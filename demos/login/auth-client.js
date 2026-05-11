@@ -1,3 +1,13 @@
+const APPROVED_WORKER_ACCOUNT = {
+  name: "박현장",
+  phone: "010-1234-5678",
+  code: "123456",
+  password: "safety1234",
+  workType: "철골 설치",
+  team: "철골 2팀",
+  supervisor: "김안전 관리자",
+};
+
 /**
  * AuthClient contract used by the login demo.
  *
@@ -12,11 +22,14 @@ function createMockAuthClient() {
   const allowedAdminDomains = ["safetycontrol.local"];
   const registeredWorkers = new Map([
     [
-      "010-1234-5678",
+      APPROVED_WORKER_ACCOUNT.phone,
       {
-        name: "홍길동",
-        workType: "현장 순찰",
-        password: null,
+        name: APPROVED_WORKER_ACCOUNT.name,
+        workType: APPROVED_WORKER_ACCOUNT.workType,
+        team: APPROVED_WORKER_ACCOUNT.team,
+        supervisor: APPROVED_WORKER_ACCOUNT.supervisor,
+        password: APPROVED_WORKER_ACCOUNT.password,
+        autoApproved: true,
       },
     ],
     [
@@ -24,7 +37,10 @@ function createMockAuthClient() {
       {
         name: "김안전",
         workType: "장비 작업",
+        team: "장비 1팀",
+        supervisor: "이관리 관리자",
         password: null,
+        autoApproved: false,
       },
     ],
   ]);
@@ -51,11 +67,27 @@ function createMockAuthClient() {
 
   function validatePassword(password) {
     if (!password || password.length < 8) {
-      throw new Error("비밀번호는 8자 이상으로 설정하세요.");
+      throw new Error("비밀번호는 8자 이상으로 입력하세요.");
     }
   }
 
+  function toWorkerSession(worker, phone) {
+    return {
+      role: "worker",
+      name: worker.name,
+      workType: worker.workType,
+      team: worker.team,
+      supervisor: worker.supervisor,
+      phone,
+      status: worker.autoApproved ? "자동 승인" : "출근 확인",
+    };
+  }
+
   return {
+    getApprovedWorkerAccount() {
+      return { ...APPROVED_WORKER_ACCOUNT };
+    },
+
     async requestWorkerCode({ phone }) {
       await wait();
 
@@ -89,11 +121,8 @@ function createMockAuthClient() {
       worker.password = password;
 
       return {
-        role: "worker",
-        name: worker.name,
-        workType: worker.workType,
-        phone: normalizedPhone,
-        status: "registered",
+        ...toWorkerSession(worker, normalizedPhone),
+        status: "등록 승인",
       };
     },
 
@@ -125,12 +154,7 @@ function createMockAuthClient() {
         throw new Error("비밀번호가 일치하지 않습니다.");
       }
 
-      return {
-        role: "worker",
-        name: worker.name,
-        workType: worker.workType,
-        phone: normalizedPhone,
-      };
+      return toWorkerSession(worker, normalizedPhone);
     },
 
     async signInAdminWithGoogle() {

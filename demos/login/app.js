@@ -1,4 +1,5 @@
 const authClient = createMockAuthClient();
+const approvedWorker = authClient.getApprovedWorkerAccount();
 
 const tabs = {
   user: document.querySelector("#user-tab"),
@@ -15,6 +16,9 @@ const workerRegisterForm = document.querySelector("#worker-register-form");
 const workerLoginForm = document.querySelector("#worker-login-form");
 const requestCodeButtons = document.querySelectorAll(".request-code");
 const googleLoginButton = document.querySelector("#google-login");
+const fillDemoWorkerButton = document.querySelector("#fill-demo-worker");
+const demoAccountSummary = document.querySelector("#demo-account-summary");
+const dashboardPath = "../dashboard/";
 const workerModes = {
   register: document.querySelector("#register-mode"),
   login: document.querySelector("#login-mode"),
@@ -63,10 +67,31 @@ function activateWorkerMode(modeName, options = {}) {
   }
 }
 
+function fillApprovedWorkerLogin() {
+  activateTab("user");
+  activateWorkerMode("login", { keepMessage: true });
+  document.querySelector("#login-name").value = approvedWorker.name;
+  document.querySelector("#login-phone").value = approvedWorker.phone;
+  document.querySelector("#login-code").value = approvedWorker.code;
+  document.querySelector("#login-password").value = approvedWorker.password;
+  setMessage("자동 승인 데모 계정이 입력되었습니다. 로그인하면 대시보드로 이동합니다.");
+}
+
+function saveWorkerSession(user) {
+  window.sessionStorage.setItem("safetyControlUser", JSON.stringify(user));
+}
+
+function goToDashboard() {
+  window.location.href = dashboardPath;
+}
+
+demoAccountSummary.textContent = `${approvedWorker.name} · ${approvedWorker.phone} · 코드 ${approvedWorker.code}`;
+
 tabs.user.addEventListener("click", () => activateTab("user"));
 tabs.admin.addEventListener("click", () => activateTab("admin"));
 workerModes.register.addEventListener("click", () => activateWorkerMode("register"));
 workerModes.login.addEventListener("click", () => activateWorkerMode("login"));
+fillDemoWorkerButton.addEventListener("click", fillApprovedWorkerLogin);
 
 requestCodeButtons.forEach((button) => {
   button.addEventListener("click", async () => {
@@ -100,7 +125,9 @@ workerRegisterForm.addEventListener("submit", async (event) => {
     activateWorkerMode("login", { keepMessage: true });
     document.querySelector("#login-name").value = user.name;
     document.querySelector("#login-phone").value = user.phone;
-    setMessage(`${user.name}님 등록이 승인되었습니다. 이제 로그인할 수 있습니다.`);
+    document.querySelector("#login-code").value = payload.code;
+    document.querySelector("#login-password").value = payload.password;
+    setMessage(`${user.name}님 등록이 승인되었습니다. 로그인하면 대시보드로 이동합니다.`);
   } catch (error) {
     setMessage(error.message, "error");
   }
@@ -116,7 +143,9 @@ workerLoginForm.addEventListener("submit", async (event) => {
 
   try {
     const user = await authClient.signInWorker(payload);
-    setMessage(`${user.name}님 ${user.workType} 계정으로 로그인되었습니다.`);
+    saveWorkerSession(user);
+    setMessage(`${user.name}님 로그인 완료. 대시보드로 이동합니다.`);
+    window.setTimeout(goToDashboard, 450);
   } catch (error) {
     setMessage(error.message, "error");
   }

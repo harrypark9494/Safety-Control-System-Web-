@@ -28,6 +28,14 @@
             </button>
           </div>
 
+          <aside class="demo-account" aria-label="자동 승인 데모 계정">
+            <div>
+              <strong>자동 승인 데모 계정</strong>
+              <span id="demo-account-summary"></span>
+            </div>
+            <button class="secondary-button" id="fill-demo-worker" type="button">입력</button>
+          </aside>
+
           <form class="worker-flow active" id="worker-register-form">
             <label>
               연락처
@@ -53,7 +61,7 @@
           <form class="worker-flow" id="worker-login-form" hidden>
             <label>
               이름
-              <input id="login-name" name="name" type="text" autocomplete="name" placeholder="홍길동" required />
+              <input id="login-name" name="name" type="text" autocomplete="name" placeholder="박현장" required />
             </label>
 
             <label>
@@ -71,10 +79,10 @@
 
             <label>
               비밀번호
-              <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="등록한 비밀번호" required />
+              <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="등록된 비밀번호" required />
             </label>
 
-            <button class="primary-button" type="submit">일반 사용자 로그인</button>
+            <button class="primary-button" type="submit">대시보드로 로그인</button>
           </form>
         </div>
 

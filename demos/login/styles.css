@@ -180,6 +180,33 @@ select:focus {
   background: #fff;
 }
 
+.demo-account {
+  display: grid;
+  grid-template-columns: 1fr 82px;
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid rgba(16, 122, 85, 0.24);
+  border-radius: 8px;
+  background: rgba(16, 122, 85, 0.08);
+}
+
+.demo-account div {
+  display: grid;
+  gap: 4px;
+}
+
+.demo-account strong {
+  color: var(--accent-dark);
+  font-size: 0.94rem;
+}
+
+.demo-account span {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
 .admin-copy {
   display: grid;
   gap: 8px;
@@ -247,6 +274,10 @@ select:focus {
 
 @media (max-width: 460px) {
   .code-row {
+    grid-template-columns: 1fr;
+  }
+
+  .demo-account {
     grid-template-columns: 1fr;
   }
 }
