@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard Demo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="dashboard-shell">
+      <header class="topbar" aria-label="대시보드 상단 정보">
+        <a class="back-link" href="../../">Demo Hub</a>
+        <div class="topbar-actions">
+          <span class="sync-status">Mock data</span>
+          <button class="icon-button" type="button" aria-label="알림">
+            <span aria-hidden="true">!</span>
+          </button>
+        </div>
+      </header>
+
+      <section class="dashboard-hero" aria-labelledby="dashboard-title">
+        <div>
+          <p class="eyebrow" id="today-label"></p>
+          <h1 id="dashboard-title"></h1>
+          <p class="hero-copy" id="site-summary"></p>
+        </div>
+        <div class="risk-badge" id="risk-badge" aria-label="현재 안전 위험 등급"></div>
+      </section>
+
+      <section class="metric-grid" aria-label="오늘의 핵심 지표">
+        <article class="metric-card">
+          <span>체감온도</span>
+          <strong id="metric-temperature"></strong>
+          <small id="metric-temperature-note"></small>
+        </article>
+        <article class="metric-card">
+          <span>강수확률</span>
+          <strong id="metric-rain"></strong>
+          <small id="metric-rain-note"></small>
+        </article>
+        <article class="metric-card">
+          <span>풍속</span>
+          <strong id="metric-wind"></strong>
+          <small id="metric-wind-note"></small>
+        </article>
+        <article class="metric-card">
+          <span>오늘 작업</span>
+          <strong id="metric-tasks"></strong>
+          <small id="metric-tasks-note"></small>
+        </article>
+      </section>
+
+      <div class="dashboard-grid">
+        <section class="panel user-panel" aria-labelledby="user-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Worker</p>
+              <h2 id="user-title">사용자 정보</h2>
+            </div>
+            <span class="status-pill" id="user-status"></span>
+          </div>
+
+          <div class="profile-row">
+            <div class="avatar" id="user-avatar" aria-hidden="true"></div>
+            <div>
+              <strong id="user-name"></strong>
+              <span id="user-role"></span>
+            </div>
+          </div>
+
+          <dl class="info-list" id="user-info"></dl>
+        </section>
+
+        <section class="panel weather-panel" aria-labelledby="weather-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Weather</p>
+              <h2 id="weather-title">현장 날씨</h2>
+            </div>
+            <span class="status-pill caution" id="weather-status"></span>
+          </div>
+
+          <div class="weather-main">
+            <strong id="weather-temperature"></strong>
+            <div>
+              <span id="weather-condition"></span>
+              <small id="weather-updated"></small>
+            </div>
+          </div>
+
+          <ul class="weather-list" id="weather-list"></ul>
+        </section>
+
+        <section class="panel tasks-panel" aria-labelledby="tasks-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Today</p>
+              <h2 id="tasks-title">오늘 할 일</h2>
+            </div>
+            <span class="status-pill" id="tasks-progress"></span>
+          </div>
+
+          <ul class="task-list" id="task-list"></ul>
+        </section>
+
+        <section class="panel alerts-panel" aria-labelledby="alerts-title">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Safety</p>
+              <h2 id="alerts-title">안전 알림</h2>
+            </div>
+          </div>
+
+          <ul class="alert-list" id="alert-list"></ul>
+        </section>
+      </div>
+    </main>
+
+    <script src="./dashboard-data.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
