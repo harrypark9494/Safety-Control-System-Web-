@@ -1,883 +1,157 @@
-# Firebase 기반 인증/대시보드 페이지 구성 가이드
+# Agent Guide
 
-## 진행 체크리스트
+이 문서는 Safety Control System Web 작업을 이어가는 에이전트를 위한 작업 지시서입니다. 공개 README는 폴더 구조와 GitHub Pages 링크 안내에 집중하고, 이 파일은 현재 작업 상태, 제약 조건, 다음 작업 우선순위를 정리합니다.
 
-### 현재 작업 단계
+## Current Direction
 
-- [x] README 기반 작업 범위 정의
-- [x] GitHub Pages 기반 UI 시안 단계로 범위 제한
-- [x] Firebase SDK 연동은 현재 단계에서 제외
-- [x] Google Sheets는 실제 연동 전 mock 데이터로 대체
-- [x] `docs/`, `prototypes/`, `app/`, `mocks/` 역할 분리
-- [ ] GitHub Pages용 정적 UI 구조 생성
-- [ ] `mocks/` mock 데이터 파일 생성
-- [ ] `decisions/` 구조 결정 문서 생성
-- [ ] 로그인 시안 제작
-- [ ] 최초 등록 시안 제작
-- [ ] 추가 인증 시안 제작
-- [ ] 일반 사용자 대시보드 시안 제작
-- [ ] 관리자 대시보드 시안 제작
-- [ ] 시안 목록 인덱스 페이지 제작
+현재 단계의 목표는 실제 Firebase 서비스 구현이 아니라 GitHub Pages에서 확인 가능한 정적 UI 데모를 만드는 것입니다.
 
-### 구조 설계
+핵심 방향:
 
-- [x] 로그인 페이지 기본 구조 정의
-- [x] 일반 사용자 / 관리자 탭 분리 정의
-- [x] 일반 사용자 최초 등록 흐름 정의
-- [x] 일반 사용자 로그인 후 추가 인증 분기 정의
-- [x] 관리자 Google 로그인 및 Workspace 검증 흐름 정의
-- [x] 일반 사용자 공통 대시보드와 관리자 전용 대시보드 분리 정의
-- [x] 사용자 데이터 DB를 Google Sheets로 사용하는 방향 반영
-- [x] GitHub Pages에서 UI 시안을 확인하는 저장소 구조 정의
-- [x] 실제 개발 코드를 `app/`으로 분리하는 구조 정의
-- [ ] 실제 화면별 UI 시안 제작
-- [ ] Google Sheets 컬럼 확정
-- [ ] Firebase Authentication 방식 확정
-- [ ] 휴대폰 인증 우회 방식 확정
-- [ ] 관리자 Workspace 허용 기준 확정
-- [ ] 실제 배포 구조 확정
+- 루트 페이지는 데모 허브입니다.
+- 각 기능 화면은 `/demos/{demo-name}/` 아래에 독립 데모로 둡니다.
+- 실제 Firebase, Google Sheets, 외부 API 연동은 아직 하지 않습니다.
+- 인증/DB 흐름은 mock `AuthClient`와 mock 데이터로 먼저 표현합니다.
+- 실제 앱 코드와 Firebase 연결은 화면 흐름이 정리된 뒤 별도 단계에서 진행합니다.
 
-### UI 시안
+## Current Repository State
 
-- [ ] 로그인 시안 목록 구성
-- [ ] 로그인 시안 1 제작
-- [ ] 로그인 시안 2 제작
-- [ ] 로그인 시안 3 제작
-- [ ] 일반 사용자 최초 등록 시안 제작
-- [ ] 추가 인증 시안 제작
-- [ ] 일반 사용자 대시보드 시안 목록 구성
-- [ ] 대시보드 시안 1 제작
-- [ ] 대시보드 시안 2 제작
-- [ ] 대시보드 시안 3 제작
-- [ ] 관리자 대시보드 시안 제작
-- [ ] GitHub Pages 인덱스 페이지에서 모든 시안 링크 연결
+현재 실제 구조:
 
-### 인증/데이터 연동
+```text
+Safety-Control-System-Web-/
+├─ index.html
+├─ styles.css
+├─ README.md
+├─ GUIDE.md
+└─ demos/
+   └─ login/
+      ├─ index.html
+      ├─ styles.css
+      ├─ app.js
+      └─ auth-client.js
+```
 
-- [ ] Firebase 프로젝트 생성
-- [ ] Firebase Authentication 설정
-- [ ] Google 로그인 Provider 설정
-- [ ] 일반 사용자 인증 방식 설정
-- [ ] Google Sheets 사용자 데이터 문서 생성
-- [ ] Google Sheets API 접근 방식 설계
-- [ ] 사용자 등록 데이터 저장 방식 설계
-- [ ] 로그인 후 사용자 분류 조회 방식 설계
-- [ ] 추가 인증 완료 상태 저장 방식 설계
-- [ ] 관리자 Workspace 검증 방식 설계
+역할:
 
-주의: 위 항목은 UI 시안 단계 이후의 작업입니다. 현재 UI 구성 단계에서는 구현하지 않습니다.
+- `/index.html`: GitHub Pages 루트에서 열리는 데모 허브
+- `/styles.css`: 데모 허브 전용 스타일
+- `/README.md`: 폴더 트리와 Pages URL 안내
+- `/GUIDE.md`: 에이전트용 작업 지시서
+- `/demos/login/`: 로그인 흐름 데모
 
-## Agent 작업 규칙
+예전 `main`의 가이드에는 `docs/`, `prototypes/`, `app/`, `mocks/`, `firebase/`, `sheets/`, `decisions/` 구조가 제안되어 있었습니다. 지금은 더 단순한 GitHub Pages 데모 구조를 우선합니다. 필요해질 때만 해당 폴더를 추가합니다.
 
-이 README는 사람에게 설명하기 위한 문서가 아니라, 다음 작업을 수행할 agent가 범위와 우선순위를 확인하기 위한 작업 지시 문서입니다.
+## Non-Negotiable Rules
 
-현재 agent는 아래 규칙을 우선합니다.
-
-- 지금 단계의 목표는 실제 서비스 구현이 아니라 GitHub Pages에서 확인 가능한 UI 시안 제작입니다.
+- Firebase Emulator를 실행하지 않습니다.
 - Firebase SDK를 설치하거나 import하지 않습니다.
-- Firebase Authentication 실제 로그인 로직을 구현하지 않습니다.
-- Google Sheets API 실제 연동을 구현하지 않습니다.
-- 외부 API 호출, 서버, Cloud Functions, 백엔드 라우트를 만들지 않습니다.
-- 인증 상태, 사용자 데이터, 관리자 데이터는 mock 데이터로 처리합니다.
-- mock 데이터는 화면 흐름을 확인할 만큼만 구성합니다.
-- 시안은 정적 페이지로 열람 가능해야 합니다.
-- 각 시안은 독립적으로 확인 가능해야 합니다.
-- GitHub Pages에 공개되는 파일은 `docs/` 아래에 둡니다.
-- 시안 원본과 실험 파일은 `prototypes/` 아래에 둡니다.
-- mock 데이터는 `mocks/` 아래에 둡니다.
-- 실제 앱 개발 코드는 `app/` 아래에 둡니다.
-- 시안 개수는 고정하지 않습니다. 다만 목록 페이지에서 접근 가능해야 합니다.
-- 실제 배포용 Firebase 구조는 후속 단계에서 설계합니다.
+- Google Sheets API를 호출하지 않습니다.
+- 외부 API, 서버, Cloud Functions, 백엔드 라우트를 만들지 않습니다.
+- 실제 개인정보처럼 보이는 데이터를 넣지 않습니다.
+- mock 데이터는 화면 흐름을 확인할 만큼만 둡니다.
+- 새 데모를 만들면 루트 `index.html` 버튼과 `README.md` 트리를 함께 갱신합니다.
 
-## 현재 단계의 mock 데이터 기준
+## Login Demo Status
 
-UI 시안 제작 중에는 아래 데이터를 실제 DB 대신 사용합니다.
+현재 로그인 데모 경로:
 
-### 일반 사용자 mock
+- local: `demos/login/index.html`
+- Pages: `https://harrypark9494.github.io/Safety-Control-System-Web-/demos/login/`
 
-```js
-const mockUser = {
-  uid: "mock-user-001",
-  email: "user@example.com",
-  name: "홍길동",
-  phone: "010-0000-0000",
-  userType: "general",
-  registrationCompleted: true,
-  requiresAdditionalVerification: true,
-  additionalVerificationCompleted: false,
-  firstLoginCompleted: false,
-};
-```
+일반 사용자 흐름:
 
-### 추가 인증 완료 사용자 mock
+1. 최초 등록
+   - 이름과 근무 유형은 화면에서 직접 입력하지 않습니다.
+   - 이름과 근무 유형은 DB에 이미 있다고 가정합니다.
+   - 사용자는 연락처로 인증 코드를 받고 비밀번호를 설정합니다.
+   - mock DB에 등록된 연락처이면 등록을 승인합니다.
+2. 이후 로그인
+   - 이름, 연락처, 인증 코드, 비밀번호로 로그인합니다.
 
-```js
-const mockVerifiedUser = {
-  uid: "mock-user-002",
-  email: "verified@example.com",
-  name: "김민지",
-  phone: "010-1111-1111",
-  userType: "general",
-  registrationCompleted: true,
-  requiresAdditionalVerification: true,
-  additionalVerificationCompleted: true,
-  firstLoginCompleted: true,
-};
-```
+관리자 흐름:
 
-### 관리자 mock
+- 관리자 탭은 별도 입력 없이 Google 로그인으로 연결되는 구조를 목표로 합니다.
+- 현재 데모에서는 prompt 기반 mock Google 로그인을 사용합니다.
+- 허용 Workspace가 아니면 차단합니다.
 
-```js
-const mockAdmin = {
-  uid: "mock-admin-001",
-  email: "admin@example.com",
-  workspaceDomain: "example.com",
-  role: "admin",
-  isActive: true,
-};
-```
+현재 mock 데이터:
 
-mock 데이터는 실제 개인정보처럼 보이지 않도록 예시값만 사용합니다.
+- `010-1234-5678` / `홍길동` / `현장 순찰`
+- `010-2222-3333` / `김안전` / `장비 작업`
+- 인증 코드: `123456`
+- 관리자 mock Workspace: `safetycontrol.local`
 
-## 목적
+## Immediate To Do
 
-이 문서는 Firebase 기반 페이지를 실제로 구현하기 전, 전체 페이지 구성과 인증 흐름, 사용자 데이터 저장 방식, UI 시안 관리 방식을 정의하기 위한 작업 가이드입니다.
+우선순위 높은 다음 작업입니다.
 
-핵심 구조는 다음과 같습니다.
+- [ ] 로그인 성공 후 이동할 데모 목적지를 정합니다.
+  - 일반 사용자: 공통 대시보드 데모
+  - 관리자: 관리자 대시보드 데모
+- [ ] `/demos/dashboard/` 공통 대시보드 데모를 만듭니다.
+- [ ] `/demos/admin-dashboard/` 관리자 대시보드 데모를 만듭니다.
+- [ ] 루트 데모 허브에 Dashboard Demo, Admin Dashboard Demo 버튼을 추가합니다.
+- [ ] README의 Folder Tree와 Demo Pages 표를 새 데모 기준으로 갱신합니다.
+- [ ] 로그인 데모에서 성공 시 실제 이동 대신 mock 이동 메시지 또는 데모 링크 버튼을 보여줄지 결정합니다.
 
-1. 로그인 페이지
-2. 사용자 인증
-3. 대시보드 진입
+## Next Design Decisions
 
-로그인 절차는 `일반 사용자`와 `관리자` 두 가지로 나뉘며, 로그인 페이지 내 탭으로 구분합니다.
+아직 결정이 필요한 항목입니다. 구현 전에 사용자에게 확인하거나 별도 문서로 정리합니다.
 
-실제 배포 임베딩을 바로 진행하지 않고, 먼저 GitHub Pages에서 여러 UI 시안을 확인할 수 있도록 구성합니다.
-
-## 전체 페이지 구조
-
-### 1. 로그인 페이지
-
-로그인 페이지는 서비스 진입점입니다.
-
-구성:
-
-- 일반 사용자 탭
-- 관리자 탭
-
-각 탭은 서로 다른 인증 절차를 가집니다.
-
-### 2. 일반 사용자 인증 흐름
-
-일반 사용자는 최초 등록 여부에 따라 흐름이 달라집니다.
-
-#### 최초 사용자 등록
-
-일반 사용자가 처음 서비스를 이용하는 경우, 회원가입과 유사한 형태의 최초 등록 페이지에서 인증 절차를 완료합니다.
-
-예상 구성:
-
-- 이름 입력
-- 전화번호 입력
-- 이메일 또는 계정 식별 정보 입력
-- 개인정보 수집 동의
-- Firebase Authentication 계정 생성 또는 인증 연결
-- Google Sheets 사용자 데이터 행 생성
-- 사용자 분류 정보 저장
-- 최초 등록 완료 상태 저장
-
-최초 등록이 완료된 이후부터는 일반 로그인 절차를 사용할 수 있습니다.
-
-#### 기존 사용자 로그인
-
-최초 등록을 마친 일반 사용자는 로그인 페이지의 일반 사용자 탭에서 로그인합니다.
-
-로그인 이후에는 Google Sheets에 저장된 사용자 데이터를 조회해 사용자 상태와 분류를 확인합니다.
-
-확인 항목:
-
-- 사용자 계정 존재 여부
-- 최초 등록 완료 여부
-- 사용자 분류
-- 추가 인증 필요 여부
-- 추가 인증 완료 여부
-
-#### 추가 인증
-
-로그인한 일반 사용자는 Google Sheets의 사용자 분류에 따라 추가 인증이 필요할 수 있습니다.
-
-추가 인증 규칙:
-
-- 추가 인증은 최초 로그인 시에만 적용합니다.
-- 추가 인증이 필요한 사용자는 대시보드 진입 전에 추가 인증 페이지를 거칩니다.
-- 추가 인증이 필요하지 않은 사용자는 곧바로 공통 대시보드로 이동합니다.
-- 추가 인증이 완료되면 Google Sheets에 완료 상태를 저장합니다.
-- 이후 로그인부터는 추가 인증 없이 공통 대시보드로 이동합니다.
-
-#### 일반 사용자 대시보드
-
-일반 사용자 인증이 완료되면 사용자 분류와 관계없이 동일한 대시보드를 봅니다.
-
-대시보드 규칙:
-
-- 일반 사용자는 모두 공통 대시보드로 진입합니다.
-- 사용자 분류는 최초 추가 인증 여부를 판단하는 데 사용합니다.
-- 대시보드 자체는 사용자 분류별로 분리하지 않습니다.
-
-### 3. 관리자 인증 흐름
-
-관리자는 일반 사용자와 별도의 탭에서 로그인합니다.
-
-관리자 인증은 Google 연동을 기반으로 하며, Google Workspace 정보를 통해 접근 권한을 구분합니다.
-
-예상 흐름:
-
-1. 관리자 탭 선택
-2. Google 로그인 진행
-3. Google Workspace 정보 확인
-4. 허용된 Workspace인지 검증
-5. 관리자 권한 확인
-6. 관리자 전용 대시보드로 이동
-
-관리자는 일반 사용자용 최초 등록 또는 추가 인증 흐름을 거치지 않습니다.
-
-### 4. 관리자 대시보드
-
-관리자 인증이 완료되면 곧바로 관리자 전용 대시보드로 이동합니다.
-
-관리자 대시보드는 일반 사용자 대시보드와 분리합니다.
-
-예상 역할:
-
-- 사용자 목록 확인
-- 사용자 분류 관리
-- 추가 인증 필요 여부 관리
-- Google Sheets 사용자 데이터 확인
-- Workspace 기반 관리자 접근 관리
-- 서비스 운영 상태 확인
-
-## 인증 상태 분기
-
-### 일반 사용자
-
-```text
-로그인 페이지
-  -> 일반 사용자 탭
-    -> 최초 등록 여부 확인
-      -> 미등록 사용자: 최초 등록 페이지
-        -> 등록 완료
-        -> Google Sheets 사용자 데이터 저장
-        -> 로그인 가능 상태
-      -> 등록 사용자: 로그인
-        -> Google Sheets 사용자 분류 확인
-          -> 추가 인증 필요 + 미완료: 추가 인증 페이지
-            -> 추가 인증 완료 상태 저장
-            -> 공통 대시보드
-          -> 추가 인증 불필요 또는 이미 완료: 공통 대시보드
-```
-
-### 관리자
-
-```text
-로그인 페이지
-  -> 관리자 탭
-    -> Google 로그인
-      -> Google Workspace 검증
-        -> 관리자 권한 확인
-          -> 관리자 전용 대시보드
-```
-
-## 데이터 저장 방향
-
-### 사용자 데이터 DB
-
-사용자 데이터 DB는 Google Sheets를 기준으로 설계합니다.
-
-이 DB에는 서비스 운영에 필요한 사용자 수집 데이터가 들어갑니다.
-
-예상 데이터:
-
-- 이름
-- 전화번호
-- 이메일
-- 사용자 분류
-- 최초 등록 완료 여부
-- 최초 로그인 완료 여부
-- 추가 인증 필요 여부
-- 추가 인증 완료 여부
-- 약관 동의 상태
-- 등록 일시
-- 수정 일시
-
-Google Sheets는 관리자가 직접 확인하고 수정할 수 있는 운영용 사용자 데이터 저장소로 사용합니다.
-
-### 추가 DB가 필요한 경우
-
-뒷동작에서 외부 API 호출 결과, 시스템 로그, 캐시, 분석용 이벤트 등 별도 저장이 필요한 데이터가 생기면 추가 DB를 설계합니다.
-
-예상 후보:
-
-- Firestore
-- Supabase
-- Cloud SQL
-- 별도 서버 DB
-
-현재 문서에서는 Google Sheets를 사용자 데이터 DB로 보고, 추가 DB는 후속 설계 항목으로 남깁니다.
-
-## Firebase 사용 범위
-
-### Firebase Authentication
-
-사용 목적:
-
-- 일반 사용자 로그인
-- 일반 사용자 최초 등록
-- 관리자 Google 로그인
-- 인증 상태 유지
-
-### Firebase Hosting
-
-사용 목적:
-
-- 실제 서비스 배포 시 로그인 페이지 제공
-- 실제 서비스 배포 시 일반 사용자 대시보드 제공
-- 실제 서비스 배포 시 관리자 대시보드 제공
-
-초기 단계에서는 Firebase Hosting보다 GitHub Pages를 우선 사용해 UI 시안을 확인합니다.
-
-### Firestore Database
-
-현재 기본 사용자 데이터 DB로는 사용하지 않습니다.
-
-Firestore는 아래 상황이 생기면 추가 설계합니다.
-
-- Google Sheets만으로 처리하기 어려운 실시간 상태 저장이 필요한 경우
-- 외부 API 결과를 구조적으로 저장해야 하는 경우
-- 보안 규칙 기반의 클라이언트 직접 접근 DB가 필요한 경우
-- 로그, 이벤트, 캐시 데이터가 필요한 경우
-
-## Google Sheets 사용자 데이터 모델 초안
-
-### users 시트
-
-일반 사용자 정보를 저장합니다.
-
-예상 컬럼:
-
-- `uid`
-- `email`
-- `name`
-- `phone`
-- `userType`
-- `registrationCompleted`
-- `requiresAdditionalVerification`
-- `additionalVerificationCompleted`
-- `firstLoginCompleted`
-- `termsAgreed`
-- `createdAt`
-- `updatedAt`
-
-### admins 시트
-
-관리자 정보를 저장합니다.
-
-예상 컬럼:
-
-- `uid`
-- `email`
-- `workspaceDomain`
-- `role`
-- `isActive`
-- `createdAt`
-- `updatedAt`
-
-### allowedWorkspaces 시트
-
-관리자 로그인을 허용할 Google Workspace 정보를 저장합니다.
-
-예상 컬럼:
-
-- `domain`
-- `isAllowed`
-- `description`
-- `createdAt`
-- `updatedAt`
-
-## Firebase 휴대폰 인증 우회 방향
-
-Firebase Authentication의 Phone Auth는 공식적으로 SMS 기반 휴대폰 인증을 제공합니다. 다만 한국 번호 환경에서는 비용, 발송 안정성, 정책, 대행사 연동 문제 때문에 별도 전략이 필요할 수 있습니다.
-
-한국 인증 대행사를 활용하지 않는 방향에서는 아래 방식들을 검토합니다.
-
-### 1. 휴대폰 번호는 수집만 하고, 로그인 인증 수단으로 사용하지 않기
-
-가장 단순한 방식입니다.
-
-흐름:
-
-1. 최초 등록 페이지에서 이름과 전화번호를 입력합니다.
-2. 실제 로그인은 이메일, Google, 또는 별도 매직 링크 방식으로 처리합니다.
-3. 전화번호는 Google Sheets 사용자 데이터에 저장합니다.
-4. 전화번호의 진위 확인은 관리자 검수 또는 후속 프로세스로 처리합니다.
-
-장점:
-
-- 한국 SMS 인증 대행사가 필요 없습니다.
-- Firebase Phone Auth 의존도를 줄일 수 있습니다.
-- UI와 운영 흐름이 단순합니다.
-
-주의점:
-
-- 전화번호 소유 여부를 자동으로 보장하지 않습니다.
-- 전화번호가 핵심 보안 요소라면 별도 확인 절차가 필요합니다.
-
-### 2. 이메일 또는 Google 로그인으로 본인 인증을 대체하기
-
-휴대폰 인증을 필수 인증 수단으로 보지 않고, 이메일 또는 Google 계정을 기준 인증 수단으로 사용합니다.
-
-흐름:
-
-1. 사용자가 이메일 로그인 또는 Google 로그인을 진행합니다.
-2. 최초 등록 페이지에서 전화번호를 추가 정보로 입력합니다.
-3. 로그인된 Firebase `uid`와 Google Sheets의 사용자 행을 연결합니다.
-
-장점:
-
-- Firebase Authentication의 안정적인 Provider를 사용할 수 있습니다.
-- 별도 SMS 연동이 필요 없습니다.
-- 관리자 Google Workspace 인증 흐름과도 구조가 유사합니다.
-
-주의점:
-
-- 전화번호 인증이 아니라 계정 인증입니다.
-- 서비스 정책상 휴대폰 소유 확인이 필요한 경우에는 부족할 수 있습니다.
-
-### 3. 관리자 승인 기반으로 휴대폰 인증을 대체하기
-
-전화번호를 입력받은 뒤, 관리자가 Google Sheets에서 사용자 정보를 확인하고 승인하는 방식입니다.
-
-흐름:
-
-1. 사용자가 최초 등록 정보를 제출합니다.
-2. Google Sheets에 `pending` 상태로 저장합니다.
-3. 관리자가 이름, 전화번호, 기타 정보를 확인합니다.
-4. 관리자가 승인하면 `approved` 상태로 변경합니다.
-5. 승인된 사용자만 대시보드에 진입할 수 있습니다.
-
-장점:
-
-- 한국 SMS 인증 대행사가 필요 없습니다.
-- 초기 운영 단계에서 구현이 쉽습니다.
-- 수동 검수가 필요한 서비스에 적합합니다.
-
-주의점:
-
-- 운영자가 개입해야 합니다.
-- 사용자가 즉시 이용하지 못할 수 있습니다.
-
-### 4. Firebase Phone Auth 테스트 번호는 실제 운영 우회 방식으로 사용하지 않기
-
-Firebase에는 테스트용 전화번호와 인증 코드를 설정하는 기능이 있습니다.
-
-이 기능은 개발과 QA를 위한 것이며, 실제 운영 환경에서 휴대폰 인증 우회 수단으로 사용하지 않습니다.
-
-사용 범위:
-
-- 로그인 UI 개발
-- 인증 흐름 테스트
-- QA 환경 확인
-
-운영 환경에서는 테스트 번호를 일반 사용자에게 노출하지 않습니다.
-
-## GitHub Pages UI 시안 관리
-
-초기 단계에서는 Firebase 배포나 실제 임베딩보다, GitHub Pages에서 여러 UI 시안을 확인하는 것을 우선합니다.
-
-목표:
-
-- 로그인 페이지 시안을 여러 개 비교합니다.
-- 대시보드 시안을 여러 개 비교합니다.
-- 실제 인증 로직 없이 화면 흐름과 사용자 경험을 먼저 확인합니다.
-- GitHub Pages에서 누구나 링크로 시안을 볼 수 있게 합니다.
-
-## UI 시안 데모 주소
-
-현재 repository 정보가 아직 확정되지 않았으므로, 아래 주소는 GitHub Pages 배포 후 `{github-user}`와 `{repo-name}`을 실제 값으로 교체합니다.
-
-기본 주소:
-
-```text
-https://{github-user}.github.io/{repo-name}/
-```
-
-시안 목록 주소:
-
-```text
-https://{github-user}.github.io/{repo-name}/
-├── login/
-│   ├── concept-01/
-│   ├── concept-02/
-│   └── concept-03/
-├── register/
-│   └── concept-01/
-├── verification/
-│   └── concept-01/
-├── dashboard/
-│   ├── concept-01/
-│   ├── concept-02/
-│   └── concept-03/
-└── admin-dashboard/
-    └── concept-01/
-```
-
-각 상위 경로는 시안 묶음 목록 페이지입니다.
-
-- `/login/`: 로그인 시안 여러 개를 볼 수 있는 주소
-- `/register/`: 최초 등록 시안을 볼 수 있는 주소
-- `/verification/`: 추가 인증 시안을 볼 수 있는 주소
-- `/dashboard/`: 일반 사용자 대시보드 시안 여러 개를 볼 수 있는 주소
-- `/admin-dashboard/`: 관리자 대시보드 시안을 볼 수 있는 주소
-
-Agent 작업 규칙:
-
-- `docs/index.html`은 전체 시안 목록 페이지입니다.
-- `docs/login/index.html`은 로그인 시안 여러 개를 볼 수 있는 목록 페이지입니다.
-- `docs/dashboard/index.html`은 일반 사용자 대시보드 시안 여러 개를 볼 수 있는 목록 페이지입니다.
-- `docs/admin-dashboard/index.html`은 관리자 대시보드 시안을 볼 수 있는 목록 페이지입니다.
-- GitHub Pages가 `docs/` 폴더 기준으로 배포되면 URL에는 `docs`가 포함되지 않습니다.
-- 시안이 추가되거나 삭제되면 위 주소 목록과 각 `index.html` 링크를 함께 갱신합니다.
-
-## Repo 폴더 구조 초안
-
-이 repo는 UI 시안 테스트와 실제 개발 형상 관리를 함께 수행합니다.
-
-핵심 분리 기준:
-
-- `docs`: GitHub Pages에 공개되는 UI 시안 데모
-- `prototypes`: 시안 원본, 실험 화면, 비교 자료
-- `app`: 실제 제품 개발 코드
-- `mocks`: UI 시안과 초기 개발에서 사용할 mock 데이터
-- `firebase`, `sheets`, `decisions`: 연동과 설계 기록
-
-```text
-.
-├── README.md
-├── docs
-│   ├── index.html
-│   ├── assets
-│   ├── styles
-│   │   └── prototype.css
-│   ├── login
-│   │   ├── index.html
-│   │   ├── concept-01
-│   │   │   ├── index.html
-│   │   │   └── assets
-│   │   ├── concept-02
-│   │   │   ├── index.html
-│   │   │   └── assets
-│   │   └── concept-03
-│   │       ├── index.html
-│   │       └── assets
-│   ├── register
-│   │   ├── index.html
-│   │   └── concept-01
-│   │       ├── index.html
-│   │       └── assets
-│   ├── verification
-│   │   ├── index.html
-│   │   └── concept-01
-│   │       ├── index.html
-│   │       └── assets
-│   ├── dashboard
-│   │   ├── index.html
-│   │   ├── concept-01
-│   │   │   ├── index.html
-│   │   │   └── assets
-│   │   ├── concept-02
-│   │   │   ├── index.html
-│   │   │   └── assets
-│   │   └── concept-03
-│   │       ├── index.html
-│   │       └── assets
-│   └── admin-dashboard
-│       ├── index.html
-│       └── concept-01
-│           ├── index.html
-│           └── assets
-├── app
-│   ├── README.md
-│   ├── public
-│   ├── src
-│   ├── package.json
-│   └── firebase.json
-├── prototypes
-│   ├── login
-│   ├── register
-│   ├── verification
-│   ├── dashboard
-│   ├── admin-dashboard
-│   ├── notes
-│   └── screenshots
-├── mocks
-│   ├── users.js
-│   ├── admins.js
-│   └── sheets.js
-├── firebase
-│   ├── auth.md
-│   ├── hosting.md
-│   └── phone-auth-alternatives.md
-├── sheets
-│   └── schema.md
-└── decisions
-    └── 0001-repo-structure.md
-```
-
-### docs
-
-GitHub Pages에서 직접 노출할 정적 파일을 둡니다.
-
-GitHub Pages 설정은 `docs/` 폴더를 기준으로 잡는 것을 권장합니다.
-
-현재 단계에서는 `docs/` 아래에 있는 파일만 실제로 화면 확인 대상입니다.
-
-주의:
-
-- `docs/`는 공개 데모 산출물입니다.
-- 실제 앱 개발 코드를 `docs/`에 두지 않습니다.
-- GitHub Pages가 `docs/` 폴더 기준으로 배포되면 URL에는 `docs`가 포함되지 않습니다.
-
-### docs/assets, docs/styles
-
-GitHub Pages 시안에서 공통으로 사용할 공개 정적 리소스를 둡니다.
-
-예상 파일:
-
-- `docs/styles/prototype.css`: GitHub Pages 시안 공통 스타일
-- `docs/assets`: GitHub Pages에 공개되어도 되는 이미지, 아이콘, 기타 정적 파일
-
-주의:
-
-- 실제 사용자 데이터처럼 보이는 파일을 `docs/`에 두지 않습니다.
-- mock 데이터는 `mocks/`에 두고, 공개 가능한 예시값만 사용합니다.
-
-### docs/index.html
-
-전체 시안 목록 페이지입니다.
-
-예상 링크:
-
-- 로그인 시안 목록
-- 최초 등록 시안 목록
-- 추가 인증 시안 목록
-- 일반 사용자 대시보드 시안 목록
-- 관리자 대시보드 시안 목록
-
-### docs/login
-
-로그인 페이지 시안을 관리합니다.
-
-시안 개수는 고정하지 않습니다. 필요에 따라 `concept-01`, `concept-02`, `concept-03`처럼 추가합니다.
-
-### docs/dashboard
-
-일반 사용자 공통 대시보드 시안을 관리합니다.
-
-시안 개수는 고정하지 않습니다.
-
-### docs/admin-dashboard
-
-관리자 전용 대시보드 시안을 관리합니다.
-
-### app
-
-실제 개발 앱 코드를 둡니다.
-
-역할:
-
-- Firebase Authentication 실제 연동
-- Google Sheets 또는 API 연동
-- 실제 라우팅
-- 실제 배포 설정
-- 운영용 빌드 산출물 생성
-
-주의:
-
-- 현재 UI 시안 단계에서는 `app/` 구현을 시작하지 않습니다.
-- UI 시안에서 확정된 흐름과 디자인을 실제 개발 단계에서 `app/`으로 이관합니다.
-- `app/`과 `docs/`는 목적이 다릅니다. `docs/`는 데모, `app/`은 제품 코드입니다.
-
-### prototypes
-
-시안 원본, 실험용 화면, 비교 자료를 저장합니다.
-
-역할:
-
-- GitHub Pages에 올리기 전의 실험 화면 관리
-- 디자인 비교안 관리
-- 화면 캡처와 메모 관리
-- 폐기된 시안의 기록 보관
-
-주의:
-
-- GitHub Pages에 공개할 최종 시안은 `docs/`로 옮기거나 복제합니다.
-- `prototypes/` 안의 파일은 공개 데모 링크의 기준이 아닙니다.
-
-### mocks
-
-UI 시안과 초기 앱 개발에서 사용할 mock 데이터를 저장합니다.
-
-예상 파일:
-
-- `mocks/users.js`: 일반 사용자 mock
-- `mocks/admins.js`: 관리자 mock
-- `mocks/sheets.js`: Google Sheets 응답 형태 mock
-
-주의:
-
-- 실제 개인정보를 넣지 않습니다.
-- Firebase SDK 또는 Google Sheets API를 호출하지 않습니다.
-- UI 상태 표현에 필요한 최소 데이터만 둡니다.
-
-### firebase
-
-Firebase 설정, 인증 방식, 배포 전환 계획을 따로 정리합니다.
-
-### sheets
-
-Google Sheets 컬럼 구조, 시트별 역할, API 연동 방식을 정리합니다.
-
-### decisions
-
-프로젝트 구조와 중요한 설계 결정을 기록합니다.
-
-예상 파일:
-
-- `0001-repo-structure.md`: UI 시안과 실제 앱 개발을 같은 repo에서 관리하기 위한 구조 결정
-- `0002-user-data-source.md`: 사용자 데이터 DB를 Google Sheets로 두는 결정
-- `0003-auth-strategy.md`: 휴대폰 인증 우회 및 Firebase 인증 전략 결정
-
-새로운 agent는 기존 결정과 충돌하는 변경을 하기 전에 `decisions/`를 먼저 확인합니다.
-
-## 라우트 초안
-
-실제 서비스 전환 시 사용할 수 있는 라우트 초안입니다.
-
-```text
-/login
-/register
-/verify
-/dashboard
-/admin/dashboard
-```
-
-GitHub Pages 시안 단계에서는 아래처럼 정적 경로를 사용합니다.
-
-```text
-/login/concept-01/
-/login/concept-02/
-/dashboard/concept-01/
-/dashboard/concept-02/
-/admin-dashboard/concept-01/
-```
-
-## 작업 워크로드
-
-### 1. Repo 구조 생성
-
-- `docs/` GitHub Pages 데모 구조 생성
-- `prototypes/` 시안 원본 구조 생성
-- `app/` 실제 개발 코드 구조 생성
-- `mocks/` mock 데이터 구조 생성
-- `firebase/` Firebase 설계 문서 구조 생성
-- `sheets/` Google Sheets 스키마 문서 구조 생성
-- `decisions/` 설계 결정 기록 구조 생성
-
-현재 단계에서는 `docs/`, `prototypes/`, `mocks/`, `decisions/`를 우선 생성합니다.
-
-### 2. 페이지 구조 정의
-
-- 로그인 페이지 구성
-- 일반 사용자 탭 구성
-- 관리자 탭 구성
-- 최초 등록 페이지 구성
-- 추가 인증 페이지 구성
-- 공통 대시보드 구성
-- 관리자 전용 대시보드 구성
-
-### 3. UI 시안 제작
-
-- GitHub Pages용 `docs/index.html` 제작
-- 로그인 시안 묶음 제작
-- 최초 등록 시안 제작
-- 추가 인증 시안 제작
-- 일반 사용자 대시보드 시안 묶음 제작
-- 관리자 대시보드 시안 제작
-- 각 시안 간 비교가 가능한 링크 구조 제작
-- Firebase SDK 없이 mock 데이터 기반으로 화면 상태 표현
-- Google Sheets API 없이 mock 데이터 기반으로 사용자 상태 표현
-
-### 4. 일반 사용자 인증 설계
-
-- Firebase Authentication 기반 일반 로그인 설계
-- 최초 등록 플로우 설계
-- Google Sheets 사용자 행 생성 규칙 설계
-- 최초 등록 완료 상태 저장 방식 설계
-- 로그인 후 사용자 분류 조회 방식 설계
-
-주의: 이 단계는 UI 시안 제작 이후 진행합니다.
-
-### 5. 추가 인증 설계
-
-- 사용자 분류별 추가 인증 필요 조건 정의
-- 최초 로그인 여부 판단 방식 정의
-- 추가 인증 완료 상태 저장 방식 정의
-- 추가 인증 이후 대시보드 이동 규칙 정의
-
-주의: 이 단계는 UI 시안 제작 이후 진행합니다.
-
-### 6. 관리자 인증 설계
-
-- Google 로그인 연동 설계
-- Google Workspace 도메인 확인 방식 설계
-- 허용 Workspace 목록 관리 방식 설계
-- 관리자 권한 확인 방식 설계
-- 관리자 대시보드 이동 규칙 정의
-
-주의: 이 단계는 UI 시안 제작 이후 진행합니다.
-
-### 7. Google Sheets 연동 설계
-
-- 사용자 데이터 시트 구조 확정
-- 관리자 데이터 시트 구조 확정
-- 허용 Workspace 시트 구조 확정
-- Google Sheets API 접근 권한 설계
-- 클라이언트 직접 접근 여부 검토
-- 서버 또는 Cloud Functions 중계 필요 여부 검토
-
-주의: 이 단계는 UI 시안 제작 이후 진행합니다.
-
-### 8. 대시보드 분기 설계
-
-- 일반 사용자 공통 대시보드 라우팅 설계
-- 관리자 전용 대시보드 라우팅 설계
-- 인증되지 않은 사용자의 접근 차단 규칙 설계
-- 잘못된 권한으로 접근한 사용자의 리다이렉트 규칙 설계
-
-### 9. 보안 설계
-
-- Firebase 인증 상태와 Google Sheets 사용자 데이터 연결 방식 정의
-- Google Sheets API 키 또는 서비스 계정 노출 방지 방식 정의
-- 관리자 Workspace 검증 방식 보완
-- 클라이언트 검증과 서버 검증의 역할 분리
-- 개인정보 저장 및 접근 권한 정책 정의
-
-## 결정이 필요한 항목
-
-- 일반 사용자 최초 등록 시 필요한 정보
-- 휴대폰 번호를 인증 수단으로 볼지, 수집 정보로만 볼지
-- 사용자 분류 기준
-- 추가 인증이 필요한 사용자 분류
-- 추가 인증의 구체적인 방식
+- 일반 사용자 대시보드에서 보여줄 핵심 정보
+- 관리자 대시보드에서 관리할 항목
+- 사용자 DB의 실제 컬럼
+- 사용자의 근무 유형 분류 기준
 - 관리자 Workspace 허용 기준
-- 관리자 권한 등급 필요 여부
-- Google Sheets를 직접 수정 가능한 운영 DB로 사용할 때의 권한 정책
-- 공통 대시보드에서 사용자 분류별 UI 차이를 둘지 여부
+- 인증 코드 발송 방식
+- 비밀번호 저장 방식
+- 로그인 후 세션 유지 방식
+- GitHub Pages 데모 구조를 계속 쓸지, 나중에 `docs/` 배포 구조로 전환할지
+
+## Deferred Integration Work
+
+아래 작업은 UI 데모가 정리된 뒤 진행합니다. 현재 단계에서 구현하지 않습니다.
+
+- Firebase 프로젝트 생성
+- Firebase Authentication 설정
+- Google 로그인 Provider 설정
+- Firebase Hosting 설정
+- Google Sheets 문서 생성
+- Google Sheets API 접근 방식 설계
+- Cloud Functions 또는 백엔드 중계 필요 여부 검토
+- Firestore 또는 별도 DB 필요 여부 검토
+- 실제 보안 규칙과 권한 정책 설계
+
+## Future Folder Candidates
+
+필요해질 때만 추가합니다.
+
+- `/mocks`: 여러 데모가 공유할 mock 데이터
+- `/decisions`: 구조와 설계 결정 기록
+- `/firebase`: Firebase 연결 설계 문서
+- `/sheets`: Google Sheets 스키마 문서
+- `/app`: 실제 제품 코드
+- `/prototypes`: 폐기 또는 비교용 실험 화면
+
+현재는 로그인 데모 하나만 있으므로, mock 데이터는 `demos/login/auth-client.js` 안에 둡니다. 두 개 이상의 데모가 같은 데이터를 공유하게 되면 `/mocks`로 분리합니다.
+
+## Suggested Work Order
+
+1. 현재 로그인 데모를 유지하면서 이동 대상만 정리합니다.
+2. 공통 대시보드 데모를 정적 화면으로 만듭니다.
+3. 관리자 대시보드 데모를 정적 화면으로 만듭니다.
+4. 로그인 성공 흐름을 각 데모 페이지로 연결합니다.
+5. mock 데이터가 중복되면 `/mocks`로 분리합니다.
+6. 사용자 DB 스키마와 관리자 권한 기준을 문서화합니다.
+7. 이후 Firebase/Sheets real 구현 단계를 시작합니다.
+
+## Verification Checklist
+
+작업 후 최소 확인 항목:
+
+- [ ] `demos/login/app.js` 문법 검사
+- [ ] 새로 만든 JS 파일 문법 검사
+- [ ] 루트 `index.html`에서 모든 데모 링크가 상대 경로로 연결되는지 확인
+- [ ] README의 Pages URL이 실제 경로와 일치하는지 확인
+- [ ] Firebase SDK 또는 Emulator 관련 코드가 추가되지 않았는지 확인

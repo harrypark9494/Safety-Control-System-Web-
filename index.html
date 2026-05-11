@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Safety Control Demo Hub</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="demo-hub">
+      <section class="hub-panel" aria-labelledby="hub-title">
+        <p class="eyebrow">Demo Site</p>
+        <h1 id="hub-title">Safety Control System Web</h1>
+        <p class="summary">
+          현재 작업 중인 화면 데모로 이동하는 루트 페이지입니다. 각 버튼은 독립 데모 페이지로 연결됩니다.
+        </p>
+
+        <div class="demo-list" aria-label="데모 페이지 목록">
+          <a class="demo-link" href="./demos/login/">
+            <span>
+              <strong>Log in Demo</strong>
+              <small>일반 사용자 최초 등록, 일반 사용자 로그인, 관리자 mock Google 로그인</small>
+            </span>
+            <span aria-hidden="true">→</span>
+          </a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
