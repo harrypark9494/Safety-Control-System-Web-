@@ -1,6 +1,6 @@
 const dashboardData = {
   dateLabel: "2026년 5월 11일 월요일",
-  greeting: "박현장님, 오늘 배정된 안전 점검을 확인하세요.",
+  greeting: "오늘 배정된 안전 점검을 확인하세요.",
   site: {
     name: "A-3 구역 철골 설치 현장",
     location: "서울 성동구 성수동",

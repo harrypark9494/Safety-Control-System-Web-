@@ -8,6 +8,43 @@ function setText(selector, text) {
   document.querySelector(selector).textContent = text;
 }
 
+function getSavedWorker() {
+  const rawUser = window.sessionStorage.getItem("safetyControlUser");
+
+  if (!rawUser) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(rawUser);
+  } catch {
+    window.sessionStorage.removeItem("safetyControlUser");
+    return null;
+  }
+}
+
+function getDashboardData() {
+  const savedWorker = getSavedWorker();
+
+  if (!savedWorker) {
+    return dashboardData;
+  }
+
+  return {
+    ...dashboardData,
+    greeting: `${savedWorker.name}님, 오늘 배정된 안전 점검을 확인하세요.`,
+    user: {
+      ...dashboardData.user,
+      name: savedWorker.name,
+      role: savedWorker.workType || dashboardData.user.role,
+      phone: savedWorker.phone,
+      team: savedWorker.team || dashboardData.user.team,
+      supervisor: savedWorker.supervisor || dashboardData.user.supervisor,
+      status: savedWorker.status || dashboardData.user.status,
+    },
+  };
+}
+
 function renderUser(user, site) {
   setText("#user-avatar", user.name.slice(0, 1));
   setText("#user-name", user.name);
@@ -99,4 +136,4 @@ function renderDashboard(data) {
   renderAlerts(data.alerts);
 }
 
-renderDashboard(dashboardData);
+renderDashboard(getDashboardData());
