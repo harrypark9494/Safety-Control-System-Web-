@@ -24,12 +24,16 @@ Safety-Control-System-Web-/
    │  ├─ index.html
    │  ├─ styles.css
    │  ├─ app.js
-   │  └─ auth-client.js
    ├─ login-register-link/
    │  ├─ index.html
    │  ├─ styles.css
-   │  ├─ app.js
-   │  └─ auth-client.js
+   │  └─ app.js
+   ├─ shared/
+   │  └─ auth/
+   │     ├─ auth-config.js
+   │     ├─ auth-client.js
+   │     ├─ mock-auth-client.js
+   │     └─ api-auth-client.js
    └─ dashboard/
       ├─ index.html
       ├─ styles.css
@@ -53,3 +57,28 @@ Safety-Control-System-Web-/
 - Dashboard Demo: 사용자 정보, 현장 날씨, 오늘 할 일, 안전 알림을 목업 데이터로 표시
 
 실제 Firebase, 날씨 API, 작업 데이터 API 연결은 별도 단계에서 진행합니다.
+
+## Auth API Adapter
+
+로그인 데모는 `demos/shared/auth/`의 공통 인증 클라이언트를 사용합니다.
+기본값은 `mock` 모드라 GitHub Pages에서 바로 동작합니다.
+
+실제 DB 확인 API를 붙일 때는 `demos/shared/auth/auth-config.js`에서 다음 값을
+변경합니다.
+
+```js
+mode: "api",
+apiBaseUrl: "https://your-api.example.com",
+```
+
+API 모드에서 호출하는 기본 엔드포인트는 다음과 같습니다.
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| POST | `/auth/worker/code` | 사용자 인증 코드 요청 |
+| POST | `/auth/worker/register` | 등록된 사용자 여부 확인 후 최초 비밀번호 설정 |
+| POST | `/auth/worker/login` | 등록 사용자 로그인 |
+| POST | `/auth/admin/google` | 관리자 Google 계정 확인 |
+
+각 API는 성공 시 화면에서 사용할 사용자 세션 JSON을 반환하고, 실패 시
+`{ "message": "오류 메시지" }` 형태로 반환하면 됩니다.

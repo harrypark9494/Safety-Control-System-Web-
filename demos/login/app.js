@@ -1,4 +1,4 @@
-const authClient = createMockAuthClient();
+const authClient = createAuthClient();
 const approvedWorker = authClient.getApprovedWorkerAccount();
 
 const tabs = {
