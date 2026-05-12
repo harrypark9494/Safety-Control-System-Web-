@@ -23,6 +23,12 @@ function getSavedWorker() {
   }
 }
 
+const savedWorkerForGuard = getSavedWorker();
+
+if (isPayrollDocumentRequired(savedWorkerForGuard)) {
+  window.location.replace("../payroll-documents/");
+}
+
 function getDashboardData() {
   const savedWorker = getSavedWorker();
 

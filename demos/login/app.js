@@ -19,6 +19,7 @@ const googleLoginButton = document.querySelector("#google-login");
 const fillDemoWorkerButton = document.querySelector("#fill-demo-worker");
 const demoAccountSummary = document.querySelector("#demo-account-summary");
 const dashboardPath = "../dashboard/";
+const payrollDocumentsPath = "../payroll-documents/";
 const workerModes = {
   register: document.querySelector("#register-mode"),
   login: document.querySelector("#login-mode"),
@@ -74,7 +75,7 @@ function fillApprovedWorkerLogin() {
   document.querySelector("#login-phone").value = approvedWorker.phone;
   document.querySelector("#login-code").value = approvedWorker.code;
   document.querySelector("#login-password").value = approvedWorker.password;
-  setMessage("자동 승인 데모 계정이 입력되었습니다. 로그인하면 대시보드로 이동합니다.");
+  setMessage("자동 승인 데모 계정이 입력되었습니다. 급여 서류 미제출 상태면 제출 화면으로 이동합니다.");
 }
 
 function saveWorkerSession(user) {
@@ -83,6 +84,15 @@ function saveWorkerSession(user) {
 
 function goToDashboard() {
   window.location.href = dashboardPath;
+}
+
+function goToNextPage(user) {
+  if (isPayrollDocumentRequired(user)) {
+    window.location.href = payrollDocumentsPath;
+    return;
+  }
+
+  goToDashboard();
 }
 
 demoAccountSummary.textContent = `${approvedWorker.name} · ${approvedWorker.phone} · 코드 ${approvedWorker.code}`;
@@ -122,12 +132,9 @@ workerRegisterForm.addEventListener("submit", async (event) => {
 
   try {
     const user = await authClient.registerWorker(payload);
-    activateWorkerMode("login", { keepMessage: true });
-    document.querySelector("#login-name").value = user.name;
-    document.querySelector("#login-phone").value = user.phone;
-    document.querySelector("#login-code").value = payload.code;
-    document.querySelector("#login-password").value = payload.password;
-    setMessage(`${user.name}님 등록이 승인되었습니다. 로그인하면 대시보드로 이동합니다.`);
+    saveWorkerSession(user);
+    setMessage(`${user.name}님 등록이 승인되었습니다. 다음 화면으로 이동합니다.`);
+    window.setTimeout(() => goToNextPage(user), 450);
   } catch (error) {
     setMessage(error.message, "error");
   }
@@ -144,8 +151,8 @@ workerLoginForm.addEventListener("submit", async (event) => {
   try {
     const user = await authClient.signInWorker(payload);
     saveWorkerSession(user);
-    setMessage(`${user.name}님 로그인 완료. 대시보드로 이동합니다.`);
-    window.setTimeout(goToDashboard, 450);
+    setMessage(`${user.name}님 로그인 완료. 다음 화면으로 이동합니다.`);
+    window.setTimeout(() => goToNextPage(user), 450);
   } catch (error) {
     setMessage(error.message, "error");
   }
