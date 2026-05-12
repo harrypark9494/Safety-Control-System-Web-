@@ -2,7 +2,6 @@ const dashboardPath = "../dashboard/";
 const loginPath = "../login/";
 const form = document.querySelector("#documents-form");
 const message = document.querySelector("#documents-message");
-const filePreviewUrls = new Map();
 
 function setMessage(text, type = "info") {
   message.textContent = text;
@@ -60,44 +59,86 @@ function escapeHtml(value) {
   });
 }
 
-function clearPreviewUrl(preview) {
-  const previousUrl = filePreviewUrls.get(preview.id);
-
-  if (previousUrl) {
-    URL.revokeObjectURL(previousUrl);
-    filePreviewUrls.delete(preview.id);
-  }
+function getFileExtension(fileName) {
+  return fileName.split(".").pop()?.toUpperCase() || "FILE";
 }
 
-function renderFilePreview(input, preview) {
-  const file = input.files[0];
-  clearPreviewUrl(preview);
+function isPreviewableImage(file) {
+  return (
+    file.type.startsWith("image/") ||
+    /\.(png|jpe?g|gif|webp|bmp)$/i.test(file.name)
+  );
+}
 
-  if (!file) {
-    preview.classList.add("empty");
-    preview.innerHTML = "<span>선택된 파일 없음</span>";
-    return;
-  }
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
 
-  preview.classList.remove("empty");
+    reader.addEventListener("load", () => resolve(reader.result));
+    reader.addEventListener("error", () => reject(reader.error));
+    reader.readAsDataURL(file);
+  });
+}
 
+function renderEmptyPreview(preview) {
+  preview.classList.add("empty");
+  preview.innerHTML = "<span>선택된 파일 없음</span>";
+}
+
+function renderFileMeta(file, inputId, options = {}) {
   const safeFileName = escapeHtml(file.name);
   const safeFileType = escapeHtml(file.type || "파일 형식 알 수 없음");
-  const fileMeta = `
-    <div>
-      <strong>${safeFileName}</strong>
-      <small>${safeFileType} · ${formatFileSize(file.size)}</small>
+
+  return `
+    <div class="file-preview-body">
+      <div>
+        <strong>${safeFileName}</strong>
+        <small>${safeFileType} · ${formatFileSize(file.size)}${options.note ? ` · ${options.note}` : ""}</small>
+      </div>
+      <button class="remove-file" type="button" data-file-input="${inputId}">파일 제거</button>
     </div>
   `;
+}
 
-  if (file.type.startsWith("image/")) {
-    const imageUrl = URL.createObjectURL(file);
-    filePreviewUrls.set(preview.id, imageUrl);
-    preview.innerHTML = `<img src="${imageUrl}" alt="${safeFileName} 미리보기" />${fileMeta}`;
+function renderFileIconPreview(file, input, preview, label) {
+  preview.classList.remove("empty");
+  preview.innerHTML = `
+    <span class="file-icon" aria-hidden="true">${label}</span>
+    ${renderFileMeta(file, input.id)}
+  `;
+}
+
+async function renderFilePreview(input, preview) {
+  const file = input.files[0];
+
+  if (!file) {
+    renderEmptyPreview(preview);
     return;
   }
 
-  preview.innerHTML = `<span class="file-icon" aria-hidden="true">PDF</span>${fileMeta}`;
+  if (!isPreviewableImage(file)) {
+    renderFileIconPreview(file, input, preview, getFileExtension(file.name));
+    return;
+  }
+
+  try {
+    const imageUrl = await readFileAsDataUrl(file);
+    const safeFileName = escapeHtml(file.name);
+    preview.classList.remove("empty");
+    preview.innerHTML = `
+      <img src="${imageUrl}" alt="${safeFileName} 미리보기" />
+      ${renderFileMeta(file, input.id)}
+    `;
+
+    preview.querySelector("img").addEventListener("error", () => {
+      preview.innerHTML = `
+        <span class="file-icon" aria-hidden="true">IMG</span>
+        ${renderFileMeta(file, input.id, { note: "이 브라우저에서 미리보기를 표시할 수 없음" })}
+      `;
+    });
+  } catch {
+    renderFileIconPreview(file, input, preview, "IMG");
+  }
 }
 
 const worker = getCurrentWorker();
@@ -110,8 +151,8 @@ if (!worker) {
   renderWorker(worker);
 }
 
-document.querySelector("#id-card-preview").classList.add("empty");
-document.querySelector("#bankbook-preview").classList.add("empty");
+renderEmptyPreview(document.querySelector("#id-card-preview"));
+renderEmptyPreview(document.querySelector("#bankbook-preview"));
 
 document.querySelector("#id-card-file").addEventListener("change", (event) => {
   renderFilePreview(event.currentTarget, document.querySelector("#id-card-preview"));
@@ -119,6 +160,24 @@ document.querySelector("#id-card-file").addEventListener("change", (event) => {
 
 document.querySelector("#bankbook-file").addEventListener("change", (event) => {
   renderFilePreview(event.currentTarget, document.querySelector("#bankbook-preview"));
+});
+
+form.addEventListener("click", (event) => {
+  const removeButton = event.target.closest(".remove-file");
+
+  if (!removeButton) {
+    return;
+  }
+
+  event.preventDefault();
+
+  const input = document.querySelector(`#${removeButton.dataset.fileInput}`);
+  const preview = input.id === "id-card-file"
+    ? document.querySelector("#id-card-preview")
+    : document.querySelector("#bankbook-preview");
+
+  input.value = "";
+  renderEmptyPreview(preview);
 });
 
 form.addEventListener("submit", (event) => {
