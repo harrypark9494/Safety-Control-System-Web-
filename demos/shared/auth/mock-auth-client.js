@@ -1,34 +1,15 @@
-const APPROVED_WORKER_ACCOUNT = {
-  name: "박현장",
-  phone: "010-1234-5678",
-  code: "123456",
-  password: "safety1234",
-  workType: "철골 설치",
-  team: "철골 2팀",
-  supervisor: "김안전 관리자",
-};
-
-/**
- * AuthClient contract used by the login demo.
- *
- * Real Firebase code should implement the same methods later:
- * - requestWorkerCode({ phone })
- * - registerWorker({ phone, code, password })
- * - signInWorker({ name, phone, code, password })
- * - signInAdminWithGoogle()
- * - signOut()
- */
-function createMockAuthClient() {
+function createMockAuthClient(config = SAFETY_CONTROL_AUTH_CONFIG) {
+  const approvedWorkerAccount = config.demoAccount;
   const allowedAdminDomains = ["safetycontrol.local"];
   const registeredWorkers = new Map([
     [
-      APPROVED_WORKER_ACCOUNT.phone,
+      approvedWorkerAccount.phone,
       {
-        name: APPROVED_WORKER_ACCOUNT.name,
-        workType: APPROVED_WORKER_ACCOUNT.workType,
-        team: APPROVED_WORKER_ACCOUNT.team,
-        supervisor: APPROVED_WORKER_ACCOUNT.supervisor,
-        password: APPROVED_WORKER_ACCOUNT.password,
+        name: approvedWorkerAccount.name,
+        workType: approvedWorkerAccount.workType,
+        team: approvedWorkerAccount.team,
+        supervisor: approvedWorkerAccount.supervisor,
+        password: approvedWorkerAccount.password,
         autoApproved: true,
       },
     ],
@@ -85,7 +66,7 @@ function createMockAuthClient() {
 
   return {
     getApprovedWorkerAccount() {
-      return { ...APPROVED_WORKER_ACCOUNT };
+      return { ...approvedWorkerAccount };
     },
 
     async requestWorkerCode({ phone }) {

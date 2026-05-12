@@ -8,7 +8,8 @@
 
 - 루트 페이지는 데모 허브입니다.
 - 기능 화면은 `/demos/{demo-name}/` 아래에 독립 데모로 둡니다.
-- Firebase, Google Sheets, 외부 API, 서버, Cloud Functions는 아직 연결하지 않습니다.
+- Firebase, Google Sheets, 외부 API, 서버, Cloud Functions는 아직 실제 연결하지 않습니다.
+- 인증 코드는 API 어댑터 구조만 준비하고, 기본 실행 모드는 mock으로 둡니다.
 - 데모 데이터는 화면 흐름 확인용 mock 데이터로만 둡니다.
 
 ## Current Repository State
@@ -43,8 +44,9 @@ Safety-Control-System-Web-/
 
 - Firebase Emulator를 실행하지 않습니다.
 - Firebase SDK를 설치하거나 import하지 않습니다.
-- Google Sheets API를 호출하지 않습니다.
+- Google Sheets API를 브라우저에서 직접 호출하지 않습니다.
 - 외부 날씨 API를 호출하지 않습니다.
+- 실제 API URL이 정해지기 전까지 `auth-config.js`의 기본 모드는 `mock`으로 유지합니다.
 - 서버나 백엔드 라우터를 만들지 않습니다.
 - 실제 개인정보처럼 보이는 데이터는 넣지 않습니다.
 - 새 데모를 만들면 루트 `index.html` 링크와 `README.md` 데모 표를 함께 갱신합니다.
