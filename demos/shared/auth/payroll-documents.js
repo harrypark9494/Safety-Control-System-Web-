@@ -29,14 +29,18 @@ function hasSubmittedPayrollDocuments(user) {
   return Boolean(getPayrollDocumentRecords()[userKey]?.submittedAt);
 }
 
-function isPayrollDocumentRequired(user, config = SAFETY_CONTROL_AUTH_CONFIG) {
+function isPayrollDocumentTarget(user, config = SAFETY_CONTROL_AUTH_CONFIG) {
   if (user?.role !== "worker") {
     return false;
   }
 
   const requiredPhones = config.payrollDocumentRequiredPhones || [];
 
-  return requiredPhones.includes(user.phone) && !hasSubmittedPayrollDocuments(user);
+  return requiredPhones.includes(user.phone);
+}
+
+function isPayrollDocumentRequired(user, config = SAFETY_CONTROL_AUTH_CONFIG) {
+  return isPayrollDocumentTarget(user, config) && !hasSubmittedPayrollDocuments(user);
 }
 
 function savePayrollDocumentSubmission(user, submission) {
