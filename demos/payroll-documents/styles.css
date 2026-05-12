@@ -145,7 +145,7 @@ h1 {
   padding: 16px;
 }
 
-.file-field span {
+.file-title {
   display: grid;
   gap: 5px;
 }
@@ -205,6 +205,28 @@ input[type="file"] {
   color: var(--accent-dark);
   background: rgba(16, 122, 85, 0.1);
   font-weight: 950;
+}
+
+.file-preview-body {
+  display: grid;
+  gap: 10px;
+}
+
+.remove-file {
+  justify-self: start;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--warning);
+  background: #fff;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.remove-file:hover {
+  border-color: rgba(180, 77, 18, 0.35);
+  background: rgba(180, 77, 18, 0.08);
 }
 
 .agreement {

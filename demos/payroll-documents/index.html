@@ -38,27 +38,27 @@
         </dl>
 
         <form class="documents-form" id="documents-form">
-          <label class="file-field">
-            <span>
+          <div class="file-field">
+            <label class="file-title" for="id-card-file">
               <strong>주민등록증 사본</strong>
               <small>이미지 또는 PDF</small>
-            </span>
+            </label>
             <input id="id-card-file" name="idCardFile" type="file" accept="image/*,.pdf" required />
             <output class="file-preview" id="id-card-preview" aria-live="polite">
               <span>선택된 파일 없음</span>
             </output>
-          </label>
+          </div>
 
-          <label class="file-field">
-            <span>
+          <div class="file-field">
+            <label class="file-title" for="bankbook-file">
               <strong>통장 사본</strong>
               <small>이미지 또는 PDF</small>
-            </span>
+            </label>
             <input id="bankbook-file" name="bankbookFile" type="file" accept="image/*,.pdf" required />
             <output class="file-preview" id="bankbook-preview" aria-live="polite">
               <span>선택된 파일 없음</span>
             </output>
-          </label>
+          </div>
 
           <label class="agreement">
             <input id="privacy-agreement" name="privacyAgreement" type="checkbox" required />
