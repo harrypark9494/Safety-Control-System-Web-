@@ -21,6 +21,7 @@ Safety-Control-System-Web-/
 ├─ GUIDE.md
 └─ demos/
    ├─ login/
+   ├─ login-register-link/
    └─ dashboard/
 ```
 
