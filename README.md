@@ -8,6 +8,7 @@ Firebase, Google Sheets 연결 없이 GitHub Pages에서 확인 가능한 정적
 
 - Demo Hub: [https://harrypark9494.github.io/Safety-Control-System-Web-/](https://harrypark9494.github.io/Safety-Control-System-Web-/)
 - Log in Demo: [https://harrypark9494.github.io/Safety-Control-System-Web-/demos/login/](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/login/)
+- Log in Register Link Demo: [https://harrypark9494.github.io/Safety-Control-System-Web-/demos/login-register-link/](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/login-register-link/)
 - Dashboard Demo: [https://harrypark9494.github.io/Safety-Control-System-Web-/demos/dashboard/](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/dashboard/)
 
 ## Folder Tree
@@ -20,6 +21,11 @@ Safety-Control-System-Web-/
 ├─ GUIDE.md
 └─ demos/
    ├─ login/
+   │  ├─ index.html
+   │  ├─ styles.css
+   │  ├─ app.js
+   │  └─ auth-client.js
+   ├─ login-register-link/
    │  ├─ index.html
    │  ├─ styles.css
    │  ├─ app.js
@@ -37,11 +43,13 @@ Safety-Control-System-Web-/
 | --- | --- | --- |
 | Demo Hub | `index.html` | [Open](https://harrypark9494.github.io/Safety-Control-System-Web-/) |
 | Log in Demo | `demos/login/index.html` | [Open](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/login/) |
+| Log in Register Link Demo | `demos/login-register-link/index.html` | [Open](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/login-register-link/) |
 | Dashboard Demo | `demos/dashboard/index.html` | [Open](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/dashboard/) |
 
 ## Current Demo Scope
 
 - Log in Demo: 일반 사용자 등록/로그인과 관리자 mock Google 로그인 흐름
+- Log in Register Link Demo: 최초 등록을 일반 로그인 화면 하단 액션으로 배치한 변형 흐름
 - Dashboard Demo: 사용자 정보, 현장 날씨, 오늘 할 일, 안전 알림을 목업 데이터로 표시
 
 실제 Firebase, 날씨 API, 작업 데이터 API 연결은 별도 단계에서 진행합니다.
