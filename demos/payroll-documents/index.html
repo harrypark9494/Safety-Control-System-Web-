@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Payroll Documents Demo</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="documents-shell">
+      <section class="documents-panel" aria-labelledby="documents-title">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Payroll</p>
+            <h1 id="documents-title">급여 서류 제출</h1>
+          </div>
+          <span class="status-pill">최초 1회</span>
+        </div>
+
+        <p class="summary">
+          급여 지급을 위해 주민등록증 사본과 통장 사본을 제출합니다. 데모에서는
+          파일명만 브라우저에 저장하고 실제 파일은 업로드하지 않습니다.
+        </p>
+
+        <dl class="worker-summary" aria-label="제출 대상자">
+          <div>
+            <dt>이름</dt>
+            <dd id="worker-name"></dd>
+          </div>
+          <div>
+            <dt>연락처</dt>
+            <dd id="worker-phone"></dd>
+          </div>
+          <div>
+            <dt>소속</dt>
+            <dd id="worker-team"></dd>
+          </div>
+        </dl>
+
+        <form class="documents-form" id="documents-form">
+          <label class="file-field">
+            <span>
+              <strong>주민등록증 사본</strong>
+              <small>이미지 또는 PDF</small>
+            </span>
+            <input id="id-card-file" name="idCardFile" type="file" accept="image/*,.pdf" required />
+          </label>
+
+          <label class="file-field">
+            <span>
+              <strong>통장 사본</strong>
+              <small>이미지 또는 PDF</small>
+            </span>
+            <input id="bankbook-file" name="bankbookFile" type="file" accept="image/*,.pdf" required />
+          </label>
+
+          <label class="agreement">
+            <input id="privacy-agreement" name="privacyAgreement" type="checkbox" required />
+            <span>급여 지급 목적의 서류 수집 및 보관에 동의합니다.</span>
+          </label>
+
+          <button class="primary-button" type="submit">제출 완료</button>
+        </form>
+
+        <p class="message" id="documents-message" role="status" aria-live="polite"></p>
+      </section>
+    </main>
+
+    <script src="../shared/auth/auth-config.js"></script>
+    <script src="../shared/auth/payroll-documents.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
