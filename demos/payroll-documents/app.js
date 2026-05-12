@@ -2,6 +2,7 @@ const dashboardPath = "../dashboard/";
 const loginPath = "../login/";
 const form = document.querySelector("#documents-form");
 const message = document.querySelector("#documents-message");
+const filePreviewUrls = new Map();
 
 function setMessage(text, type = "info") {
   message.textContent = text;
@@ -37,6 +38,68 @@ function getFileSummary(file) {
   };
 }
 
+function formatFileSize(size) {
+  if (size < 1024 * 1024) {
+    return `${Math.max(1, Math.round(size / 1024))}KB`;
+  }
+
+  return `${(size / 1024 / 1024).toFixed(1)}MB`;
+}
+
+function escapeHtml(value) {
+  return value.replace(/[&<>"']/g, (char) => {
+    const entities = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;",
+    };
+
+    return entities[char];
+  });
+}
+
+function clearPreviewUrl(preview) {
+  const previousUrl = filePreviewUrls.get(preview.id);
+
+  if (previousUrl) {
+    URL.revokeObjectURL(previousUrl);
+    filePreviewUrls.delete(preview.id);
+  }
+}
+
+function renderFilePreview(input, preview) {
+  const file = input.files[0];
+  clearPreviewUrl(preview);
+
+  if (!file) {
+    preview.classList.add("empty");
+    preview.innerHTML = "<span>선택된 파일 없음</span>";
+    return;
+  }
+
+  preview.classList.remove("empty");
+
+  const safeFileName = escapeHtml(file.name);
+  const safeFileType = escapeHtml(file.type || "파일 형식 알 수 없음");
+  const fileMeta = `
+    <div>
+      <strong>${safeFileName}</strong>
+      <small>${safeFileType} · ${formatFileSize(file.size)}</small>
+    </div>
+  `;
+
+  if (file.type.startsWith("image/")) {
+    const imageUrl = URL.createObjectURL(file);
+    filePreviewUrls.set(preview.id, imageUrl);
+    preview.innerHTML = `<img src="${imageUrl}" alt="${safeFileName} 미리보기" />${fileMeta}`;
+    return;
+  }
+
+  preview.innerHTML = `<span class="file-icon" aria-hidden="true">PDF</span>${fileMeta}`;
+}
+
 const worker = getCurrentWorker();
 
 if (!worker) {
@@ -46,6 +109,17 @@ if (!worker) {
 } else {
   renderWorker(worker);
 }
+
+document.querySelector("#id-card-preview").classList.add("empty");
+document.querySelector("#bankbook-preview").classList.add("empty");
+
+document.querySelector("#id-card-file").addEventListener("change", (event) => {
+  renderFilePreview(event.currentTarget, document.querySelector("#id-card-preview"));
+});
+
+document.querySelector("#bankbook-file").addEventListener("change", (event) => {
+  renderFilePreview(event.currentTarget, document.querySelector("#bankbook-preview"));
+});
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
