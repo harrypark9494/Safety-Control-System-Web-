@@ -23,7 +23,10 @@ Safety-Control-System-Web-/
 └─ demos/
    ├─ login/
    ├─ login-register-link/
-   └─ dashboard/
+   ├─ shared/
+   │  └─ auth/
+   ├─ dashboard/
+   └─ payroll-documents/
 ```
 
 ## Dashboard Demo Status
@@ -40,6 +43,84 @@ Safety-Control-System-Web-/
 - 오늘 할 일 목업: 완료/진행/예정 상태
 - 안전 알림 목업: 주의, 확인, 대기 메시지
 
+## Payroll Document Submission Demo Status
+
+경로:
+
+- local: `demos/payroll-documents/index.html`
+- Pages: `https://harrypark9494.github.io/Safety-Control-System-Web-/demos/payroll-documents/`
+
+이 화면은 인증 시스템 전체가 아니라, 직접 급여를 지급받는 노동자가 급여/세무
+처리에 필요한 서류를 제출하는 페이지입니다. 현재 단계의 핵심 목표는 실제
+저장소나 데이터베이스 구축이 아니라, 로그인 이후 특정 사용자에게 표시될 서류
+제출 UI 흐름을 정적 데모로 확인하는 것입니다.
+
+현재 로그인 후 흐름:
+
+```text
+최초 등록 또는 로그인 성공
+→ mock 사용자 세션 저장
+→ `payrollDocumentRequiredPhones`에 포함된 사용자이고 제출 기록이 없으면 급여 서류 제출 페이지로 이동
+→ 제출 완료 기록이 있거나 대상자가 아니면 대시보드로 이동
+```
+
+현재 구현 방식:
+
+- 급여 서류 대상자 판별은 `demos/shared/auth/auth-config.js`의
+  `payrollDocumentRequiredPhones` mock 설정으로 처리합니다.
+- 제출 완료 여부는 GitHub Pages 정적 데모에 맞춰 브라우저 `localStorage`에 저장합니다.
+- 대시보드에 직접 접근해도 미제출 대상자이면 `demos/payroll-documents/`로 다시 보냅니다.
+- 현재 데모에서는 파일 자체를 서버로 업로드하지 않고, 파일명/크기/형식만 제출 기록에 저장합니다.
+
+현재 표시 항목:
+
+- 제출 안내 영역
+- 제출 대상자 이름, 연락처, 소속
+- 주민등록증 사본 업로드 영역
+- 통장 사본 업로드 영역
+- 이미지 파일 선택 시 썸네일 미리보기
+- PDF 파일 선택 시 파일명, 용량, PDF 표시
+- 급여 지급 목적의 서류 수집 및 보관 동의 체크박스
+- 제출 버튼
+
+주의사항:
+
+- 이 화면은 "로그인 인증"이나 "본인인증" 화면으로 표현하지 않습니다.
+- 주민등록증 사본과 통장 사본은 급여/세무 처리 목적상 원본에 가까운 형태로
+  수집될 수 있으므로, 일부 정보를 가리도록 안내하는 정책을 기본값으로 두지
+  않습니다.
+- 실제 개인정보처럼 보이는 이름, 주민등록번호, 계좌번호, 이미지 파일명은 mock
+  데이터에도 넣지 않습니다.
+- 지금 단계에서는 업로드 파일을 실제 서버, Firebase Storage, Google Drive,
+  Google Sheets 등에 저장하지 않습니다.
+- 파일 선택 UI는 브라우저 내부 상태에서만 동작하는 mock으로 구현합니다.
+- 제출 완료 처리는 `localStorage`에 기록하는 mock 동작으로 구현합니다.
+- 보관 기간과 파기 기준은 실제 법무/노무 검토 전 확정 문구처럼 쓰지 말고,
+  "추후 운영 기준에 따라 명시"하는 가이드 문구로 표현합니다.
+- 관리자 열람, 승인, 반려, 파기 이력은 향후 구현 고려사항으로 문서화하되,
+  현재 데모에서 관리자 기능까지 만들 필요는 없습니다.
+
+나중에 데이터베이스를 붙일 때는 프론트에 전화번호 목록을 두지 말고, 로그인 API가
+사용자별 서류 제출 상태를 내려줘야 합니다.
+
+권장 로그인 응답 필드:
+
+```text
+payrollDocumentsRequired: boolean
+payrollDocumentsSubmitted: boolean
+payrollDocumentStatus: missing | submitted | reviewing | approved | rejected
+submittedAt
+reviewedAt
+retentionUntil
+deletedAt
+```
+
+실제 업로드 API를 붙일 때는 `auth-config.js`의
+`endpoints.submitPayrollDocuments` 값을 사용하고, 파일은 브라우저에서 Google
+Sheets로 직접 보내지 않습니다. Firebase Storage, Cloud Functions, Apps Script
+등 서버 측 경계를 둔 후 Sheets에는 파일 URL이나 상태값만 기록하는 방향을
+기본값으로 둡니다.
+
 ## Non-Negotiable Rules
 
 - Firebase Emulator를 실행하지 않습니다.
@@ -49,6 +130,8 @@ Safety-Control-System-Web-/
 - 실제 API URL이 정해지기 전까지 `auth-config.js`의 기본 모드는 `mock`으로 유지합니다.
 - 서버나 백엔드 라우터를 만들지 않습니다.
 - 실제 개인정보처럼 보이는 데이터는 넣지 않습니다.
+- 급여/세무 서류 제출 데모에서도 실제 주민등록번호, 계좌번호, 신분증 이미지,
+  통장 이미지, 실명 기반 파일명을 넣지 않습니다.
 - 새 데모를 만들면 루트 `index.html` 링크와 `README.md` 데모 표를 함께 갱신합니다.
 
 ## Suggested Next Work
@@ -57,3 +140,4 @@ Safety-Control-System-Web-/
 2. 일반 사용자 대시보드와 관리자 대시보드를 분리할지 결정합니다.
 3. 사용자 DB 컬럼, 작업 상태 값, 날씨 위험 등급 기준을 문서화합니다.
 4. 실제 API 연결 단계에서 `dashboard-data.js`를 API 응답 어댑터로 교체합니다.
+5. 실제 API 연결 단계에서 급여 서류 제출 상태를 로그인 API 응답과 제출 API로 교체합니다.
