@@ -98,6 +98,21 @@ button {
   font-weight: 900;
 }
 
+.payroll-action {
+  min-height: 38px;
+  border: 1px solid rgba(16, 122, 85, 0.28);
+  border-radius: 6px;
+  padding: 0 12px;
+  color: var(--accent-dark);
+  background: #fff;
+  cursor: pointer;
+  font-weight: 850;
+}
+
+.payroll-action:hover {
+  background: rgba(16, 122, 85, 0.08);
+}
+
 .dashboard-hero {
   justify-content: space-between;
   gap: 24px;
@@ -392,6 +407,11 @@ h2 {
   .dashboard-hero,
   .section-heading {
     align-items: flex-start;
+  }
+
+  .topbar-actions {
+    flex-wrap: wrap;
+    justify-content: flex-end;
   }
 
   .dashboard-hero,

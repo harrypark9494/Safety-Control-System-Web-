@@ -29,6 +29,21 @@ if (isPayrollDocumentRequired(savedWorkerForGuard)) {
   window.location.replace("../payroll-documents/");
 }
 
+function setupPayrollDocumentAction(user) {
+  const button = document.querySelector("#payroll-resubmit");
+
+  if (!isPayrollDocumentTarget(user)) {
+    button.hidden = true;
+    return;
+  }
+
+  button.hidden = false;
+  button.addEventListener("click", () => {
+    clearPayrollDocumentSubmission(user);
+    window.location.href = "../payroll-documents/";
+  });
+}
+
 function getDashboardData() {
   const savedWorker = getSavedWorker();
 
@@ -143,3 +158,4 @@ function renderDashboard(data) {
 }
 
 renderDashboard(getDashboardData());
+setupPayrollDocumentAction(savedWorkerForGuard);
