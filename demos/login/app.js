@@ -17,6 +17,7 @@ const workerLoginForm = document.querySelector("#worker-login-form");
 const requestCodeButtons = document.querySelectorAll(".request-code");
 const googleLoginButton = document.querySelector("#google-login");
 const fillDemoWorkerButton = document.querySelector("#fill-demo-worker");
+const resetPayrollDocumentsButton = document.querySelector("#reset-payroll-documents");
 const demoAccountSummary = document.querySelector("#demo-account-summary");
 const dashboardPath = "../dashboard/";
 const payrollDocumentsPath = "../payroll-documents/";
@@ -82,6 +83,18 @@ function saveWorkerSession(user) {
   window.sessionStorage.setItem("safetyControlUser", JSON.stringify(user));
 }
 
+function getApprovedWorkerSession() {
+  return {
+    role: "worker",
+    name: approvedWorker.name,
+    workType: approvedWorker.workType,
+    team: approvedWorker.team,
+    supervisor: approvedWorker.supervisor,
+    phone: approvedWorker.phone,
+    status: "자동 승인",
+  };
+}
+
 function goToDashboard() {
   window.location.href = dashboardPath;
 }
@@ -102,6 +115,17 @@ tabs.admin.addEventListener("click", () => activateTab("admin"));
 workerModes.register.addEventListener("click", () => activateWorkerMode("register"));
 workerModes.login.addEventListener("click", () => activateWorkerMode("login"));
 fillDemoWorkerButton.addEventListener("click", fillApprovedWorkerLogin);
+resetPayrollDocumentsButton.addEventListener("click", () => {
+  const reset = clearPayrollDocumentSubmission(getApprovedWorkerSession());
+  window.sessionStorage.removeItem("safetyControlUser");
+
+  if (reset) {
+    setMessage("급여 서류 제출 기록을 초기화했습니다. 데모 계정으로 다시 로그인하면 제출 화면이 표시됩니다.");
+    return;
+  }
+
+  setMessage("초기화할 급여 서류 제출 기록이 없습니다.");
+});
 
 requestCodeButtons.forEach((button) => {
   button.addEventListener("click", async () => {

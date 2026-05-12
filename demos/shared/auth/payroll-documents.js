@@ -59,6 +59,25 @@ function savePayrollDocumentSubmission(user, submission) {
   );
 }
 
+function clearPayrollDocumentSubmission(user) {
+  const userKey = getPayrollDocumentUserKey(user);
+
+  if (!userKey) {
+    return false;
+  }
+
+  const records = getPayrollDocumentRecords();
+  const existed = Boolean(records[userKey]);
+
+  delete records[userKey];
+  window.localStorage.setItem(
+    SAFETY_CONTROL_PAYROLL_DOCUMENTS_KEY,
+    JSON.stringify(records),
+  );
+
+  return existed;
+}
+
 function markCurrentSessionPayrollSubmitted() {
   const rawUser = window.sessionStorage.getItem("safetyControlUser");
 
