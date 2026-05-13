@@ -40,6 +40,7 @@ Safety-Control-System-Web-/
    │  ├─ index.html
    │  ├─ styles.css
    │  ├─ app.js
+   │  ├─ weather-api.js
    │  └─ dashboard-data.js
    └─ payroll-documents/
       ├─ index.html
@@ -61,10 +62,15 @@ Safety-Control-System-Web-/
 
 - Log in Demo: 일반 사용자 등록/로그인과 관리자 mock Google 로그인 흐름
 - Log in Register Link Demo: 최초 등록을 일반 로그인 화면 하단 액션으로 배치한 변형 흐름
-- Dashboard Demo: 사용자 정보, 현장 날씨, 오늘 할 일, 안전 알림을 목업 데이터로 표시
+- Dashboard Demo: 사용자 정보, 기상청 날씨 mock과 현장 보정값, 오늘 할 일, 안전 알림을 목업 데이터로 표시
 - Payroll Documents Demo: 급여 지급용 주민등록증 사본과 통장 사본 최초 1회 제출 흐름
 
 실제 Firebase, 날씨 API, 작업 데이터 API 연결은 별도 단계에서 진행합니다.
+
+Dashboard Demo의 날씨 데이터는 `demos/dashboard/weather-api.js`에 mock API 레이어로
+분리되어 있습니다. 현재는 기상청 단기예보 mock 원천값에 현장 보정 프로필을
+적용한 뒤 대시보드에 표시하며, 기상 특보는 별도 채널에서 받은 뒤 위험 등급
+상향 조건으로 합산하는 구조만 준비해 두었습니다.
 
 ## Auth API Adapter
 
