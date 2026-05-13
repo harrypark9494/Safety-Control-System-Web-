@@ -12,7 +12,7 @@
         <a class="back-link" href="../../">Demo Hub</a>
         <div class="topbar-actions">
           <button class="payroll-action" id="payroll-resubmit" type="button" hidden>급여 서류 재제출</button>
-          <span class="sync-status">Mock data</span>
+          <span class="sync-status" id="weather-source-status">Mock data</span>
           <button class="icon-button" type="button" aria-label="알림">
             <span aria-hidden="true">!</span>
           </button>
@@ -117,6 +117,7 @@
       </div>
     </main>
 
+    <script src="./weather-api.js"></script>
     <script src="./dashboard-data.js"></script>
     <script src="../shared/auth/auth-config.js"></script>
     <script src="../shared/auth/payroll-documents.js"></script>

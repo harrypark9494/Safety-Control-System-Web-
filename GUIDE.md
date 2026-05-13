@@ -39,9 +39,18 @@ Safety-Control-System-Web-/
 현재 표시 항목:
 
 - 사용자 이름, 역할, 연락처, 소속, 담당 관리자, 근무 시간, 현장 위치
-- 현장 날씨 목업: 기온, 체감온도, 강수확률, 풍속, 습도, 자외선
+- 현장 날씨 목업: 기상청 원천 예보값, 현장 보정값, 체감온도, 강수확률, 풍속, 습도
+- 기상 특보 채널 연동 예정 상태와 위험 등급 합산 정책
 - 오늘 할 일 목업: 완료/진행/예정 상태
 - 안전 알림 목업: 주의, 확인, 대기 메시지
+
+현재 날씨 데이터 구조:
+
+- `demos/dashboard/weather-api.js`가 기상청 mock 원천값, 현장 보정 프로필, 위험 기준을 관리합니다.
+- `dashboard-data.js`는 `buildDashboardWeather()` 결과만 받아 대시보드용 데이터로 합칩니다.
+- 실제 기상청 API 연결 시에는 `weather-api.js`의 `mockKmaForecastResponse`를 API 응답 어댑터로 교체합니다.
+- 특보는 일반 날씨 예보와 같은 값으로 섞지 않고 별도 채널에서 받은 뒤, 위험 등급 상향 조건으로만 합산합니다.
+- 보정값은 `correctionProfile`에 따로 두며, 원천값과 보정 후 값을 화면에서 구분해 확인할 수 있게 유지합니다.
 
 ## Payroll Document Submission Demo Status
 
@@ -128,6 +137,7 @@ Sheets로 직접 보내지 않습니다. Firebase Storage, Cloud Functions, Apps
 - Firebase SDK를 설치하거나 import하지 않습니다.
 - Google Sheets API를 브라우저에서 직접 호출하지 않습니다.
 - 외부 날씨 API를 호출하지 않습니다.
+- 기상 특보 데이터를 일반 예보 mock에 직접 섞지 않습니다.
 - 실제 API URL이 정해지기 전까지 `auth-config.js`의 기본 모드는 `mock`으로 유지합니다.
 - 서버나 백엔드 라우터를 만들지 않습니다.
 - 실제 개인정보처럼 보이는 데이터는 넣지 않습니다.

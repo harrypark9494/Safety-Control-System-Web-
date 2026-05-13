@@ -1,3 +1,5 @@
+const dashboardWeather = buildDashboardWeather();
+
 const dashboardData = {
   dateLabel: "2026년 5월 11일 월요일",
   greeting: "오늘 배정된 안전 점검을 확인하세요.",
@@ -7,8 +9,8 @@ const dashboardData = {
     shift: "오전 08:00 - 오후 17:00",
   },
   risk: {
-    level: "주의",
-    detail: "오후 강풍 가능성이 있어 고소작업 전 재점검이 필요합니다.",
+    level: dashboardWeather.risk.level,
+    detail: `${dashboardWeather.risk.detail} 기상 특보는 별도 채널 연동 후 위험 등급 상향 조건으로 합산합니다.`,
   },
   user: {
     name: "박현장",
@@ -18,16 +20,7 @@ const dashboardData = {
     supervisor: "김안전 관리자",
     status: "출근 확인",
   },
-  weather: {
-    temperature: 24,
-    feelsLike: 27,
-    condition: "구름 많음",
-    updatedAt: "오전 09:20 기준",
-    rainProbability: 35,
-    windSpeed: 6.2,
-    humidity: 68,
-    uvIndex: "보통",
-  },
+  weather: dashboardWeather,
   tasks: [
     {
       title: "작업 전 안전교육 참석",
@@ -53,15 +46,15 @@ const dashboardData = {
   alerts: [
     {
       label: "주의",
-      text: "풍속 6m/s 이상 예보. 양중 작업 전 관리자 확인 필요",
+      text: `${dashboardWeather.risk.detail}. 양중 작업 전 관리자 확인 필요`,
     },
     {
       label: "확인",
-      text: "오전 TBM 참석 기록이 정상 반영되었습니다.",
+      text: `${dashboardWeather.source.name} 원천값에 현장 보정값이 적용되었습니다.`,
     },
     {
       label: "대기",
-      text: "13:00 이후 작업 승인 여부를 다시 확인하세요.",
+      text: "기상 특보 채널은 별도 연동 예정입니다. 특보 수신 시 위험 등급 상향 조건으로 합산합니다.",
     },
   ],
 };

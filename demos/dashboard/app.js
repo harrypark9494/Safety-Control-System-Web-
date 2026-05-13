@@ -87,22 +87,27 @@ function renderUser(user, site) {
 
 function renderWeather(weather) {
   setText("#metric-temperature", `${weather.feelsLike}°C`);
-  setText("#metric-temperature-note", `실제 ${weather.temperature}°C`);
+  setText("#metric-temperature-note", `보정 기온 ${weather.temperature}°C`);
   setText("#metric-rain", `${weather.rainProbability}%`);
-  setText("#metric-rain-note", "오후 기준");
+  setText("#metric-rain-note", `원천 ${weather.raw.rainProbability}%`);
   setText("#metric-wind", `${weather.windSpeed}m/s`);
-  setText("#metric-wind-note", weather.windSpeed >= 6 ? "작업 전 확인" : "정상 범위");
+  setText("#metric-wind-note", `원천 ${weather.raw.windSpeed}m/s`);
 
-  setText("#weather-status", weather.windSpeed >= 6 ? "작업 전 확인" : "정상");
+  setText("#weather-source-status", `${weather.source.name} · mock`);
+  setText("#weather-status", weather.risk.statusLabel);
   setText("#weather-temperature", `${weather.temperature}°C`);
   setText("#weather-condition", weather.condition);
-  setText("#weather-updated", weather.updatedAt);
+  setText("#weather-updated", `${weather.updatedAt} · ${weather.correction.name}`);
 
   const items = [
     ["체감온도", `${weather.feelsLike}°C`],
-    ["습도", `${weather.humidity}%`],
-    ["강수확률", `${weather.rainProbability}%`],
-    ["자외선", weather.uvIndex],
+    ["보정 습도", `${weather.humidity}%`],
+    ["보정 강수확률", `${weather.rainProbability}%`],
+    ["보정 풍속", `${weather.windSpeed}m/s`],
+    ["원천 기온", `${weather.raw.temperature}°C`],
+    ["원천 풍속", `${weather.raw.windSpeed}m/s`],
+    ["특보 채널", weather.specialAdvisory.current ? weather.specialAdvisory.current.title : "별도 연동 예정"],
+    ["보정 근거", weather.correction.reason],
   ];
 
   document.querySelector("#weather-list").innerHTML = items
