@@ -149,10 +149,9 @@ function readFileAsDataUrl(file) {
 
 function renderEmptyPreview(preview) {
   preview.classList.add("empty");
-  const label = preview.id === "id-card-preview" ? "신분증 사본 이미지" : "통장 사본 이미지";
   preview.innerHTML = `
-    <strong>${label}</strong>
-    <span>눌러서 파일 선택</span>
+    <span class="upload-icon" aria-hidden="true"></span>
+    <strong>이미지를 눌러 업로드하세요.</strong>
     <small>이미지 또는 PDF</small>
   `;
 }
