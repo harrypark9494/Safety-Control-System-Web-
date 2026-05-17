@@ -34,12 +34,23 @@ function createApiAuthClient(config = SAFETY_CONTROL_AUTH_CONFIG) {
       return request(config.endpoints.requestWorkerCode, { phone });
     },
 
-    registerWorker({ phone, code, password }) {
-      return request(config.endpoints.registerWorker, { phone, code, password });
+    registerWorker({ phone, code, password, workType }) {
+      return request(config.endpoints.registerWorker, {
+        phone,
+        code,
+        password,
+        workType,
+      });
     },
 
-    signInWorker({ name, phone, code, password }) {
-      return request(config.endpoints.signInWorker, { name, phone, code, password });
+    signInWorker({ name, phone, code, password, workType }) {
+      return request(config.endpoints.signInWorker, {
+        name,
+        phone,
+        code,
+        password,
+        workType,
+      });
     },
 
     async signInAdminWithGoogle() {

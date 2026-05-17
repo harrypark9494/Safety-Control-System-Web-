@@ -2,6 +2,7 @@ const dashboardPath = "../dashboard/";
 const loginPath = "../login/";
 const form = document.querySelector("#documents-form");
 const message = document.querySelector("#documents-message");
+const workTypeSelect = document.querySelector("#work-type");
 
 function setMessage(text, type = "info") {
   message.textContent = text;
@@ -23,10 +24,22 @@ function getCurrentWorker() {
   }
 }
 
+function renderWorkTypeOptions(worker) {
+  SAFETY_CONTROL_AUTH_CONFIG.workTypeOptions.forEach((workType) => {
+    const option = document.createElement("option");
+    option.value = workType;
+    option.textContent = workType;
+    workTypeSelect.append(option);
+  });
+
+  workTypeSelect.value = worker.workType || "";
+}
+
 function renderWorker(worker) {
-  document.querySelector("#worker-name").textContent = worker.name || "-";
   document.querySelector("#worker-phone").textContent = worker.phone || "-";
-  document.querySelector("#worker-team").textContent = worker.team || "-";
+  document.querySelector("#worker-schedule").textContent =
+    worker.schedule || "DB 근무 일정 연동 예정";
+  renderWorkTypeOptions(worker);
 }
 
 function getFileSummary(file) {
@@ -141,6 +154,22 @@ async function renderFilePreview(input, preview) {
   }
 }
 
+function getFormPayload(idCardFile, bankbookFile) {
+  const formData = new FormData(form);
+
+  return {
+    workType: formData.get("workType"),
+    residentNumber: formData.get("residentNumber"),
+    address: formData.get("address"),
+    privacyAgreement: formData.get("privacyAgreement") === "on",
+    bankName: formData.get("bankName"),
+    accountHolder: formData.get("accountHolder"),
+    accountNumber: formData.get("accountNumber"),
+    idCardFile: getFileSummary(idCardFile),
+    bankbookFile: getFileSummary(bankbookFile),
+  };
+}
+
 const worker = getCurrentWorker();
 
 if (!worker) {
@@ -160,6 +189,11 @@ document.querySelector("#id-card-file").addEventListener("change", (event) => {
 
 document.querySelector("#bankbook-file").addEventListener("change", (event) => {
   renderFilePreview(event.currentTarget, document.querySelector("#bankbook-preview"));
+});
+
+document.querySelector("#search-address").addEventListener("click", () => {
+  document.querySelector("#address").value = "서울특별시 00구 00로 00";
+  setMessage("주소 검색 연동 위치에 데모 주소를 입력했습니다.");
 });
 
 form.addEventListener("click", (event) => {
@@ -187,22 +221,19 @@ form.addEventListener("submit", (event) => {
   const bankbookFile = document.querySelector("#bankbook-file").files[0];
   const agreed = document.querySelector("#privacy-agreement").checked;
 
-  if (!idCardFile || !bankbookFile || !agreed) {
-    setMessage("주민등록증 사본, 통장 사본, 수집 동의를 모두 완료하세요.", "error");
+  if (!form.checkValidity() || !idCardFile || !bankbookFile || !agreed) {
+    form.reportValidity();
+    setMessage("기본 정보, 계좌 정보, 사본 이미지, 수집 동의를 모두 완료하세요.", "error");
     return;
   }
 
-  form.querySelector("button").disabled = true;
-  setMessage("제출 정보를 저장하는 중입니다.");
+  form.querySelector("button[type='submit']").disabled = true;
+  setMessage("HR 제출 정보를 저장하는 중입니다.");
 
-  savePayrollDocumentSubmission(worker, {
-    idCardFile: getFileSummary(idCardFile),
-    bankbookFile: getFileSummary(bankbookFile),
-    privacyAgreement: agreed,
-  });
+  savePayrollDocumentSubmission(worker, getFormPayload(idCardFile, bankbookFile));
   markCurrentSessionPayrollSubmitted();
 
-  setMessage("급여 서류 제출이 완료되었습니다. 대시보드로 이동합니다.");
+  setMessage("급여 정보 등록이 완료되었습니다. 대시보드로 이동합니다.");
   window.setTimeout(() => {
     window.location.href = dashboardPath;
   }, 650);
