@@ -253,6 +253,7 @@ select:focus {
 .address-fields {
   display: grid;
   gap: 8px;
+  margin-top: 8px;
 }
 
 .address-row {

@@ -35,7 +35,7 @@
 
             <label>
               연락처
-              <input id="login-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000" required />
+              <input id="login-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000" pattern="01[016789]-[0-9]{3,4}-[0-9]{4}" maxlength="13" required />
             </label>
 
             <label>
@@ -64,7 +64,7 @@
           <form class="worker-flow" id="worker-register-form" hidden>
             <label>
               연락처
-              <input id="register-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000" required />
+              <input id="register-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000" pattern="01[016789]-[0-9]{3,4}-[0-9]{4}" maxlength="13" required />
             </label>
 
             <label>
