@@ -70,23 +70,17 @@
               />
             </label>
 
-            <label>
-              우편번호
-              <div class="address-row">
-                <input id="postcode" name="postcode" type="text" inputmode="numeric" placeholder="우편번호 검색" readonly required />
-                <button class="secondary-button" id="search-address" type="button">검색</button>
+            <fieldset class="field-group">
+              <legend>주소</legend>
+              <div class="address-fields">
+                <div class="address-row">
+                  <input id="postcode" name="postcode" type="text" inputmode="numeric" placeholder="우편번호" readonly required />
+                  <button class="secondary-button" id="search-address" type="button">검색</button>
+                </div>
+                <input id="address" name="address" type="text" placeholder="기본 주소" readonly required />
+                <input id="address-detail" name="addressDetail" type="text" placeholder="상세주소 입력" required />
               </div>
-            </label>
-
-            <label>
-              주소
-              <input id="address" name="address" type="text" placeholder="기본 주소" readonly required />
-            </label>
-
-            <label>
-              상세주소
-              <input id="address-detail" name="addressDetail" type="text" placeholder="상세주소 입력" required />
-            </label>
+            </fieldset>
 
             <label class="agreement">
               <input id="privacy-agreement" name="privacyAgreement" type="checkbox" required />

@@ -1,14 +1,15 @@
 :root {
   color-scheme: light;
-  --ink: #17211b;
-  --muted: #65726b;
-  --line: #d9e1dc;
-  --field: #f7faf8;
-  --accent: #107a55;
-  --accent-dark: #0c5f43;
-  --warning: #b44d12;
-  --bg-a: #edf5f1;
-  --bg-b: #f8faf7;
+  --ink: #1f2421;
+  --muted: #6c746f;
+  --line: #dde1de;
+  --field: #f7f8f6;
+  --accent: #2f8f5b;
+  --accent-dark: #276f4a;
+  --warning: #d97706;
+  --notice: #eab308;
+  --bg-a: #eef0ed;
+  --bg-b: #faf9f3;
   font-family:
     Inter, Pretendard, "Segoe UI", "Noto Sans KR", system-ui, -apple-system,
     sans-serif;
@@ -22,7 +23,10 @@ body {
   min-height: 100vh;
   margin: 0;
   color: var(--ink);
-  background: linear-gradient(180deg, var(--bg-a), var(--bg-b));
+  background:
+    linear-gradient(135deg, rgba(47, 143, 91, 0.1), transparent 42%),
+    linear-gradient(225deg, rgba(234, 179, 8, 0.14), transparent 38%),
+    linear-gradient(180deg, var(--bg-a), var(--bg-b));
 }
 
 button,
@@ -40,10 +44,10 @@ select {
 
 .documents-panel {
   padding: 22px;
-  border: 1px solid rgba(23, 33, 27, 0.1);
+  border: 1px solid rgba(31, 36, 33, 0.1);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 18px 54px rgba(23, 33, 27, 0.1);
+  box-shadow: 0 18px 54px rgba(31, 36, 33, 0.1);
 }
 
 .panel-heading,
@@ -93,10 +97,10 @@ h2 {
   justify-content: center;
   min-height: 30px;
   padding: 0 10px;
-  border: 1px solid rgba(16, 122, 85, 0.2);
+  border: 1px solid rgba(47, 143, 91, 0.22);
   border-radius: 999px;
   color: var(--accent-dark);
-  background: rgba(16, 122, 85, 0.08);
+  background: rgba(47, 143, 91, 0.08);
   font-size: 0.78rem;
   font-weight: 850;
   white-space: nowrap;
@@ -143,9 +147,9 @@ h2 {
 }
 
 .progress-tab.active {
-  border-color: rgba(16, 122, 85, 0.36);
+  border-color: rgba(47, 143, 91, 0.36);
   color: var(--accent-dark);
-  background: rgba(16, 122, 85, 0.09);
+  background: rgba(47, 143, 91, 0.09);
 }
 
 .form-section,
@@ -181,10 +185,11 @@ h2 {
 
 .readonly-row {
   display: grid;
-  grid-template-columns: 76px 1fr;
+  grid-template-columns: 82px minmax(0, 1fr);
   gap: 10px;
-  align-items: baseline;
+  align-items: center;
   min-height: 32px;
+  padding: 2px 0;
 }
 
 .readonly-row + .readonly-row {
@@ -226,13 +231,39 @@ select {
 input:focus,
 select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 4px rgba(16, 122, 85, 0.13);
+  box-shadow: 0 0 0 4px rgba(47, 143, 91, 0.13);
+}
+
+.field-group {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+  color: #2c3931;
+  font-size: 0.94rem;
+  font-weight: 800;
+}
+
+.field-group legend {
+  padding: 0;
+}
+
+.address-fields {
+  display: grid;
+  gap: 8px;
 }
 
 .address-row {
   display: grid;
-  grid-template-columns: 1fr 96px;
+  grid-template-columns: minmax(96px, 132px) 96px;
   gap: 8px;
+  justify-content: start;
+}
+
+.address-row input {
+  text-align: center;
 }
 
 .secondary-button,
@@ -307,7 +338,7 @@ select:focus {
   align-items: center;
   min-height: 96px;
   padding: 12px;
-  border: 1px dashed rgba(16, 122, 85, 0.28);
+  border: 1px dashed rgba(47, 143, 91, 0.28);
   border-radius: 8px;
   color: var(--muted);
   background: var(--field);
@@ -345,7 +376,7 @@ select:focus {
   display: grid;
   place-items: center;
   color: var(--accent-dark);
-  background: rgba(16, 122, 85, 0.1);
+  background: rgba(47, 143, 91, 0.1);
   font-weight: 950;
 }
 
@@ -410,7 +441,7 @@ select:focus {
   }
 
   .address-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(96px, 132px) 96px;
   }
 
   .readonly-row {

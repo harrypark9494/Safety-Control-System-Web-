@@ -1,14 +1,16 @@
 :root {
   color-scheme: light;
-  --ink: #17211b;
-  --muted: #65726b;
-  --line: #d9e1dc;
+  --ink: #1f2421;
+  --muted: #6c746f;
+  --line: #dde1de;
   --panel: #ffffff;
-  --field: #f7faf8;
-  --accent: #107a55;
-  --accent-dark: #0c5f43;
-  --bg-a: #edf5f1;
-  --bg-b: #f8faf7;
+  --field: #f7f8f6;
+  --accent: #2f8f5b;
+  --accent-dark: #276f4a;
+  --warning: #d97706;
+  --notice: #eab308;
+  --bg-a: #eef0ed;
+  --bg-b: #faf9f3;
   font-family:
     Inter, Pretendard, "Segoe UI", "Noto Sans KR", system-ui, -apple-system,
     sans-serif;
@@ -23,8 +25,8 @@ body {
   margin: 0;
   color: var(--ink);
   background:
-    linear-gradient(135deg, rgba(16, 122, 85, 0.12), transparent 42%),
-    linear-gradient(225deg, rgba(180, 77, 18, 0.1), transparent 38%),
+    linear-gradient(135deg, rgba(47, 143, 91, 0.1), transparent 42%),
+    linear-gradient(225deg, rgba(234, 179, 8, 0.14), transparent 38%),
     linear-gradient(180deg, var(--bg-a), var(--bg-b));
 }
 
@@ -38,10 +40,10 @@ body {
 .hub-panel {
   width: min(680px, 100%);
   padding: 32px;
-  border: 1px solid rgba(23, 33, 27, 0.1);
+  border: 1px solid rgba(31, 36, 33, 0.1);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.86);
-  box-shadow: 0 24px 70px rgba(23, 33, 27, 0.12);
+  box-shadow: 0 24px 70px rgba(31, 36, 33, 0.1);
   backdrop-filter: blur(16px);
 }
 
@@ -85,8 +87,8 @@ h1 {
 }
 
 .demo-link:hover {
-  border-color: rgba(16, 122, 85, 0.4);
-  background: rgba(16, 122, 85, 0.08);
+  border-color: rgba(47, 143, 91, 0.36);
+  background: rgba(47, 143, 91, 0.08);
 }
 
 .demo-link span:first-child {

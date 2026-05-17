@@ -1,16 +1,17 @@
 :root {
   color-scheme: light;
-  --ink: #17211b;
-  --muted: #65726b;
-  --line: #d9e1dc;
+  --ink: #1f2421;
+  --muted: #6c746f;
+  --line: #dde1de;
   --panel: #ffffff;
-  --field: #f7faf8;
-  --accent: #107a55;
-  --accent-dark: #0c5f43;
-  --warning: #b44d12;
+  --field: #f7f8f6;
+  --accent: #2f8f5b;
+  --accent-dark: #276f4a;
+  --warning: #d97706;
+  --notice: #eab308;
   --danger: #9f2d22;
-  --bg-a: #edf5f1;
-  --bg-b: #f8faf7;
+  --bg-a: #eef0ed;
+  --bg-b: #faf9f3;
   font-family:
     Inter, Pretendard, "Segoe UI", "Noto Sans KR", system-ui, -apple-system,
     sans-serif;
@@ -25,8 +26,8 @@ body {
   margin: 0;
   color: var(--ink);
   background:
-    linear-gradient(135deg, rgba(16, 122, 85, 0.12), transparent 42%),
-    linear-gradient(225deg, rgba(180, 77, 18, 0.1), transparent 38%),
+    linear-gradient(135deg, rgba(47, 143, 91, 0.1), transparent 42%),
+    linear-gradient(225deg, rgba(234, 179, 8, 0.14), transparent 38%),
     linear-gradient(180deg, var(--bg-a), var(--bg-b));
 }
 
@@ -71,18 +72,18 @@ button {
   align-items: center;
   min-height: 30px;
   padding: 0 10px;
-  border: 1px solid rgba(16, 122, 85, 0.2);
+  border: 1px solid rgba(47, 143, 91, 0.22);
   border-radius: 999px;
   color: var(--accent-dark);
-  background: rgba(16, 122, 85, 0.08);
+  background: rgba(47, 143, 91, 0.08);
   font-size: 0.82rem;
   font-weight: 850;
 }
 
 .status-pill.caution {
-  border-color: rgba(180, 77, 18, 0.24);
+  border-color: rgba(217, 119, 6, 0.26);
   color: var(--warning);
-  background: rgba(180, 77, 18, 0.1);
+  background: rgba(234, 179, 8, 0.16);
 }
 
 .icon-button {
@@ -100,7 +101,7 @@ button {
 
 .payroll-action {
   min-height: 38px;
-  border: 1px solid rgba(16, 122, 85, 0.28);
+  border: 1px solid rgba(47, 143, 91, 0.28);
   border-radius: 6px;
   padding: 0 12px;
   color: var(--accent-dark);
@@ -110,7 +111,7 @@ button {
 }
 
 .payroll-action:hover {
-  background: rgba(16, 122, 85, 0.08);
+  background: rgba(47, 143, 91, 0.08);
 }
 
 .dashboard-hero {
@@ -118,10 +119,10 @@ button {
   gap: 24px;
   margin-bottom: 18px;
   padding: 30px;
-  border: 1px solid rgba(23, 33, 27, 0.1);
+  border: 1px solid rgba(31, 36, 33, 0.1);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.86);
-  box-shadow: 0 20px 60px rgba(23, 33, 27, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 20px 60px rgba(31, 36, 33, 0.1);
   backdrop-filter: blur(16px);
 }
 
@@ -170,7 +171,7 @@ h2 {
   border-radius: 50%;
   color: #fff;
   background: var(--warning);
-  box-shadow: 0 14px 34px rgba(180, 77, 18, 0.22);
+  box-shadow: 0 14px 34px rgba(217, 119, 6, 0.22);
   font-size: 1.35rem;
   font-weight: 950;
 }
@@ -188,7 +189,7 @@ h2 {
 
 .metric-card,
 .panel {
-  border: 1px solid rgba(23, 33, 27, 0.1);
+  border: 1px solid rgba(31, 36, 33, 0.1);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.9);
 }
@@ -287,7 +288,7 @@ h2 {
   padding: 18px;
   border-radius: 8px;
   color: #fff;
-  background: linear-gradient(135deg, var(--accent), #315f75);
+  background: linear-gradient(135deg, var(--accent), #5f6c67);
 }
 
 .weather-main strong {
@@ -362,8 +363,8 @@ h2 {
 }
 
 .task-list li.active {
-  border-color: rgba(180, 77, 18, 0.32);
-  background: rgba(180, 77, 18, 0.08);
+  border-color: rgba(217, 119, 6, 0.32);
+  background: rgba(234, 179, 8, 0.14);
 }
 
 .task-list li.active .task-check {
