@@ -3,6 +3,7 @@ const loginPath = "../login/";
 const form = document.querySelector("#documents-form");
 const message = document.querySelector("#documents-message");
 const workTypeSelect = document.querySelector("#work-type");
+const residentNumberInput = document.querySelector("#resident-number");
 const steps = {
   basic: document.querySelector("#basic-step"),
   document: document.querySelector("#document-step"),
@@ -23,6 +24,16 @@ const basicStepFields = [
 function setMessage(text, type = "info") {
   message.textContent = text;
   message.classList.toggle("error", type === "error");
+}
+
+function formatResidentNumber(value) {
+  const digits = value.replace(/\D/g, "").slice(0, 13);
+
+  if (digits.length <= 6) {
+    return digits;
+  }
+
+  return `${digits.slice(0, 6)}-${digits.slice(6)}`;
 }
 
 function getCurrentWorker() {
@@ -232,6 +243,10 @@ if (!worker) {
 
 renderEmptyPreview(document.querySelector("#id-card-preview"));
 renderEmptyPreview(document.querySelector("#bankbook-preview"));
+
+residentNumberInput.addEventListener("input", () => {
+  residentNumberInput.value = formatResidentNumber(residentNumberInput.value);
+});
 
 document.querySelector("#id-card-file").addEventListener("change", (event) => {
   renderFilePreview(event.currentTarget, document.querySelector("#id-card-preview"));

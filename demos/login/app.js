@@ -29,10 +29,29 @@ const workerFlows = {
   login: workerLoginForm,
 };
 const workTypeSelects = document.querySelectorAll('select[name="workType"]');
+const phoneInputs = document.querySelectorAll('input[name="phone"]');
 
 function setMessage(text, type = "info") {
   message.textContent = text;
   message.classList.toggle("error", type === "error");
+}
+
+function formatPhoneNumber(value) {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+
+  if (digits.length <= 3) {
+    return digits;
+  }
+
+  if (digits.length <= 7) {
+    return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  }
+
+  if (!digits.startsWith("010") && digits.length <= 10) {
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+
+  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
 }
 
 function activateTab(tabName) {
@@ -112,6 +131,12 @@ renderWorkTypeOptions();
 document.querySelector("#register-work-type").value = approvedWorker.workType;
 
 demoAccountSummary.textContent = `${approvedWorker.name} · ${approvedWorker.phone} · ${approvedWorker.workType} · 코드 ${approvedWorker.code}`;
+
+phoneInputs.forEach((input) => {
+  input.addEventListener("input", () => {
+    input.value = formatPhoneNumber(input.value);
+  });
+});
 
 tabs.user.addEventListener("click", () => activateTab("user"));
 tabs.admin.addEventListener("click", () => activateTab("admin"));
