@@ -9,6 +9,7 @@ const SAFETY_CONTROL_AUTH_CONFIG = {
     submitPayrollDocuments: "/worker/payroll-documents",
   },
   payrollDocumentRequiredPhones: ["010-1234-5678"],
+  workTypeOptions: ["철골 설치", "장비 작업", "전기 작업", "안전 관리", "현장 지원"],
   demoAccount: {
     name: "박현장",
     phone: "010-1234-5678",

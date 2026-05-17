@@ -63,7 +63,7 @@ Safety-Control-System-Web-/
 - Log in Demo: 일반 사용자 등록/로그인과 관리자 mock Google 로그인 흐름
 - Log in Register Link Demo: 최초 등록을 일반 로그인 화면 하단 액션으로 배치한 변형 흐름
 - Dashboard Demo: 사용자 정보, 기상청 날씨 mock과 현장 보정값, 오늘 할 일, 안전 알림을 목업 데이터로 표시
-- Payroll Documents Demo: 급여 지급용 주민등록증 사본과 통장 사본 최초 1회 제출 흐름
+- Payroll Documents Demo: HR 급여 처리용 기본 정보, 주민등록번호, 주소, 계좌 정보, 신분증/통장 사본 제출 흐름
 
 실제 Firebase, 날씨 API, 작업 데이터 API 연결은 별도 단계에서 진행합니다.
 
@@ -90,14 +90,18 @@ API 모드에서 호출하는 기본 엔드포인트는 다음과 같습니다.
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
 | POST | `/auth/worker/code` | 사용자 인증 코드 요청 |
-| POST | `/auth/worker/register` | 등록된 사용자 여부 확인 후 최초 비밀번호 설정 |
-| POST | `/auth/worker/login` | 등록 사용자 로그인 |
+| POST | `/auth/worker/register` | 등록된 사용자 여부 확인, 근무 유형 선택, 최초 비밀번호 설정 |
+| POST | `/auth/worker/login` | 등록 사용자 로그인과 근무 유형 선택 |
 | POST | `/auth/admin/google` | 관리자 Google 계정 확인 |
 | POST | `/worker/payroll-documents` | 급여 지급용 서류 제출 |
 
 각 API는 성공 시 화면에서 사용할 사용자 세션 JSON을 반환하고, 실패 시
 `{ "message": "오류 메시지" }` 형태로 반환하면 됩니다.
 
+`workTypeOptions`는 로그인/등록 및 급여 정보 등록 화면의 근무 유형 선택값으로
+사용합니다. 실제 서비스에서는 관리자 페이지에서 수정 가능한 DB 값으로 대체될
+예정입니다.
+
 `payrollDocumentRequiredPhones`에 포함된 일반 사용자는 최초 등록 또는 로그인 후
-서류 제출 화면으로 이동합니다. 데모에서는 제출 완료 여부를 브라우저
+급여 정보 등록 화면으로 이동합니다. 데모에서는 제출 완료 여부를 브라우저
 `localStorage`에 저장하므로, 제출 후 같은 브라우저에서는 다시 표시되지 않습니다.

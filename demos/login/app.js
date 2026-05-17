@@ -28,6 +28,7 @@ const workerFlows = {
   register: workerRegisterForm,
   login: workerLoginForm,
 };
+const workTypeSelects = document.querySelectorAll('select[name="workType"]');
 
 function setMessage(text, type = "info") {
   message.textContent = text;
@@ -73,6 +74,7 @@ function fillApprovedWorkerLogin() {
   activateWorkerMode("login", { keepMessage: true });
   document.querySelector("#login-name").value = approvedWorker.name;
   document.querySelector("#login-phone").value = approvedWorker.phone;
+  document.querySelector("#login-work-type").value = approvedWorker.workType;
   document.querySelector("#login-code").value = approvedWorker.code;
   document.querySelector("#login-password").value = approvedWorker.password;
   setMessage("자동 승인 데모 계정이 입력되었습니다. 급여 서류 미제출 상태면 제출 화면으로 이동합니다.");
@@ -95,7 +97,21 @@ function goToNextPage(user) {
   goToDashboard();
 }
 
-demoAccountSummary.textContent = `${approvedWorker.name} · ${approvedWorker.phone} · 코드 ${approvedWorker.code}`;
+function renderWorkTypeOptions() {
+  workTypeSelects.forEach((select) => {
+    SAFETY_CONTROL_AUTH_CONFIG.workTypeOptions.forEach((workType) => {
+      const option = document.createElement("option");
+      option.value = workType;
+      option.textContent = workType;
+      select.append(option);
+    });
+  });
+}
+
+renderWorkTypeOptions();
+document.querySelector("#register-work-type").value = approvedWorker.workType;
+
+demoAccountSummary.textContent = `${approvedWorker.name} · ${approvedWorker.phone} · ${approvedWorker.workType} · 코드 ${approvedWorker.code}`;
 
 tabs.user.addEventListener("click", () => activateTab("user"));
 tabs.admin.addEventListener("click", () => activateTab("admin"));

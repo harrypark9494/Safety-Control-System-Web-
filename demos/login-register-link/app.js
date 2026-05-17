@@ -31,6 +31,7 @@ const workerFooters = {
   register: document.querySelector("#register-footer"),
   login: document.querySelector("#login-footer"),
 };
+const workTypeSelects = document.querySelectorAll('select[name="workType"]');
 
 function setMessage(text, type = "info") {
   message.textContent = text;
@@ -80,6 +81,7 @@ function fillApprovedWorkerLogin() {
   activateWorkerMode("login", { keepMessage: true });
   document.querySelector("#login-name").value = approvedWorker.name;
   document.querySelector("#login-phone").value = approvedWorker.phone;
+  document.querySelector("#login-work-type").value = approvedWorker.workType;
   document.querySelector("#login-code").value = approvedWorker.code;
   document.querySelector("#login-password").value = approvedWorker.password;
   setMessage("자동 승인 데모 계정이 입력되었습니다. 로그인하면 대시보드로 이동합니다.");
@@ -93,7 +95,21 @@ function goToDashboard() {
   window.location.href = dashboardPath;
 }
 
-demoAccountSummary.textContent = `${approvedWorker.name} · ${approvedWorker.phone} · 코드 ${approvedWorker.code}`;
+function renderWorkTypeOptions() {
+  workTypeSelects.forEach((select) => {
+    SAFETY_CONTROL_AUTH_CONFIG.workTypeOptions.forEach((workType) => {
+      const option = document.createElement("option");
+      option.value = workType;
+      option.textContent = workType;
+      select.append(option);
+    });
+  });
+}
+
+renderWorkTypeOptions();
+document.querySelector("#register-work-type").value = approvedWorker.workType;
+
+demoAccountSummary.textContent = `${approvedWorker.name} · ${approvedWorker.phone} · ${approvedWorker.workType} · 코드 ${approvedWorker.code}`;
 
 tabs.user.addEventListener("click", () => activateTab("user"));
 tabs.admin.addEventListener("click", () => activateTab("admin"));
@@ -133,6 +149,7 @@ workerRegisterForm.addEventListener("submit", async (event) => {
     activateWorkerMode("login", { keepMessage: true });
     document.querySelector("#login-name").value = user.name;
     document.querySelector("#login-phone").value = user.phone;
+    document.querySelector("#login-work-type").value = user.workType;
     document.querySelector("#login-code").value = payload.code;
     document.querySelector("#login-password").value = payload.password;
     setMessage(`${user.name}님 등록이 승인되었습니다. 로그인하면 대시보드로 이동합니다.`);

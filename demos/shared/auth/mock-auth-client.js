@@ -52,14 +52,19 @@ function createMockAuthClient(config = SAFETY_CONTROL_AUTH_CONFIG) {
     }
   }
 
-  function toWorkerSession(worker, phone) {
+  function getWorkTypeOption(workType) {
+    return config.workTypeOptions.includes(workType) ? workType : "";
+  }
+
+  function toWorkerSession(worker, phone, selectedWorkType) {
     return {
       role: "worker",
       name: worker.name,
-      workType: worker.workType,
+      workType: getWorkTypeOption(selectedWorkType) || worker.workType,
       team: worker.team,
       supervisor: worker.supervisor,
       phone,
+      schedule: worker.schedule || "05.20(수) 09:00-18:00 / A현장 2구역",
       status: worker.autoApproved ? "자동 승인" : "출근 확인",
     };
   }
@@ -82,11 +87,11 @@ function createMockAuthClient(config = SAFETY_CONTROL_AUTH_CONFIG) {
       };
     },
 
-    async registerWorker({ phone, code, password }) {
+    async registerWorker({ phone, code, password, workType }) {
       await wait();
 
-      if (!phone || !code || !password) {
-        throw new Error("연락처, 인증 코드, 비밀번호를 모두 입력하세요.");
+      if (!phone || !code || !password || !workType) {
+        throw new Error("연락처, 근무 유형, 인증 코드, 비밀번호를 모두 입력하세요.");
       }
 
       const normalizedPhone = normalizePhone(phone);
@@ -100,18 +105,19 @@ function createMockAuthClient(config = SAFETY_CONTROL_AUTH_CONFIG) {
       validatePassword(password);
 
       worker.password = password;
+      worker.workType = getWorkTypeOption(workType) || worker.workType;
 
       return {
-        ...toWorkerSession(worker, normalizedPhone),
+        ...toWorkerSession(worker, normalizedPhone, workType),
         status: "등록 승인",
       };
     },
 
-    async signInWorker({ name, phone, code, password }) {
+    async signInWorker({ name, phone, code, password, workType }) {
       await wait();
 
-      if (!name || !phone || !code || !password) {
-        throw new Error("이름, 연락처, 인증 코드, 비밀번호를 모두 입력하세요.");
+      if (!name || !phone || !code || !password || !workType) {
+        throw new Error("이름, 연락처, 근무 유형, 인증 코드, 비밀번호를 모두 입력하세요.");
       }
 
       const normalizedPhone = normalizePhone(phone);
@@ -135,7 +141,7 @@ function createMockAuthClient(config = SAFETY_CONTROL_AUTH_CONFIG) {
         throw new Error("비밀번호가 일치하지 않습니다.");
       }
 
-      return toWorkerSession(worker, normalizedPhone);
+      return toWorkerSession(worker, normalizedPhone, workType);
     },
 
     async signInAdminWithGoogle() {
