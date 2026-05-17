@@ -3,6 +3,22 @@ const loginPath = "../login/";
 const form = document.querySelector("#documents-form");
 const message = document.querySelector("#documents-message");
 const workTypeSelect = document.querySelector("#work-type");
+const steps = {
+  basic: document.querySelector("#basic-step"),
+  document: document.querySelector("#document-step"),
+};
+const stepIndicators = {
+  basic: document.querySelector("#basic-step-indicator"),
+  document: document.querySelector("#document-step-indicator"),
+};
+const basicStepFields = [
+  "#work-type",
+  "#resident-number",
+  "#postcode",
+  "#address",
+  "#address-detail",
+  "#privacy-agreement",
+];
 
 function setMessage(text, type = "info") {
   message.textContent = text;
@@ -40,6 +56,33 @@ function renderWorker(worker) {
   document.querySelector("#worker-schedule").textContent =
     worker.schedule || "DB 근무 일정 연동 예정";
   renderWorkTypeOptions(worker);
+}
+
+function setStep(stepName) {
+  const isDocumentStep = stepName === "document";
+
+  steps.basic.hidden = isDocumentStep;
+  steps.document.hidden = !isDocumentStep;
+  steps.basic.classList.toggle("active", !isDocumentStep);
+  steps.document.classList.toggle("active", isDocumentStep);
+  stepIndicators.basic.classList.toggle("active", !isDocumentStep);
+  stepIndicators.document.classList.toggle("active", isDocumentStep);
+  setMessage("");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function validateBasicStep() {
+  const invalidField = basicStepFields
+    .map((selector) => document.querySelector(selector))
+    .find((field) => !field.checkValidity());
+
+  if (invalidField) {
+    invalidField.reportValidity();
+    setMessage("기본 정보 입력을 완료한 뒤 다음 단계로 이동하세요.", "error");
+    return false;
+  }
+
+  return true;
 }
 
 function getFileSummary(file) {
@@ -95,7 +138,12 @@ function readFileAsDataUrl(file) {
 
 function renderEmptyPreview(preview) {
   preview.classList.add("empty");
-  preview.innerHTML = "<span>선택된 파일 없음</span>";
+  const label = preview.id === "id-card-preview" ? "신분증 사본 이미지" : "통장 사본 이미지";
+  preview.innerHTML = `
+    <strong>${label}</strong>
+    <span>눌러서 파일 선택</span>
+    <small>이미지 또는 PDF</small>
+  `;
 }
 
 function renderFileMeta(file, inputId, options = {}) {
@@ -160,7 +208,9 @@ function getFormPayload(idCardFile, bankbookFile) {
   return {
     workType: formData.get("workType"),
     residentNumber: formData.get("residentNumber"),
+    postcode: formData.get("postcode"),
     address: formData.get("address"),
+    addressDetail: formData.get("addressDetail"),
     privacyAgreement: formData.get("privacyAgreement") === "on",
     bankName: formData.get("bankName"),
     accountHolder: formData.get("accountHolder"),
@@ -192,8 +242,36 @@ document.querySelector("#bankbook-file").addEventListener("change", (event) => {
 });
 
 document.querySelector("#search-address").addEventListener("click", () => {
-  document.querySelector("#address").value = "서울특별시 00구 00로 00";
-  setMessage("주소 검색 연동 위치에 데모 주소를 입력했습니다.");
+  if (!window.kakao?.Postcode) {
+    document.querySelector("#postcode").value = "00000";
+    document.querySelector("#address").value = "서울특별시 00구 00로 00";
+    document.querySelector("#address-detail").focus();
+    setMessage("우편번호 스크립트를 불러오지 못해 데모 주소를 입력했습니다.");
+    return;
+  }
+
+  new window.kakao.Postcode({
+    oncomplete(data) {
+      const address = data.userSelectedType === "R"
+        ? data.roadAddress
+        : data.jibunAddress;
+
+      document.querySelector("#postcode").value = data.zonecode;
+      document.querySelector("#address").value = address;
+      document.querySelector("#address-detail").focus();
+      setMessage("우편번호 검색 결과를 입력했습니다.");
+    },
+  }).open();
+});
+
+document.querySelector("#next-step").addEventListener("click", () => {
+  if (validateBasicStep()) {
+    setStep("document");
+  }
+});
+
+document.querySelector("#prev-step").addEventListener("click", () => {
+  setStep("basic");
 });
 
 form.addEventListener("click", (event) => {
@@ -219,11 +297,15 @@ form.addEventListener("submit", (event) => {
 
   const idCardFile = document.querySelector("#id-card-file").files[0];
   const bankbookFile = document.querySelector("#bankbook-file").files[0];
-  const agreed = document.querySelector("#privacy-agreement").checked;
 
-  if (!form.checkValidity() || !idCardFile || !bankbookFile || !agreed) {
+  if (!validateBasicStep()) {
+    setStep("basic");
+    return;
+  }
+
+  if (!form.checkValidity() || !idCardFile || !bankbookFile) {
     form.reportValidity();
-    setMessage("기본 정보, 계좌 정보, 사본 이미지, 수집 동의를 모두 완료하세요.", "error");
+    setMessage("계좌 정보와 사본 이미지를 모두 완료하세요.", "error");
     return;
   }
 

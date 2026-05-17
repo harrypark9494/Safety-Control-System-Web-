@@ -63,7 +63,7 @@ Safety-Control-System-Web-/
 - Log in Demo: 일반 사용자 등록/로그인과 관리자 mock Google 로그인 흐름
 - Log in Register Link Demo: 최초 등록을 일반 로그인 화면 하단 액션으로 배치한 변형 흐름
 - Dashboard Demo: 사용자 정보, 기상청 날씨 mock과 현장 보정값, 오늘 할 일, 안전 알림을 목업 데이터로 표시
-- Payroll Documents Demo: HR 급여 처리용 기본 정보, 주민등록번호, 주소, 계좌 정보, 신분증/통장 사본 제출 흐름
+- Payroll Documents Demo: HR 급여 처리용 기본 정보, 주민등록번호, Kakao 우편번호 주소 검색, 계좌 정보, 신분증/통장 사본 제출 흐름
 
 실제 Firebase, 날씨 API, 작업 데이터 API 연결은 별도 단계에서 진행합니다.
 

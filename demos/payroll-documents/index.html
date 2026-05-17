@@ -23,7 +23,12 @@
         </p>
 
         <form class="documents-form" id="documents-form">
-          <section class="form-section" aria-labelledby="basic-info-title">
+          <div class="progress-tabs" aria-label="입력 단계">
+            <span class="progress-tab active" id="basic-step-indicator">1 기본 정보</span>
+            <span class="progress-tab" id="document-step-indicator">2 서류 제출</span>
+          </div>
+
+          <section class="form-section active" id="basic-step" aria-labelledby="basic-info-title">
             <div class="section-heading">
               <span class="step-badge">1</span>
               <div>
@@ -32,12 +37,12 @@
               </div>
             </div>
 
-            <div class="readonly-grid" aria-label="DB 확인 정보">
-              <div>
+            <div class="readonly-card" aria-label="DB 확인 정보">
+              <div class="readonly-row">
                 <span>연락처</span>
                 <strong id="worker-phone"></strong>
               </div>
-              <div>
+              <div class="readonly-row">
                 <span>근무 일정</span>
                 <strong id="worker-schedule"></strong>
               </div>
@@ -66,20 +71,34 @@
             </label>
 
             <label>
-              주소
+              우편번호
               <div class="address-row">
-                <input id="address" name="address" type="text" placeholder="주소 검색 후 입력" required />
-                <button class="secondary-button" id="search-address" type="button">주소 검색</button>
+                <input id="postcode" name="postcode" type="text" inputmode="numeric" placeholder="우편번호 검색" readonly required />
+                <button class="secondary-button" id="search-address" type="button">검색</button>
               </div>
+            </label>
+
+            <label>
+              주소
+              <input id="address" name="address" type="text" placeholder="기본 주소" readonly required />
+            </label>
+
+            <label>
+              상세주소
+              <input id="address-detail" name="addressDetail" type="text" placeholder="상세주소 입력" required />
             </label>
 
             <label class="agreement">
               <input id="privacy-agreement" name="privacyAgreement" type="checkbox" required />
               <span>급여 및 인사 처리를 위한 개인정보 수집에 동의합니다.</span>
             </label>
+
+            <div class="step-actions">
+              <button class="primary-button" id="next-step" type="button">다음</button>
+            </div>
           </section>
 
-          <section class="form-section" aria-labelledby="document-info-title">
+          <section class="form-section" id="document-step" aria-labelledby="document-info-title" hidden>
             <div class="section-heading">
               <span class="step-badge">2</span>
               <div>
@@ -88,15 +107,15 @@
               </div>
             </div>
 
-            <div class="file-field">
-              <label class="file-title" for="id-card-file">
-                <strong>신분증 사본 이미지</strong>
-                <small>이미지 또는 PDF, 미리보기 제공</small>
+            <div class="upload-card">
+              <input id="id-card-file" class="sr-only" name="idCardFile" type="file" accept="image/*,.pdf" required />
+              <label class="upload-target" id="id-card-target" for="id-card-file">
+                <output class="file-preview empty" id="id-card-preview" aria-live="polite">
+                  <strong>신분증 사본 이미지</strong>
+                  <span>눌러서 파일 선택</span>
+                  <small>이미지 또는 PDF</small>
+                </output>
               </label>
-              <input id="id-card-file" name="idCardFile" type="file" accept="image/*,.pdf" required />
-              <output class="file-preview" id="id-card-preview" aria-live="polite">
-                <span>선택된 파일 없음</span>
-              </output>
             </div>
 
             <div class="bank-grid">
@@ -114,26 +133,29 @@
               </label>
             </div>
 
-            <div class="file-field">
-              <label class="file-title" for="bankbook-file">
-                <strong>통장 사본 이미지</strong>
-                <small>이미지 또는 PDF, 미리보기 제공</small>
+            <div class="upload-card">
+              <input id="bankbook-file" class="sr-only" name="bankbookFile" type="file" accept="image/*,.pdf" required />
+              <label class="upload-target" id="bankbook-target" for="bankbook-file">
+                <output class="file-preview empty" id="bankbook-preview" aria-live="polite">
+                  <strong>통장 사본 이미지</strong>
+                  <span>눌러서 파일 선택</span>
+                  <small>이미지 또는 PDF</small>
+                </output>
               </label>
-              <input id="bankbook-file" name="bankbookFile" type="file" accept="image/*,.pdf" required />
-              <output class="file-preview" id="bankbook-preview" aria-live="polite">
-                <span>선택된 파일 없음</span>
-              </output>
+            </div>
+
+            <div class="step-actions split">
+              <button class="secondary-button" id="prev-step" type="button">이전</button>
+              <button class="primary-button" type="submit">HR 제출 정보 저장</button>
             </div>
           </section>
 
-          <section class="submit-section" aria-label="제출">
-            <button class="primary-button" type="submit">HR 제출 정보 저장</button>
-            <p class="message" id="documents-message" role="status" aria-live="polite"></p>
-          </section>
+          <p class="message" id="documents-message" role="status" aria-live="polite"></p>
         </form>
       </section>
     </main>
 
+    <script src="//t1.kakaocdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
     <script src="../shared/auth/auth-config.js"></script>
     <script src="../shared/auth/payroll-documents.js"></script>
     <script src="./app.js"></script>
