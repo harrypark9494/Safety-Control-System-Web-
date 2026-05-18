@@ -10,7 +10,7 @@ Firebase, Google Sheets 연결 없이 GitHub Pages에서 확인 가능한 정적
 - Log in Demo: [https://harrypark9494.github.io/Safety-Control-System-Web-/demos/login/](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/login/)
 - Log in Register Link Demo: [https://harrypark9494.github.io/Safety-Control-System-Web-/demos/login-register-link/](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/login-register-link/)
 - Dashboard Demo: [https://harrypark9494.github.io/Safety-Control-System-Web-/demos/dashboard/](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/dashboard/)
-- Payroll Documents Demo: [https://harrypark9494.github.io/Safety-Control-System-Web-/demos/payroll-documents/](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/payroll-documents/)
+- Payroll Documents Demo: [https://harrypark9494.github.io/Safety-Control-System-Web-/demos/payroll-documents/?demo=1](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/payroll-documents/?demo=1)
 
 ## Folder Tree
 
@@ -56,7 +56,7 @@ Safety-Control-System-Web-/
 | Log in Demo | `demos/login/index.html` | [Open](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/login/) |
 | Log in Register Link Demo | `demos/login-register-link/index.html` | [Open](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/login-register-link/) |
 | Dashboard Demo | `demos/dashboard/index.html` | [Open](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/dashboard/) |
-| Payroll Documents Demo | `demos/payroll-documents/index.html` | [Open](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/payroll-documents/) |
+| Payroll Documents Demo | `demos/payroll-documents/index.html` | [Open](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/payroll-documents/?demo=1) |
 
 ## Current Demo Scope
 
