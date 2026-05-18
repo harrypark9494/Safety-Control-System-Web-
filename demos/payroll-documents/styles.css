@@ -203,7 +203,8 @@ h3 {
 .bank-grid {
   display: grid;
   gap: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(112px, 1fr) minmax(92px, 104px) minmax(112px, 1fr);
+  align-items: end;
 }
 
 .bank-field {
@@ -215,15 +216,11 @@ h3 {
   display: block;
 }
 
-.bank-select-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 104px;
-  gap: 8px;
-}
-
 .bank-toggle {
+  align-self: end;
   min-height: 48px;
-  padding: 0 12px;
+  padding: 0 10px;
+  font-size: 0.88rem;
   white-space: nowrap;
 }
 
@@ -657,10 +654,6 @@ select:focus {
     gap: 4px;
   }
 
-  .bank-grid {
-    grid-template-columns: 1fr;
-  }
-
   .bank-options {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -684,8 +677,18 @@ select:focus {
     width: 8px;
   }
 
-  .bank-select-row {
-    grid-template-columns: 1fr;
+  .bank-grid {
+    gap: 7px;
+    grid-template-columns: minmax(0, 1fr) 82px minmax(0, 1fr);
+  }
+
+  .bank-grid input {
+    padding: 0 10px;
+  }
+
+  .bank-toggle {
+    padding: 0 7px;
+    font-size: 0.78rem;
   }
 
   .bank-options {
