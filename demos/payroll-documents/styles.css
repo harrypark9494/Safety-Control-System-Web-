@@ -203,7 +203,7 @@ h3 {
 .bank-grid {
   display: grid;
   gap: 10px;
-  grid-template-columns: minmax(112px, 1fr) minmax(92px, 104px) minmax(112px, 1fr);
+  grid-template-columns: minmax(0, 1fr) 96px minmax(0, 1fr);
   align-items: end;
 }
 
@@ -654,6 +654,20 @@ select:focus {
     gap: 4px;
   }
 
+  .bank-grid {
+    gap: 7px;
+    grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr);
+  }
+
+  .bank-grid input {
+    padding: 0 10px;
+  }
+
+  .bank-toggle {
+    padding: 0 7px;
+    font-size: 0.78rem;
+  }
+
   .bank-options {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -677,17 +691,8 @@ select:focus {
     width: 8px;
   }
 
-  .bank-grid {
-    gap: 7px;
-    grid-template-columns: minmax(0, 1fr) 82px minmax(0, 1fr);
-  }
-
-  .bank-grid input {
-    padding: 0 10px;
-  }
-
   .bank-toggle {
-    padding: 0 7px;
+    padding: 0 5px;
     font-size: 0.78rem;
   }
 

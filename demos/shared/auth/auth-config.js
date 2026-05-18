@@ -11,6 +11,7 @@ const SAFETY_CONTROL_AUTH_CONFIG = {
   payrollDocumentRequiredWorkTypes: ["직접 고용"],
   workTypeOptions: ["직접 고용", "외부 고용"],
   demoAccount: {
+    role: "worker",
     name: "박직접",
     phone: "010-1234-5678",
     code: "123456",
@@ -22,6 +23,7 @@ const SAFETY_CONTROL_AUTH_CONFIG = {
   demoAccounts: [
     {
       label: "직접 고용 계정",
+      role: "worker",
       name: "박직접",
       phone: "010-1234-5678",
       code: "123456",
@@ -32,6 +34,7 @@ const SAFETY_CONTROL_AUTH_CONFIG = {
     },
     {
       label: "외부 고용 계정",
+      role: "worker",
       name: "이외부",
       phone: "010-2222-3333",
       code: "123456",
