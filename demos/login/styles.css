@@ -40,8 +40,16 @@ select {
   width: min(520px, calc(100% - 40px));
   min-height: 100vh;
   margin: 0 auto;
-  align-items: center;
+  align-content: center;
+  gap: 14px;
   padding: 40px 0;
+}
+
+.login-topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
 }
 
 .auth-panel {
@@ -51,6 +59,40 @@ select {
   backdrop-filter: blur(16px);
   padding: 28px;
   border-radius: 8px;
+}
+
+.eyebrow,
+h1 {
+  margin: 0;
+}
+
+.eyebrow {
+  margin-bottom: 8px;
+  color: var(--accent-dark);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+h1 {
+  font-size: 2.05rem;
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid rgba(47, 143, 91, 0.22);
+  border-radius: 999px;
+  color: var(--accent-dark);
+  background: rgba(47, 143, 91, 0.08);
+  font-size: 0.78rem;
+  font-weight: 850;
+  white-space: nowrap;
 }
 
 .tabs {
@@ -274,6 +316,10 @@ select:focus {
 }
 
 @media (max-width: 460px) {
+  .login-topline {
+    display: grid;
+  }
+
   .code-row {
     grid-template-columns: 1fr;
   }
