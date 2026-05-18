@@ -30,6 +30,10 @@ function createApiAuthClient(config = SAFETY_CONTROL_AUTH_CONFIG) {
       return { ...config.demoAccount };
     },
 
+    getDemoWorkerAccounts() {
+      return (config.demoAccounts || [config.demoAccount]).map((account) => ({ ...account }));
+    },
+
     requestWorkerCode({ phone }) {
       return request(config.endpoints.requestWorkerCode, { phone });
     },

@@ -1,30 +1,20 @@
 function createMockAuthClient(config = SAFETY_CONTROL_AUTH_CONFIG) {
-  const approvedWorkerAccount = config.demoAccount;
+  const demoAccounts = config.demoAccounts || [config.demoAccount];
+  const approvedWorkerAccount = demoAccounts[0];
   const allowedAdminDomains = ["safetycontrol.local"];
-  const registeredWorkers = new Map([
-    [
-      approvedWorkerAccount.phone,
+  const registeredWorkers = new Map(
+    demoAccounts.map((account) => [
+      account.phone,
       {
-        name: approvedWorkerAccount.name,
-        workType: approvedWorkerAccount.workType,
-        team: approvedWorkerAccount.team,
-        supervisor: approvedWorkerAccount.supervisor,
-        password: approvedWorkerAccount.password,
+        name: account.name,
+        workType: account.workType,
+        team: account.team,
+        supervisor: account.supervisor,
+        password: account.password,
         autoApproved: true,
       },
-    ],
-    [
-      "010-2222-3333",
-      {
-        name: "김안전",
-        workType: "장비 작업",
-        team: "장비 1팀",
-        supervisor: "이관리 관리자",
-        password: null,
-        autoApproved: false,
-      },
-    ],
-  ]);
+    ]),
+  );
 
   function wait(ms = 350) {
     return new Promise((resolve) => {
@@ -52,15 +42,17 @@ function createMockAuthClient(config = SAFETY_CONTROL_AUTH_CONFIG) {
     }
   }
 
-  function getWorkTypeOption(workType) {
-    return config.workTypeOptions.includes(workType) ? workType : "";
+  function validateWorkTypeSelection(worker, selectedWorkType) {
+    if (selectedWorkType !== worker.workType) {
+      throw new Error("DB에 등록된 고용 유형과 선택값이 일치하지 않습니다.");
+    }
   }
 
-  function toWorkerSession(worker, phone, selectedWorkType) {
+  function toWorkerSession(worker, phone) {
     return {
       role: "worker",
       name: worker.name,
-      workType: getWorkTypeOption(selectedWorkType) || worker.workType,
+      workType: worker.workType,
       team: worker.team,
       supervisor: worker.supervisor,
       phone,
@@ -72,6 +64,10 @@ function createMockAuthClient(config = SAFETY_CONTROL_AUTH_CONFIG) {
   return {
     getApprovedWorkerAccount() {
       return { ...approvedWorkerAccount };
+    },
+
+    getDemoWorkerAccounts() {
+      return demoAccounts.map((account) => ({ ...account }));
     },
 
     async requestWorkerCode({ phone }) {
@@ -103,12 +99,12 @@ function createMockAuthClient(config = SAFETY_CONTROL_AUTH_CONFIG) {
 
       validateCode(code);
       validatePassword(password);
+      validateWorkTypeSelection(worker, workType);
 
       worker.password = password;
-      worker.workType = getWorkTypeOption(workType) || worker.workType;
 
       return {
-        ...toWorkerSession(worker, normalizedPhone, workType),
+        ...toWorkerSession(worker, normalizedPhone),
         status: "등록 승인",
       };
     },
@@ -136,12 +132,13 @@ function createMockAuthClient(config = SAFETY_CONTROL_AUTH_CONFIG) {
       }
 
       validateCode(code);
+      validateWorkTypeSelection(worker, workType);
 
       if (worker.password !== password) {
         throw new Error("비밀번호가 일치하지 않습니다.");
       }
 
-      return toWorkerSession(worker, normalizedPhone, workType);
+      return toWorkerSession(worker, normalizedPhone);
     },
 
     async signInAdminWithGoogle() {

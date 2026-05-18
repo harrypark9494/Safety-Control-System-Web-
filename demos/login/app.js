@@ -1,4 +1,5 @@
 const authClient = createAuthClient();
+const demoWorkers = authClient.getDemoWorkerAccounts();
 const approvedWorker = authClient.getApprovedWorkerAccount();
 
 const tabs = {
@@ -17,6 +18,7 @@ const workerLoginForm = document.querySelector("#worker-login-form");
 const requestCodeButtons = document.querySelectorAll(".request-code");
 const googleLoginButton = document.querySelector("#google-login");
 const fillDemoWorkerButton = document.querySelector("#fill-demo-worker");
+const demoAccountSelect = document.querySelector("#demo-account-select");
 const demoAccountSummary = document.querySelector("#demo-account-summary");
 const dashboardPath = "../dashboard/";
 const payrollDocumentsPath = "../payroll-documents/";
@@ -88,15 +90,38 @@ function activateWorkerMode(modeName, options = {}) {
   }
 }
 
+function getSelectedDemoWorker() {
+  return demoWorkers.find((worker) => worker.phone === demoAccountSelect.value) || approvedWorker;
+}
+
+function renderDemoWorkerOptions() {
+  demoWorkers.forEach((worker) => {
+    const option = document.createElement("option");
+    option.value = worker.phone;
+    option.textContent = worker.label || `${worker.name} 계정`;
+    demoAccountSelect.append(option);
+  });
+
+  demoAccountSelect.value = approvedWorker.phone;
+}
+
+function renderDemoAccountSummary(worker = getSelectedDemoWorker()) {
+  demoAccountSummary.textContent = `${worker.name} · ${worker.phone} · ${worker.workType} · 코드 ${worker.code}`;
+}
+
 function fillApprovedWorkerLogin() {
+  const worker = getSelectedDemoWorker();
+
   activateTab("user");
   activateWorkerMode("login", { keepMessage: true });
-  document.querySelector("#login-name").value = approvedWorker.name;
-  document.querySelector("#login-phone").value = approvedWorker.phone;
-  document.querySelector("#login-work-type").value = approvedWorker.workType;
-  document.querySelector("#login-code").value = approvedWorker.code;
-  document.querySelector("#login-password").value = approvedWorker.password;
-  setMessage("자동 승인 데모 계정이 입력되었습니다. 급여 서류 미제출 상태면 제출 화면으로 이동합니다.");
+  document.querySelector("#login-name").value = worker.name;
+  document.querySelector("#login-phone").value = worker.phone;
+  document.querySelector("#login-work-type").value = worker.workType;
+  document.querySelector("#login-code").value = worker.code;
+  document.querySelector("#login-password").value = worker.password;
+  setMessage(
+    `${worker.label || worker.name}이 입력되었습니다. 직접 고용 계정만 급여 정보 등록으로 이동합니다.`,
+  );
 }
 
 function saveWorkerSession(user) {
@@ -128,9 +153,10 @@ function renderWorkTypeOptions() {
 }
 
 renderWorkTypeOptions();
+renderDemoWorkerOptions();
 document.querySelector("#register-work-type").value = approvedWorker.workType;
 
-demoAccountSummary.textContent = `${approvedWorker.name} · ${approvedWorker.phone} · ${approvedWorker.workType} · 코드 ${approvedWorker.code}`;
+renderDemoAccountSummary();
 
 phoneInputs.forEach((input) => {
   input.addEventListener("input", () => {
@@ -143,6 +169,7 @@ tabs.admin.addEventListener("click", () => activateTab("admin"));
 workerModes.register.addEventListener("click", () => activateWorkerMode("register"));
 workerModes.login.addEventListener("click", () => activateWorkerMode("login"));
 fillDemoWorkerButton.addEventListener("click", fillApprovedWorkerLogin);
+demoAccountSelect.addEventListener("change", () => renderDemoAccountSummary());
 
 requestCodeButtons.forEach((button) => {
   button.addEventListener("click", async () => {

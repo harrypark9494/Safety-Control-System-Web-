@@ -225,7 +225,7 @@ select:focus {
 
 .demo-account {
   display: grid;
-  grid-template-columns: 1fr 82px;
+  grid-template-columns: 1fr minmax(136px, 168px) 72px;
   gap: 12px;
   align-items: center;
   padding: 14px;
@@ -248,6 +248,11 @@ select:focus {
   color: var(--muted);
   font-size: 0.88rem;
   line-height: 1.45;
+}
+
+.demo-account select {
+  min-height: 42px;
+  padding: 0 10px;
 }
 
 .admin-copy {
