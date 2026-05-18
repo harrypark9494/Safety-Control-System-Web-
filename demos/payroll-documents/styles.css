@@ -60,13 +60,9 @@ select {
 
 .section-heading {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-}
-
-.section-heading {
+  align-items: center;
   justify-content: flex-start;
+  gap: 10px;
 }
 
 .eyebrow,
@@ -154,6 +150,14 @@ h2 {
   letter-spacing: 0;
 }
 
+h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.98rem;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
 .status-pill,
 .step-badge {
   display: inline-flex;
@@ -174,11 +178,6 @@ h2 {
   width: 30px;
   padding: 0;
   flex: 0 0 auto;
-}
-
-.section-heading p {
-  color: var(--muted);
-  line-height: 1.6;
 }
 
 .documents-form {
@@ -206,21 +205,29 @@ h2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.section-intro {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.section-intro strong {
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+.additional-info {
+  display: grid;
+  gap: 14px;
+}
+
 .readonly-card {
   display: grid;
-  padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--field);
-}
-
-.readonly-greeting {
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--line);
-  color: var(--ink);
-  font-size: 0.98rem;
-  font-weight: 850;
-  line-height: 1.35;
 }
 
 .readonly-row {
@@ -228,8 +235,8 @@ h2 {
   grid-template-columns: 82px minmax(0, 1fr);
   gap: 10px;
   align-items: center;
-  min-height: 42px;
-  padding: 0;
+  min-height: 38px;
+  padding: 9px 13px;
 }
 
 .readonly-row + .readonly-row {
