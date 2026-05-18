@@ -4,6 +4,10 @@ const form = document.querySelector("#documents-form");
 const message = document.querySelector("#documents-message");
 const workTypeSelect = document.querySelector("#work-type");
 const residentNumberInput = document.querySelector("#resident-number");
+const bankNameInput = document.querySelector("#bank-name");
+const bankListToggle = document.querySelector("#bank-list-toggle");
+const bankListPanel = document.querySelector("#bank-list-panel");
+const bankList = document.querySelector("#bank-list");
 const steps = {
   basic: document.querySelector("#basic-step"),
   document: document.querySelector("#document-step"),
@@ -18,6 +22,42 @@ const basicStepFields = [
   "#postcode",
   "#address",
   "#privacy-agreement",
+];
+const supportedBanks = [
+  {
+    group: "시중/특수은행",
+    banks: [
+      "KB국민은행",
+      "신한은행",
+      "우리은행",
+      "하나은행",
+      "NH농협은행",
+      "IBK기업은행",
+      "SC제일은행",
+      "한국씨티은행",
+      "KDB산업은행",
+      "Sh수협은행",
+    ],
+  },
+  {
+    group: "지방은행",
+    banks: [
+      "iM뱅크",
+      "BNK부산은행",
+      "BNK경남은행",
+      "광주은행",
+      "전북은행",
+      "제주은행",
+    ],
+  },
+  {
+    group: "인터넷은행",
+    banks: ["카카오뱅크", "케이뱅크", "토스뱅크"],
+  },
+  {
+    group: "기타 자주 쓰는 계좌",
+    banks: ["우체국", "새마을금고", "신협", "저축은행"],
+  },
 ];
 
 function setMessage(text, type = "info") {
@@ -76,6 +116,43 @@ function renderWorkTypeOptions(worker) {
   });
 
   workTypeSelect.value = worker.workType || "";
+}
+
+function renderBankOptions() {
+  bankList.innerHTML = supportedBanks
+    .map((bankGroup) => {
+      const options = bankGroup.banks
+        .map(
+          (bankName) => `
+            <button class="bank-option" type="button" data-bank-name="${bankName}">
+              ${bankName}
+            </button>
+          `,
+        )
+        .join("");
+
+      return `
+        <div class="bank-group">
+          <strong class="bank-group-title">${bankGroup.group}</strong>
+          <div class="bank-options">${options}</div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function setBankListExpanded(isExpanded) {
+  bankListPanel.hidden = !isExpanded;
+  bankListToggle.setAttribute("aria-expanded", String(isExpanded));
+}
+
+function setSelectedBank(bankName) {
+  bankNameInput.value = bankName;
+  bankNameInput.dispatchEvent(new Event("input", { bubbles: true }));
+
+  bankList.querySelectorAll(".bank-option").forEach((option) => {
+    option.classList.toggle("selected", option.dataset.bankName === bankName);
+  });
 }
 
 function renderWorker(worker) {
@@ -268,9 +345,34 @@ if (!worker) {
 
 renderEmptyPreview(document.querySelector("#id-card-preview"));
 renderEmptyPreview(document.querySelector("#bankbook-preview"));
+renderBankOptions();
 
 residentNumberInput.addEventListener("input", () => {
   residentNumberInput.value = formatResidentNumber(residentNumberInput.value);
+});
+
+bankListToggle.addEventListener("click", () => {
+  setBankListExpanded(bankListPanel.hidden);
+});
+
+bankList.addEventListener("click", (event) => {
+  const bankButton = event.target.closest(".bank-option");
+
+  if (!bankButton) {
+    return;
+  }
+
+  setSelectedBank(bankButton.dataset.bankName);
+  setBankListExpanded(false);
+  bankNameInput.focus();
+});
+
+bankNameInput.addEventListener("input", () => {
+  const currentBankName = bankNameInput.value.trim();
+
+  bankList.querySelectorAll(".bank-option").forEach((option) => {
+    option.classList.toggle("selected", option.dataset.bankName === currentBankName);
+  });
 });
 
 document.querySelector("#id-card-file").addEventListener("change", (event) => {

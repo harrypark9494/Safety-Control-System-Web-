@@ -206,6 +206,105 @@ h3 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.bank-field {
+  display: grid;
+  gap: 8px;
+}
+
+.bank-field > label {
+  display: block;
+}
+
+.bank-select-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 104px;
+  gap: 8px;
+}
+
+.bank-toggle {
+  min-height: 48px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+
+.bank-list-panel {
+  display: grid;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid rgba(47, 143, 91, 0.2);
+  border-radius: 8px;
+  background: rgba(247, 248, 246, 0.86);
+}
+
+.bank-list-panel[hidden] {
+  display: none;
+}
+
+.bank-list-head {
+  display: grid;
+  gap: 4px;
+}
+
+.bank-list-head strong {
+  color: var(--ink);
+  font-size: 0.94rem;
+  font-weight: 900;
+}
+
+.bank-list-head span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.bank-list {
+  display: grid;
+  gap: 12px;
+}
+
+.bank-group {
+  display: grid;
+  gap: 8px;
+}
+
+.bank-group-title {
+  color: var(--accent-dark);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.bank-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.bank-option {
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0 9px;
+  color: #2c3931;
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 850;
+  text-align: center;
+}
+
+.bank-option:hover,
+.bank-option:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(47, 143, 91, 0.12);
+}
+
+.bank-option.selected {
+  border-color: rgba(47, 143, 91, 0.46);
+  color: var(--accent-dark);
+  background: rgba(47, 143, 91, 0.1);
+}
+
 .section-intro {
   display: grid;
   gap: 4px;
@@ -557,6 +656,14 @@ select:focus {
     grid-template-columns: 1fr;
     gap: 4px;
   }
+
+  .bank-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bank-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 420px) {
@@ -575,5 +682,13 @@ select:focus {
   .progress-step + .progress-step::before {
     right: calc(100% + 5px);
     width: 8px;
+  }
+
+  .bank-select-row {
+    grid-template-columns: 1fr;
+  }
+
+  .bank-options {
+    grid-template-columns: 1fr;
   }
 }
