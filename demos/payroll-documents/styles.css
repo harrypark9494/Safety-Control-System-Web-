@@ -200,21 +200,27 @@ h2 {
   display: none;
 }
 
-.readonly-card,
 .bank-grid {
   display: grid;
   gap: 10px;
-}
-
-.bank-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 .readonly-card {
-  padding: 13px;
+  display: grid;
+  padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--field);
+}
+
+.readonly-greeting {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+  font-size: 0.98rem;
+  font-weight: 850;
+  line-height: 1.35;
 }
 
 .readonly-row {
@@ -222,13 +228,12 @@ h2 {
   grid-template-columns: 82px minmax(0, 1fr);
   gap: 10px;
   align-items: center;
-  min-height: 32px;
-  padding: 2px 0;
+  min-height: 42px;
+  padding: 0;
 }
 
 .readonly-row + .readonly-row {
   border-top: 1px solid var(--line);
-  padding-top: 10px;
 }
 
 .readonly-row span,
