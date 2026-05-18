@@ -8,7 +8,15 @@
   </head>
   <body>
     <main class="login-shell">
-      <section class="auth-panel" aria-label="로그인">
+      <header class="login-topline" aria-labelledby="login-title">
+        <div>
+          <p class="eyebrow">Safety Control</p>
+          <h1 id="login-title">로그인</h1>
+        </div>
+        <span class="status-pill">Mock 인증</span>
+      </header>
+
+      <section class="auth-panel" aria-label="로그인 양식">
         <div class="tabs" role="tablist" aria-label="로그인 유형">
           <button class="tab-button active" id="user-tab" role="tab" aria-selected="true" aria-controls="user-panel" type="button">
             일반 사용자
@@ -103,7 +111,6 @@
         <div class="auth-form" id="admin-panel" role="tabpanel" aria-labelledby="admin-tab" hidden>
           <div class="admin-copy">
             <h2>관리자 Google 로그인</h2>
-            <p>mock 단계에서는 safetycontrol.local Workspace 계정만 통과합니다.</p>
           </div>
           <button class="google-button" id="google-login" type="button">
             <span class="google-g" aria-hidden="true">G</span>
