@@ -78,6 +78,9 @@ Safety-Control-System-Web-/
 - 급여 서류 대상자 판별은 `demos/shared/auth/auth-config.js`의
   `payrollDocumentRequiredPhones` mock 설정으로 처리합니다.
 - 제출 완료 여부는 GitHub Pages 정적 데모에 맞춰 브라우저 `localStorage`에 저장합니다.
+- 데모 허브에서 급여 정보 등록 화면으로 바로 진입할 때는 `?demo=1` 쿼리로
+  mock 사용자 세션을 준비해 GitHub Pages의 새 브라우저 저장소에서도 첫 화면을
+  확인할 수 있게 합니다.
 - 대시보드에 직접 접근해도 미제출 대상자이면 `demos/payroll-documents/`로 다시 보냅니다.
 - 현재 데모에서는 텍스트 입력값과 파일명/크기/형식만 제출 기록에 저장합니다.
 - 데모 재테스트나 재제출이 필요하면 대시보드 상단의 `급여 서류 재제출`을 누릅니다.

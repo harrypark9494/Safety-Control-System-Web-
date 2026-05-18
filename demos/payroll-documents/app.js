@@ -51,6 +51,23 @@ function getCurrentWorker() {
   }
 }
 
+function getDemoWorkerFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+
+  if (params.get("demo") !== "1") {
+    return null;
+  }
+
+  return {
+    ...SAFETY_CONTROL_AUTH_CONFIG.demoAccount,
+    payrollDocumentsSubmitted: false,
+  };
+}
+
+function saveWorkerSession(user) {
+  window.sessionStorage.setItem("safetyControlUser", JSON.stringify(user));
+}
+
 function renderWorkTypeOptions(worker) {
   SAFETY_CONTROL_AUTH_CONFIG.workTypeOptions.forEach((workType) => {
     const option = document.createElement("option");
@@ -232,7 +249,13 @@ function getFormPayload(idCardFile, bankbookFile) {
   };
 }
 
-const worker = getCurrentWorker();
+const demoWorker = getDemoWorkerFromUrl();
+const worker = demoWorker || getCurrentWorker();
+
+if (demoWorker) {
+  clearPayrollDocumentSubmission(worker);
+  saveWorkerSession(worker);
+}
 
 if (!worker) {
   window.location.replace(loginPath);
