@@ -68,14 +68,16 @@ Safety-Control-System-Web-/
 ```text
 최초 등록 또는 로그인 성공
 → mock 사용자 세션 저장
-→ `payrollDocumentRequiredPhones`에 포함된 사용자이고 제출 기록이 없으면 급여 서류 제출 페이지로 이동
+→ `payrollDocumentRequiredWorkTypes`에 포함된 `직접 고용` 사용자이고 제출 기록이 없으면 급여 서류 제출 페이지로 이동
 → 제출 완료 기록이 있거나 대상자가 아니면 대시보드로 이동
 ```
 
 현재 구현 방식:
 
 - 급여 서류 대상자 판별은 `demos/shared/auth/auth-config.js`의
-  `payrollDocumentRequiredPhones` mock 설정으로 처리합니다.
+  `payrollDocumentRequiredWorkTypes` mock 설정으로 처리합니다.
+- 현재 mock 고용 유형은 `직접 고용`, `외부 고용` 두 가지이며, `직접 고용`
+  계정만 급여 정보 등록 화면으로 이동합니다.
 - 제출 완료 여부는 GitHub Pages 정적 데모에 맞춰 브라우저 `localStorage`에 저장합니다.
 - 데모 허브에서 급여 정보 등록 화면으로 바로 진입할 때는 `?demo=1` 쿼리로
   mock 사용자 세션을 준비해 GitHub Pages의 새 브라우저 저장소에서도 첫 화면을

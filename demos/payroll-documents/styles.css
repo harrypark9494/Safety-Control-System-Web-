@@ -36,17 +36,14 @@ select {
 }
 
 .documents-shell {
-  width: min(100% - 28px, 720px);
+  width: min(100% - 24px, 680px);
   min-height: 100vh;
   margin: 0 auto;
-  padding: 22px 0 34px;
+  padding: 18px 0 32px;
 }
 
 .documents-topline {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
+  display: block;
   margin-bottom: 14px;
 }
 
@@ -60,13 +57,9 @@ select {
 
 .section-heading {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-}
-
-.section-heading {
+  align-items: center;
   justify-content: flex-start;
+  gap: 10px;
 }
 
 .eyebrow,
@@ -86,7 +79,9 @@ dd {
 }
 
 h1 {
-  font-size: 2.05rem;
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: 1.9rem;
   line-height: 1.08;
   letter-spacing: 0;
 }
@@ -94,14 +89,16 @@ h1 {
 .title-row {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 12px 16px;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
 }
 
 .progress-steps {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  gap: 28px;
+  gap: 22px;
   color: var(--muted);
 }
 
@@ -109,9 +106,9 @@ h1 {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   color: var(--muted);
-  font-size: 0.83rem;
+  font-size: 0.8rem;
   font-weight: 850;
   white-space: nowrap;
 }
@@ -154,6 +151,14 @@ h2 {
   letter-spacing: 0;
 }
 
+h3 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.98rem;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
 .status-pill,
 .step-badge {
   display: inline-flex;
@@ -176,11 +181,6 @@ h2 {
   flex: 0 0 auto;
 }
 
-.section-heading p {
-  color: var(--muted);
-  line-height: 1.6;
-}
-
 .documents-form {
   display: grid;
   gap: 16px;
@@ -200,13 +200,20 @@ h2 {
   display: none;
 }
 
+<<<<<<< HEAD
 .readonly-card,
 .bank-grid,
 .bank-row {
+=======
+.bank-grid {
+>>>>>>> 478da1a665faafa429682e3f38202ff8ee24db50
   display: grid;
   gap: 10px;
+  grid-template-columns: minmax(112px, 1fr) minmax(92px, 104px) minmax(112px, 1fr);
+  align-items: end;
 }
 
+<<<<<<< HEAD
 .bank-grid {
   grid-template-columns: 1fr;
 }
@@ -214,13 +221,27 @@ h2 {
 .bank-row {
   grid-template-columns: minmax(0, 1fr) 68px minmax(0, 1fr);
   align-items: end;
+=======
+.bank-field {
+  display: grid;
+  gap: 8px;
+}
+
+.bank-field > label {
+  display: block;
+>>>>>>> 478da1a665faafa429682e3f38202ff8ee24db50
 }
 
 .bank-toggle {
   align-self: end;
   min-height: 48px;
+<<<<<<< HEAD
   padding: 0 8px;
   font-size: 0.84rem;
+=======
+  padding: 0 10px;
+  font-size: 0.88rem;
+>>>>>>> 478da1a665faafa429682e3f38202ff8ee24db50
   white-space: nowrap;
 }
 
@@ -300,10 +321,31 @@ h2 {
   border-color: rgba(47, 143, 91, 0.46);
   color: var(--accent-dark);
   background: rgba(47, 143, 91, 0.1);
+<<<<<<< HEAD
+=======
+}
+
+.section-intro {
+  display: grid;
+  gap: 4px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.section-intro strong {
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+.additional-info {
+  display: grid;
+  gap: 14px;
+>>>>>>> 478da1a665faafa429682e3f38202ff8ee24db50
 }
 
 .readonly-card {
-  padding: 13px;
+  display: grid;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--field);
@@ -314,13 +356,12 @@ h2 {
   grid-template-columns: 82px minmax(0, 1fr);
   gap: 10px;
   align-items: center;
-  min-height: 32px;
-  padding: 2px 0;
+  min-height: 38px;
+  padding: 9px 13px;
 }
 
 .readonly-row + .readonly-row {
   border-top: 1px solid var(--line);
-  padding-top: 10px;
 }
 
 .readonly-row span,
@@ -605,17 +646,27 @@ select:focus {
     padding: 18px;
   }
 
-  .documents-topline {
-    display: grid;
+  h1 {
+    font-size: 1.58rem;
   }
 
   .title-row {
-    align-items: flex-start;
+    gap: 8px;
   }
 
   .progress-steps {
-    width: 100%;
-    gap: 24px;
+    gap: 16px;
+  }
+
+  .progress-step {
+    gap: 4px;
+    font-size: 0.72rem;
+  }
+
+  .progress-number {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
   }
 
   .address-row {
@@ -627,6 +678,7 @@ select:focus {
     gap: 4px;
   }
 
+<<<<<<< HEAD
   .bank-row {
     gap: 7px;
     grid-template-columns: minmax(0, 1fr) 56px minmax(0, 1fr);
@@ -644,4 +696,46 @@ select:focus {
   .bank-options {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+=======
+  .bank-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 420px) {
+  h1 {
+    font-size: 1.42rem;
+  }
+
+  .progress-label {
+    display: none;
+  }
+
+  .progress-steps {
+    gap: 12px;
+  }
+
+  .progress-step + .progress-step::before {
+    right: calc(100% + 5px);
+    width: 8px;
+  }
+
+  .bank-grid {
+    gap: 7px;
+    grid-template-columns: minmax(0, 1fr) 82px minmax(0, 1fr);
+  }
+
+  .bank-grid input {
+    padding: 0 10px;
+  }
+
+  .bank-toggle {
+    padding: 0 7px;
+    font-size: 0.78rem;
+  }
+
+  .bank-options {
+    grid-template-columns: 1fr;
+  }
+>>>>>>> 478da1a665faafa429682e3f38202ff8ee24db50
 }

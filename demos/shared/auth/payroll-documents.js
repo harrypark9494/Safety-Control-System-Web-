@@ -34,9 +34,9 @@ function isPayrollDocumentTarget(user, config = SAFETY_CONTROL_AUTH_CONFIG) {
     return false;
   }
 
-  const requiredPhones = config.payrollDocumentRequiredPhones || [];
+  const requiredWorkTypes = config.payrollDocumentRequiredWorkTypes || [];
 
-  return requiredPhones.includes(user.phone);
+  return requiredWorkTypes.includes(user.workType);
 }
 
 function isPayrollDocumentRequired(user, config = SAFETY_CONTROL_AUTH_CONFIG) {

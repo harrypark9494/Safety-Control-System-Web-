@@ -21,7 +21,6 @@ const basicStepFields = [
   "#resident-number",
   "#postcode",
   "#address",
-  "#address-detail",
   "#privacy-agreement",
 ];
 const supportedBanks = [
@@ -165,6 +164,8 @@ function setSelectedBank(bankName) {
 }
 
 function renderWorker(worker) {
+  document.querySelector("#worker-greeting").textContent =
+    `${worker.name || "작업자"}님, 안녕하세요.`;
   document.querySelector("#worker-phone").textContent = worker.phone || "-";
   document.querySelector("#worker-schedule").textContent =
     worker.schedule || "DB 근무 일정 연동 예정";
