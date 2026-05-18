@@ -11,18 +11,25 @@
       <header class="documents-topline" aria-labelledby="documents-title">
         <div>
           <p class="eyebrow">Payroll Onboarding</p>
-          <h1 id="documents-title">급여 정보 등록</h1>
+          <div class="title-row">
+            <h1 id="documents-title">급여 정보 등록</h1>
+            <div class="progress-steps" aria-label="입력 단계">
+              <span class="progress-step active" id="basic-step-indicator" aria-current="step">
+                <span class="progress-number">1</span>
+                <span class="progress-label">기본정보</span>
+              </span>
+              <span class="progress-step" id="document-step-indicator">
+                <span class="progress-number">2</span>
+                <span class="progress-label">서류제출</span>
+              </span>
+            </div>
+          </div>
         </div>
         <span class="status-pill">모바일 확인 기준</span>
       </header>
 
       <section class="documents-panel" aria-label="급여 정보 등록 입력 양식">
         <form class="documents-form" id="documents-form">
-          <div class="progress-tabs" aria-label="입력 단계">
-            <span class="progress-tab active" id="basic-step-indicator">1 기본 정보</span>
-            <span class="progress-tab" id="document-step-indicator">2 서류 제출</span>
-          </div>
-
           <section class="form-section active" id="basic-step" aria-labelledby="basic-info-title">
             <div class="section-heading">
               <span class="step-badge">1</span>
