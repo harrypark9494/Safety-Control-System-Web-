@@ -17,7 +17,6 @@ const basicStepFields = [
   "#resident-number",
   "#postcode",
   "#address",
-  "#address-detail",
   "#privacy-agreement",
 ];
 
