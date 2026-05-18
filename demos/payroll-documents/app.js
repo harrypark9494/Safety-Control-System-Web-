@@ -78,6 +78,8 @@ function setStep(stepName) {
   steps.document.classList.toggle("active", isDocumentStep);
   stepIndicators.basic.classList.toggle("active", !isDocumentStep);
   stepIndicators.document.classList.toggle("active", isDocumentStep);
+  stepIndicators.basic.toggleAttribute("aria-current", !isDocumentStep);
+  stepIndicators.document.toggleAttribute("aria-current", isDocumentStep);
   setMessage("");
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
