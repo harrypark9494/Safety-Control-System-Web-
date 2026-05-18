@@ -124,20 +124,18 @@
             <div class="bank-grid">
               <div class="bank-field">
                 <label for="bank-name">은행명</label>
-                <div class="bank-select-row">
-                  <input
-                    id="bank-name"
-                    name="bankName"
-                    type="text"
-                    placeholder="은행을 선택하거나 입력"
-                    autocomplete="off"
-                    required
-                  />
-                  <button class="secondary-button bank-toggle" id="bank-list-toggle" type="button" aria-expanded="false" aria-controls="bank-list-panel">
-                    은행 목록
-                  </button>
-                </div>
+                <input
+                  id="bank-name"
+                  name="bankName"
+                  type="text"
+                  placeholder="은행명"
+                  autocomplete="off"
+                  required
+                />
               </div>
+              <button class="secondary-button bank-toggle" id="bank-list-toggle" type="button" aria-expanded="false" aria-controls="bank-list-panel">
+                은행 목록
+              </button>
               <label>
                 예금주
                 <input id="account-holder" name="accountHolder" type="text" placeholder="예: 박현장" required />
@@ -145,7 +143,7 @@
               <div class="bank-list-panel full-field" id="bank-list-panel" hidden>
                 <div class="bank-list-head">
                   <strong>지원 은행 선택</strong>
-                  <span>급여 이체 계좌로 자주 쓰는 국내 은행을 기준으로 구성한 데모 목록입니다.</span>
+                  <span>토스페이먼츠 은행 코드 중 국내 계좌 기관만 남긴 데모 목록입니다.</span>
                 </div>
                 <div class="bank-list" id="bank-list" aria-label="지원 은행 목록"></div>
               </div>
