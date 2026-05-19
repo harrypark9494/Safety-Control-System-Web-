@@ -55,7 +55,7 @@ Safety-Control-System-Web-/
 ## Current Demo Scope
 
 - Log in Demo: 일반 사용자 등록/로그인과 관리자 mock Google 로그인 흐름
-- Dashboard Demo: 사용자 정보, 기상청 날씨 mock과 현장 보정값, 오늘 할 일, 안전 알림을 목업 데이터로 표시
+- Dashboard Demo: 워터밤 현장 모바일 관제 UI, 하단 4탭, QR 팝업, 날씨/설치 공정/안전 수칙/프로필 mock 표시
 - Payroll Documents Demo: HR 급여 처리용 기본 정보, 주민등록번호, Kakao 우편번호 주소 검색, 계좌 정보, 신분증/통장 사본 제출 흐름
 
 실제 Firebase, 날씨 API, 작업 데이터 API 연결은 별도 단계에서 진행합니다.
@@ -64,6 +64,10 @@ Dashboard Demo의 날씨 데이터는 `demos/dashboard/weather-api.js`에 mock A
 분리되어 있습니다. 현재는 기상청 단기예보 mock 원천값에 현장 보정 프로필을
 적용한 뒤 대시보드에 표시하며, 기상 특보는 별도 채널에서 받은 뒤 위험 등급
 상향 조건으로 합산하는 구조만 준비해 두었습니다.
+
+Dashboard Demo는 현재 모바일 우선 화면으로 구성되어 있으며 하단 탭은
+`대시보드`, `스케줄`, `안전`, `프로필` 네 가지입니다. QR 코드는 실제 발급값이
+아닌 정적 데모용 화면 상태입니다.
 
 ## Auth API Adapter
 
