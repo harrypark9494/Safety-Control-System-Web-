@@ -571,21 +571,21 @@ select:focus {
 
 @media (max-width: 679px) {
   body {
-    background: #eef4f8;
+    background: #f6f8fa;
   }
 
   .documents-shell {
-    width: min(100%, 430px);
+    width: 100%;
     margin: 0 auto;
-    border: 1px solid #cfe9ff;
-    border-radius: 14px;
-    background: var(--surface);
-    box-shadow: 0 22px 60px rgba(16, 24, 39, 0.12);
+    border: 0;
+    border-radius: 0;
+    background: #f6f8fa;
+    box-shadow: none;
   }
 
   .documents-topline {
     min-height: 74px;
-    border-radius: 14px 14px 0 0;
+    border-radius: 0;
     background: #fffafa;
   }
 
