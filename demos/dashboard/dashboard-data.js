@@ -118,8 +118,8 @@ const dashboardData = {
       help: "운영 데스크에서 위 QR 코드를 스캔하세요",
     },
     water: {
-      title: "성수 수령",
-      label: "성수 QR",
+      title: "생수 수령",
+      label: "생수 QR",
       help: "워터 스테이션에서 위 QR 코드를 스캔하세요",
     },
   },

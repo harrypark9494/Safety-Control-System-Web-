@@ -305,6 +305,10 @@ ol {
   background: var(--navy);
 }
 
+.timeline li.done .timeline-progress span {
+  background: var(--green);
+}
+
 .stage-breakdown {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -848,11 +852,102 @@ ol {
 
 @media (min-width: 680px) {
   body {
-    padding: 8px 0;
+    padding: 0;
+    background: #f6f8fa;
   }
 
   .app-shell {
-    min-height: calc(100vh - 16px);
+    width: 100%;
+    min-height: 100vh;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: #f6f8fa;
+    box-shadow: none;
+  }
+
+  .app-header {
+    min-height: 78px;
+    background: #fff;
+  }
+
+  .tab-panels {
+    min-height: calc(100vh - 78px);
+    padding-bottom: 108px;
+  }
+
+  .tab-panel {
+    width: min(100%, 1120px);
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  #panel-dashboard.is-active {
+    display: grid;
+    grid-template-columns: 0.82fr 1.18fr;
+    align-items: start;
+    gap: 16px;
+  }
+
+  #panel-dashboard .date-card,
+  #panel-dashboard .qr-actions {
+    grid-column: 1;
+  }
+
+  #panel-dashboard .weather-card {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  #panel-dashboard .progress-card {
+    grid-column: 1 / -1;
+  }
+
+  #panel-dashboard .rules-card {
+    grid-column: 1 / -1;
+  }
+
+  .date-card,
+  .weather-card,
+  .progress-card,
+  .rules-card {
+    margin-top: 0;
+  }
+
+  .qr-actions {
+    margin-top: 0;
+  }
+
+  .qr-card {
+    min-height: 150px;
+  }
+
+  .weather-risk {
+    min-height: 118px;
+  }
+
+  .weather-metrics {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .stage-breakdown {
+    max-width: 620px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  #panel-schedule,
+  #panel-safety,
+  #panel-profile {
+    width: min(100%, 880px);
+  }
+
+  .bottom-tabs {
+    left: 0;
+    width: 100%;
+    min-height: 82px;
+    transform: none;
+    box-shadow: 0 -10px 26px rgba(16, 24, 39, 0.08);
   }
 }
 
