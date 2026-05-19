@@ -3,119 +3,172 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dashboard Demo</title>
+    <title>Waterbomb Safety Dashboard</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <main class="dashboard-shell">
-      <header class="topbar" aria-label="대시보드 상단 정보">
-        <a class="back-link" href="../../">Demo Hub</a>
-        <div class="topbar-actions">
-          <button class="payroll-action" id="payroll-resubmit" type="button" hidden>급여 서류 재제출</button>
-          <span class="sync-status" id="weather-source-status">Mock data</span>
-          <button class="icon-button" type="button" aria-label="알림">
-            <span aria-hidden="true">!</span>
-          </button>
-        </div>
+    <main class="app-shell">
+      <header class="app-header">
+        <h1>워터밤 안전 관제 시스템</h1>
       </header>
 
-      <section class="dashboard-hero" aria-labelledby="dashboard-title">
-        <div>
-          <p class="eyebrow" id="today-label"></p>
-          <h1 id="dashboard-title"></h1>
-          <p class="hero-copy" id="site-summary"></p>
-        </div>
-        <div class="risk-badge" id="risk-badge" aria-label="현재 안전 위험 등급"></div>
-      </section>
+      <div class="tab-panels">
+        <section class="tab-panel is-active" id="panel-dashboard" data-panel="dashboard" aria-labelledby="tab-dashboard">
+          <section class="summary-card date-card" aria-label="오늘 행사 정보">
+            <strong id="event-date"></strong>
+            <span id="event-name"></span>
+          </section>
 
-      <section class="metric-grid" aria-label="오늘의 핵심 지표">
-        <article class="metric-card">
-          <span>체감온도</span>
-          <strong id="metric-temperature"></strong>
-          <small id="metric-temperature-note"></small>
-        </article>
-        <article class="metric-card">
-          <span>강수확률</span>
-          <strong id="metric-rain"></strong>
-          <small id="metric-rain-note"></small>
-        </article>
-        <article class="metric-card">
-          <span>풍속</span>
-          <strong id="metric-wind"></strong>
-          <small id="metric-wind-note"></small>
-        </article>
-        <article class="metric-card">
-          <span>오늘 작업</span>
-          <strong id="metric-tasks"></strong>
-          <small id="metric-tasks-note"></small>
-        </article>
-      </section>
+          <section class="qr-actions" aria-label="QR 바로가기">
+            <button class="qr-card" type="button" data-qr-type="meal">
+              <span class="qr-icon" aria-hidden="true">🍴</span>
+              <strong>식권 QR</strong>
+            </button>
+            <button class="qr-card" type="button" data-qr-type="water">
+              <span class="qr-icon" aria-hidden="true">🧴</span>
+              <strong>성수 QR</strong>
+            </button>
+          </section>
 
-      <div class="dashboard-grid">
-        <section class="panel user-panel" aria-labelledby="user-title">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Worker</p>
-              <h2 id="user-title">사용자 정보</h2>
+          <section class="summary-card weather-card" aria-labelledby="weather-title">
+            <div class="section-title-row">
+              <div>
+                <h2 id="weather-title">날씨 현황</h2>
+                <p id="weather-time"></p>
+              </div>
+              <span class="warning-pill">⚠ 주의</span>
             </div>
-            <span class="status-pill" id="user-status"></span>
-          </div>
 
-          <div class="profile-row">
-            <div class="avatar" id="user-avatar" aria-hidden="true"></div>
-            <div>
-              <strong id="user-name"></strong>
-              <span id="user-role"></span>
+            <div class="weather-risk">
+              <span class="sun-icon" aria-hidden="true">☀</span>
+              <div>
+                <strong id="weather-risk-title"></strong>
+                <p id="weather-risk-detail"></p>
+              </div>
             </div>
-          </div>
 
-          <dl class="info-list" id="user-info"></dl>
+            <div class="weather-metrics" id="weather-metrics"></div>
+          </section>
+
+          <section class="summary-card progress-card" aria-labelledby="stage-title">
+            <div class="stage-head">
+              <div>
+                <h2 id="stage-title"></h2>
+                <span id="stage-time"></span>
+              </div>
+              <span class="success-pill">● 정상 진행</span>
+            </div>
+            <div class="progress-label">
+              <span>전체 공정률</span>
+              <strong id="stage-progress-value"></strong>
+            </div>
+            <div class="progress-track" aria-hidden="true">
+              <span id="stage-progress-bar"></span>
+            </div>
+            <div class="stage-breakdown" id="stage-breakdown"></div>
+          </section>
+
+          <section class="summary-card rules-card" aria-labelledby="dashboard-rules-title">
+            <div class="section-title-row">
+              <h2 id="dashboard-rules-title">🛡 안전 수칙</h2>
+              <span class="success-pill">양호</span>
+            </div>
+            <div class="mini-rule-list" id="dashboard-rule-list"></div>
+          </section>
         </section>
 
-        <section class="panel weather-panel" aria-labelledby="weather-title">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Weather</p>
-              <h2 id="weather-title">현장 날씨</h2>
-            </div>
-            <span class="status-pill caution" id="weather-status"></span>
-          </div>
-
-          <div class="weather-main">
-            <strong id="weather-temperature"></strong>
-            <div>
-              <span id="weather-condition"></span>
-              <small id="weather-updated"></small>
-            </div>
-          </div>
-
-          <ul class="weather-list" id="weather-list"></ul>
+        <section class="tab-panel" id="panel-schedule" data-panel="schedule" aria-labelledby="tab-schedule">
+          <section class="schedule-heading">
+            <h2>현장 설치 스케줄</h2>
+            <p id="schedule-date"></p>
+          </section>
+          <ol class="timeline" id="timeline"></ol>
         </section>
 
-        <section class="panel tasks-panel" aria-labelledby="tasks-title">
-          <div class="section-heading">
+        <section class="tab-panel" id="panel-safety" data-panel="safety" aria-labelledby="tab-safety">
+          <section class="alert-box">
+            <span aria-hidden="true">⚠</span>
             <div>
-              <p class="eyebrow">Today</p>
-              <h2 id="tasks-title">오늘 할 일</h2>
+              <strong>폭염 경보 발령</strong>
+              <p>날씨가 덥습니다. 물을 많이 마시고 꼭 휴식하세요.</p>
             </div>
-            <span class="status-pill" id="tasks-progress"></span>
-          </div>
+          </section>
 
-          <ul class="task-list" id="task-list"></ul>
+          <section class="safety-section" aria-labelledby="safety-rules-title">
+            <h2 id="safety-rules-title">필수 안전 수칙</h2>
+            <div class="safety-rule-list" id="safety-rule-list"></div>
+          </section>
+
+          <section class="emergency-card" aria-labelledby="emergency-title">
+            <div class="section-title-row">
+              <h2 id="emergency-title">현장 비상 연락망</h2>
+              <strong class="emergency-badge">EMERGENCY</strong>
+            </div>
+            <div class="manager-call" id="manager-call"></div>
+            <div class="emergency-actions">
+              <button type="button">✚ 의료팀 본부</button>
+              <button type="button">♨ 소방 관계실</button>
+            </div>
+          </section>
         </section>
 
-        <section class="panel alerts-panel" aria-labelledby="alerts-title">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Safety</p>
-              <h2 id="alerts-title">안전 알림</h2>
-            </div>
-          </div>
+        <section class="tab-panel" id="panel-profile" data-panel="profile" aria-labelledby="tab-profile">
+          <section class="profile-card">
+            <strong id="profile-name"></strong>
+            <span id="profile-phone"></span>
+          </section>
 
-          <ul class="alert-list" id="alert-list"></ul>
+          <section class="profile-card profile-zone">
+            <span class="profile-icon" aria-hidden="true">🗺</span>
+            <div>
+              <small>담당 구역</small>
+              <strong id="profile-zone"></strong>
+            </div>
+          </section>
+
+          <section class="settings-card" aria-labelledby="settings-title">
+            <h2 id="settings-title">시스템 설정</h2>
+            <button type="button">
+              <span>🔔 알림 설정</span>
+              <strong aria-hidden="true">›</strong>
+            </button>
+          </section>
+
+          <button class="secondary-action" id="payroll-resubmit" type="button" hidden>급여 서류 재제출</button>
+          <button class="logout-button" type="button">↪ 로그아웃</button>
         </section>
       </div>
+
+      <nav class="bottom-tabs" aria-label="대시보드 메뉴">
+        <button class="tab-button is-active" id="tab-dashboard" type="button" data-tab="dashboard">
+          <span aria-hidden="true">▦</span>
+          대시보드
+        </button>
+        <button class="tab-button" id="tab-schedule" type="button" data-tab="schedule">
+          <span aria-hidden="true">▣</span>
+          스케줄
+        </button>
+        <button class="tab-button" id="tab-safety" type="button" data-tab="safety">
+          <span aria-hidden="true">⬟</span>
+          안전
+        </button>
+        <button class="tab-button" id="tab-profile" type="button" data-tab="profile">
+          <span aria-hidden="true">◉</span>
+          프로필
+        </button>
+      </nav>
     </main>
+
+    <div class="modal-backdrop" id="qr-modal" hidden>
+      <section class="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qr-modal-title">
+        <button class="modal-close" type="button" aria-label="닫기">×</button>
+        <p id="qr-modal-date"></p>
+        <h2 id="qr-modal-title"></h2>
+        <div class="qr-frame" id="qr-code" aria-label="QR 코드"></div>
+        <p class="qr-help" id="qr-modal-help"></p>
+        <button class="modal-action" type="button">닫기</button>
+      </section>
+    </div>
 
     <script src="./weather-api.js"></script>
     <script src="./dashboard-data.js"></script>
