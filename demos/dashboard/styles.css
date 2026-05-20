@@ -91,10 +91,7 @@ ol {
   display: block;
 }
 
-.summary-card,
-.profile-card,
-.settings-card,
-.emergency-card {
+.app-card {
   border: 1px solid var(--line-strong);
   border-radius: 5px;
   background: var(--panel);

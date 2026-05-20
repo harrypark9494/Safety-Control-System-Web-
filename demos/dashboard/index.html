@@ -14,7 +14,7 @@
 
       <div class="tab-panels">
         <section class="tab-panel is-active" id="panel-dashboard" data-panel="dashboard" aria-labelledby="tab-dashboard">
-          <section class="summary-card date-card" aria-label="오늘 행사 정보">
+          <section class="app-card summary-card date-card" aria-label="오늘 행사 정보">
             <strong id="event-date"></strong>
             <span id="event-name"></span>
           </section>
@@ -30,7 +30,7 @@
             </button>
           </section>
 
-          <section class="summary-card weather-card" aria-labelledby="weather-title">
+          <section class="app-card summary-card weather-card" aria-labelledby="weather-title">
             <div class="section-title-row">
               <div>
                 <h2 id="weather-title">날씨 현황</h2>
@@ -50,7 +50,7 @@
             <div class="weather-metrics" id="weather-metrics"></div>
           </section>
 
-          <section class="summary-card progress-card" aria-labelledby="stage-title">
+          <section class="app-card summary-card progress-card" aria-labelledby="stage-title">
             <div class="stage-head">
               <div>
                 <h2 id="stage-title"></h2>
@@ -68,7 +68,7 @@
             <div class="stage-breakdown" id="stage-breakdown"></div>
           </section>
 
-          <section class="summary-card rules-card" aria-labelledby="dashboard-rules-title">
+          <section class="app-card summary-card rules-card" aria-labelledby="dashboard-rules-title">
             <div class="section-title-row">
               <h2 id="dashboard-rules-title">🛡 안전 수칙</h2>
               <span class="success-pill">양호</span>
@@ -99,7 +99,7 @@
             <div class="safety-rule-list" id="safety-rule-list"></div>
           </section>
 
-          <section class="emergency-card" aria-labelledby="emergency-title">
+          <section class="app-card emergency-card" aria-labelledby="emergency-title">
             <div class="section-title-row">
               <h2 id="emergency-title">현장 비상 연락망</h2>
               <strong class="emergency-badge">EMERGENCY</strong>
@@ -113,12 +113,12 @@
         </section>
 
         <section class="tab-panel" id="panel-profile" data-panel="profile" aria-labelledby="tab-profile">
-          <section class="profile-card">
+          <section class="app-card profile-card">
             <strong id="profile-name"></strong>
             <span id="profile-phone"></span>
           </section>
 
-          <section class="profile-card profile-zone">
+          <section class="app-card profile-card profile-zone">
             <span class="profile-icon" aria-hidden="true">🗺</span>
             <div>
               <small>담당 구역</small>
@@ -126,7 +126,7 @@
             </div>
           </section>
 
-          <section class="settings-card" aria-labelledby="settings-title">
+          <section class="app-card settings-card" aria-labelledby="settings-title">
             <h2 id="settings-title">시스템 설정</h2>
             <button type="button">
               <span>🔔 알림 설정</span>

@@ -45,13 +45,13 @@ p {
   margin: 0;
 }
 
-.documents-shell {
+.app-shell {
   width: 100%;
   min-height: 100vh;
   background: #f6f8fa;
 }
 
-.documents-topline {
+.app-header {
   display: grid;
   min-height: 78px;
   place-items: center;
@@ -59,22 +59,25 @@ p {
   background: #fff;
 }
 
-.documents-topline h1 {
+.app-header h1 {
   font-size: 1.26rem;
   font-weight: 950;
   letter-spacing: 0;
 }
 
-.documents-panel {
+.app-panel {
   display: grid;
   gap: 18px;
-  width: min(100% - 48px, 760px);
   margin: 24px auto 40px;
   padding: 24px;
   border: 1px solid var(--line-strong);
   border-radius: 5px;
   background: var(--panel);
   box-shadow: 0 1px 4px rgba(16, 24, 39, 0.08);
+}
+
+.app-panel--wide {
+  width: min(100% - 48px, 760px);
 }
 
 .page-heading,
@@ -574,7 +577,7 @@ select:focus {
     background: #f6f8fa;
   }
 
-  .documents-shell {
+  .app-shell {
     width: 100%;
     margin: 0 auto;
     border: 0;
@@ -583,13 +586,13 @@ select:focus {
     box-shadow: none;
   }
 
-  .documents-topline {
+  .app-header {
     min-height: 74px;
     border-radius: 0;
     background: #fffafa;
   }
 
-  .documents-panel {
+  .app-panel {
     width: auto;
     margin: 0;
     padding: 18px;
