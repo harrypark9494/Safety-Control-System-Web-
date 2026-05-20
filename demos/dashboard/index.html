@@ -10,54 +10,61 @@
     <main class="app-shell">
       <header class="app-header">
         <h1>워터밤 안전 관제 시스템</h1>
+        <button class="icon-button header-alert-button" type="button" aria-label="알림 내역 열기">♧</button>
       </header>
 
       <div class="tab-panels">
         <section class="tab-panel is-active" id="panel-dashboard" data-panel="dashboard" aria-labelledby="tab-dashboard">
-          <section class="app-card summary-card date-card" aria-label="오늘 행사 정보">
+          <section class="app-card date-card" aria-label="오늘 행사 정보">
             <strong id="event-date"></strong>
             <span id="event-name"></span>
           </section>
 
-          <section class="qr-actions" aria-label="QR 바로가기">
-            <button class="qr-card" type="button" data-qr-type="meal">
-              <span class="qr-icon" aria-hidden="true">🍴</span>
-              <strong>식권 QR</strong>
-            </button>
-            <button class="qr-card" type="button" data-qr-type="water">
-              <span class="qr-icon" aria-hidden="true">🧴</span>
-              <strong>생수 QR</strong>
+          <section class="app-card rules-card" aria-labelledby="dashboard-rules-title">
+            <div class="section-title-row">
+              <h2 id="dashboard-rules-title"><span aria-hidden="true">⬟</span> 안전 수칙</h2>
+              <span class="status-pill status-good" id="dashboard-rule-status"></span>
+            </div>
+            <div class="mini-rule-list" id="dashboard-rule-list"></div>
+            <button class="outline-action" type="button" data-tab-jump="safety">전체 안전 수칙 확인하기</button>
+          </section>
+
+          <section class="app-card qr-summary" aria-labelledby="qr-summary-title">
+            <button class="qr-summary-button" type="button" data-qr-open>
+              <span class="qr-icon-box" aria-hidden="true">▦</span>
+              <span>
+                <strong id="qr-summary-title">통합 QR 시스템</strong>
+                <small id="qr-summary-count"></small>
+              </span>
             </button>
           </section>
 
-          <section class="app-card summary-card weather-card" aria-labelledby="weather-title">
+          <section class="app-card weather-card" aria-labelledby="weather-title">
             <div class="section-title-row">
-              <div>
-                <h2 id="weather-title">날씨 현황</h2>
-                <p id="weather-time"></p>
-              </div>
-              <span class="warning-pill">⚠ 주의</span>
+              <h2 id="weather-title">날씨 현황 및 작업 지침</h2>
+              <span class="status-pill status-warning">⚠ 주의</span>
             </div>
-
-            <div class="weather-risk">
-              <span class="sun-icon" aria-hidden="true">☀</span>
-              <div>
-                <strong id="weather-risk-title"></strong>
-                <p id="weather-risk-detail"></p>
+            <p class="weather-alert" id="weather-alert"></p>
+            <div class="work-index">
+              <div class="progress-label">
+                <span>작업 가능 지수</span>
+                <strong id="work-index-value"></strong>
+              </div>
+              <div class="progress-track progress-track--danger" aria-hidden="true">
+                <span id="work-index-bar"></span>
               </div>
             </div>
-
             <div class="weather-metrics" id="weather-metrics"></div>
           </section>
 
-          <section class="app-card summary-card progress-card" aria-labelledby="stage-title">
-            <div class="stage-head">
-              <div>
-                <h2 id="stage-title"></h2>
-                <span id="stage-time"></span>
-              </div>
-              <span class="success-pill">● 정상 진행</span>
+          <section class="app-card progress-card" aria-labelledby="stage-title">
+            <div class="team-kicker" id="team-name"></div>
+            <div class="section-title-row">
+              <h2 id="stage-title"></h2>
+              <span class="status-pill status-good">정상 진행</span>
             </div>
+            <div class="task-note" id="task-note"></div>
+            <div class="delay-alert" id="delay-alert"></div>
             <div class="progress-label">
               <span>전체 공정률</span>
               <strong id="stage-progress-value"></strong>
@@ -67,35 +74,33 @@
             </div>
             <div class="stage-breakdown" id="stage-breakdown"></div>
           </section>
-
-          <section class="app-card summary-card rules-card" aria-labelledby="dashboard-rules-title">
-            <div class="section-title-row">
-              <h2 id="dashboard-rules-title">🛡 안전 수칙</h2>
-              <span class="success-pill">양호</span>
-            </div>
-            <div class="mini-rule-list" id="dashboard-rule-list"></div>
-          </section>
         </section>
 
         <section class="tab-panel" id="panel-schedule" data-panel="schedule" aria-labelledby="tab-schedule">
-          <section class="schedule-heading">
-            <h2>현장 설치 스케줄</h2>
-            <p id="schedule-date"></p>
+          <section class="schedule-alert" id="schedule-alert"></section>
+          <section class="tab-heading">
+            <h2 id="schedule-title">스케줄</h2>
+            <span id="schedule-date"></span>
           </section>
-          <ol class="timeline" id="timeline"></ol>
+          <div class="segmented-control" role="tablist" aria-label="스케줄 범위">
+            <button class="segment-button" type="button">전체 팀</button>
+            <button class="segment-button is-active" type="button">내 팀</button>
+          </div>
+          <div class="team-schedule" id="team-schedule"></div>
         </section>
 
         <section class="tab-panel" id="panel-safety" data-panel="safety" aria-labelledby="tab-safety">
-          <section class="alert-box">
-            <span aria-hidden="true">⚠</span>
-            <div>
-              <strong>폭염 경보 발령</strong>
-              <p>날씨가 덥습니다. 물을 많이 마시고 꼭 휴식하세요.</p>
-            </div>
-          </section>
-
           <section class="safety-section" aria-labelledby="safety-rules-title">
             <h2 id="safety-rules-title">필수 안전 수칙</h2>
+            <div class="app-card safety-notice" id="safety-notice"></div>
+            <ul class="safety-bullets" id="safety-bullets"></ul>
+          </section>
+
+          <section class="safety-section" aria-labelledby="checklist-title">
+            <div class="section-title-row">
+              <h2 id="checklist-title">근로자 일일 체크리스트</h2>
+              <span id="checklist-date"></span>
+            </div>
             <div class="safety-rule-list" id="safety-rule-list"></div>
           </section>
 
@@ -114,26 +119,40 @@
 
         <section class="tab-panel" id="panel-profile" data-panel="profile" aria-labelledby="tab-profile">
           <section class="app-card profile-card">
-            <strong id="profile-name"></strong>
-            <span id="profile-phone"></span>
-          </section>
-
-          <section class="app-card profile-card profile-zone">
-            <span class="profile-icon" aria-hidden="true">🗺</span>
-            <div>
-              <small>담당 구역</small>
-              <strong id="profile-zone"></strong>
+            <div class="profile-main">
+              <span class="profile-avatar" aria-hidden="true">☹</span>
+              <div>
+                <strong id="profile-name"></strong>
+                <span id="profile-phone"></span>
+              </div>
             </div>
+            <dl class="profile-meta">
+              <div>
+                <dt>소속 팀</dt>
+                <dd id="profile-zone"></dd>
+              </div>
+              <div>
+                <dt>근무 기간</dt>
+                <dd id="profile-period"></dd>
+              </div>
+            </dl>
           </section>
 
-          <section class="app-card settings-card" aria-labelledby="settings-title">
-            <h2 id="settings-title">시스템 설정</h2>
-            <button type="button">
-              <span>🔔 알림 설정</span>
-              <strong aria-hidden="true">›</strong>
-            </button>
+          <section class="app-card profile-list-card" aria-labelledby="event-info-title">
+            <h2 id="event-info-title">행사 정보</h2>
+            <div class="profile-link-list" id="event-link-list"></div>
           </section>
 
+          <section class="app-card profile-list-card" aria-labelledby="documents-status-title">
+            <h2 id="documents-status-title">근로자 서류 제출 현황</h2>
+            <div class="document-status-list" id="document-status-list"></div>
+          </section>
+
+          <button class="settings-link" type="button">
+            <span>♧</span>
+            알림 설정
+            <strong aria-hidden="true">›</strong>
+          </button>
           <button class="secondary-action" id="payroll-resubmit" type="button" hidden>급여 서류 재제출</button>
           <button class="logout-button" type="button">↪ 로그아웃</button>
         </section>
@@ -153,7 +172,7 @@
           안전
         </button>
         <button class="tab-button" id="tab-profile" type="button" data-tab="profile">
-          <span aria-hidden="true">◉</span>
+          <span aria-hidden="true">♟</span>
           프로필
         </button>
       </nav>
@@ -163,9 +182,25 @@
       <section class="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qr-modal-title">
         <button class="modal-close" type="button" aria-label="닫기">×</button>
         <p id="qr-modal-date"></p>
-        <h2 id="qr-modal-title"></h2>
+        <h2 id="qr-modal-title">통합 QR (식권/생수)</h2>
+        <div class="qr-tabs" role="tablist" aria-label="QR 유형">
+          <button class="qr-tab is-active" type="button" data-qr-type="meal">식권 QR</button>
+          <button class="qr-tab" type="button" data-qr-type="water">생수 QR</button>
+        </div>
         <div class="qr-frame" id="qr-code" aria-label="QR 코드"></div>
+        <strong class="qr-count" id="qr-modal-count"></strong>
         <p class="qr-help" id="qr-modal-help"></p>
+        <button class="modal-action" type="button">닫기</button>
+      </section>
+    </div>
+
+    <div class="modal-backdrop modal-backdrop--sheet" id="notification-modal" hidden>
+      <section class="notification-modal" role="dialog" aria-modal="true" aria-labelledby="notification-title">
+        <div class="modal-title-row">
+          <h2 id="notification-title">알림 내역</h2>
+          <button class="modal-close" type="button" aria-label="알림 내역 닫기">×</button>
+        </div>
+        <div class="notification-list" id="notification-list"></div>
         <button class="modal-action" type="button">닫기</button>
       </section>
     </div>
