@@ -151,6 +151,50 @@ Sheets로 직접 보내지 않습니다. Firebase Storage, Cloud Functions, Apps
 등 서버 측 경계를 둔 후 Sheets에는 파일 URL이나 상태값만 기록하는 방향을
 기본값으로 둡니다.
 
+## HTML/CSS Structure Guide
+
+기능 데모는 각각 독립 HTML/CSS를 가지더라도, 같은 역할의 구조는 같은 클래스명을
+사용합니다. 새 화면을 만들거나 기존 화면을 수정할 때는 페이지명 중심 클래스보다
+공통 구조 클래스와 modifier를 우선 사용합니다.
+
+공통 구조 클래스:
+
+- `app-shell`: 각 데모 화면의 최상위 `<main>` 컨테이너입니다.
+- `app-header`: 서비스명 또는 화면 상단 타이틀을 담는 공통 헤더입니다.
+- `app-panel`: 로그인, 급여 서류 등록처럼 중앙 입력 패널이 있는 화면의 본문 패널입니다.
+- `app-panel--narrow`: 로그인처럼 좁은 패널 폭이 필요한 화면에 붙입니다.
+- `app-panel--wide`: 급여 서류 등록처럼 넓은 패널 폭이 필요한 화면에 붙입니다.
+- `app-card`: 대시보드 안에서 카드형 UI의 공통 테두리, 배경, 그림자를 담당합니다.
+
+페이지별 의미가 필요한 경우에는 공통 구조 클래스 뒤에 보조 클래스를 붙입니다.
+
+```html
+<main class="app-shell">
+  <header class="app-header">...</header>
+  <section class="app-panel app-panel--narrow">...</section>
+</main>
+```
+
+```html
+<section class="app-card summary-card weather-card">...</section>
+```
+
+CSS 작성 기준:
+
+- 같은 시각 속성은 공통 클래스에 둡니다. 예: 카드 테두리, 배경, radius, shadow는
+  `app-card`에 둡니다.
+- 화면별 차이는 modifier나 보조 클래스에 둡니다. 예: 패널 폭은
+  `app-panel--narrow`, `app-panel--wide`로 나눕니다.
+- 같은 상태 의미는 같은 상태명으로 유지합니다. 대시보드 탭처럼 현재 선택된
+  화면은 `is-active`를 사용합니다.
+- 새 색상 hex를 바로 추가하지 말고 먼저 기존 CSS 변수
+  `--ink`, `--muted`, `--line`, `--line-strong`, `--panel`, `--field`,
+  `--navy`, `--green`, `--orange`, `--red` 중에서 맞는 값을 사용합니다.
+- `login-*`, `documents-*`, `dashboard-*`처럼 페이지명을 붙인 클래스는 실제로
+  해당 화면에만 필요한 고유 동작이나 레이아웃일 때만 사용합니다.
+- 새 대시보드 섹션은 기본적으로 `app-card`를 붙이고, 제목 줄은 가능하면
+  `section-title-row` 구조를 재사용합니다.
+
 ## Non-Negotiable Rules
 
 - Firebase Emulator를 실행하지 않습니다.
