@@ -126,10 +126,11 @@ p {
   white-space: nowrap;
 }
 
-.progress-step + .progress-step::before {
+.progress-step:first-child::after {
   position: absolute;
-  right: calc(100% + 7px);
-  width: 12px;
+  top: 14px;
+  left: 100%;
+  width: 20px;
   height: 1px;
   background: var(--line);
   content: "";
@@ -318,6 +319,14 @@ select:focus {
 
 .bank-field > label {
   display: block;
+  color: #333943;
+  font-size: 0.94rem;
+  font-weight: 850;
+}
+
+#bank-name {
+  font-size: 0.94rem;
+  font-weight: 400;
 }
 
 .bank-toggle {
@@ -622,6 +631,11 @@ select:focus {
     font-size: 0.7rem;
   }
 
+  .progress-step:first-child::after {
+    top: 12px;
+    width: 16px;
+  }
+
   .bank-grid {
     grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr);
     gap: 7px;
@@ -650,9 +664,9 @@ select:focus {
     gap: 12px;
   }
 
-  .progress-step + .progress-step::before {
-    right: calc(100% + 5px);
-    width: 8px;
+  .progress-step:first-child::after {
+    left: 100%;
+    width: 12px;
   }
 
   .readonly-row,
