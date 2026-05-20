@@ -10,6 +10,7 @@ Firebase, Google Sheets 연결 없이 GitHub Pages에서 확인 가능한 정적
 [![Login Demo](https://img.shields.io/badge/Login%20Demo-Open-2f8f5b?style=flat-square)](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/login/)
 [![Dashboard Demo](https://img.shields.io/badge/Dashboard%20Demo-Open-2f8f5b?style=flat-square)](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/dashboard/)
 [![Payroll Documents Demo](https://img.shields.io/badge/Payroll%20Documents%20Demo-Open-d97706?style=flat-square)](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/payroll-documents/?demo=1)
+[![Admin Desktop Demo](https://img.shields.io/badge/Admin%20Desktop%20Demo-Open-061527?style=flat-square)](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/admin/)
 
 ## Folder Tree
 
@@ -37,6 +38,10 @@ Safety-Control-System-Web-/
    │  ├─ app.js
    │  ├─ weather-api.js
    │  └─ dashboard-data.js
+   ├─ admin/
+   │  ├─ index.html
+   │  ├─ styles.css
+   │  └─ app.js
    └─ payroll-documents/
       ├─ index.html
       ├─ styles.css
@@ -50,12 +55,14 @@ Safety-Control-System-Web-/
 | Demo Hub | `index.html` | [Open](https://harrypark9494.github.io/Safety-Control-System-Web-/) |
 | Log in Demo | `demos/login/index.html` | [Open](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/login/) |
 | Dashboard Demo | `demos/dashboard/index.html` | [Open](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/dashboard/) |
+| Admin Desktop Demo | `demos/admin/index.html` | [Open](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/admin/) |
 | Payroll Documents Demo | `demos/payroll-documents/index.html` | [Open](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/payroll-documents/?demo=1) |
 
 ## Current Demo Scope
 
 - Log in Demo: 일반 사용자 등록/로그인과 관리자 mock Google 로그인 흐름
 - Dashboard Demo: 워터밤 현장 모바일 관제 UI, 하단 4탭, QR 팝업, 날씨/설치 공정/안전 수칙/프로필 mock 표시
+- Admin Desktop Demo: 관리자용 데스크탑 관제 UI, 날씨/스케줄/QR/근로자/안전 수칙/어드민 관리 mock 표시
 - Payroll Documents Demo: HR 급여 처리용 기본 정보, 주민등록번호, Kakao 우편번호 주소 검색, 계좌 정보, 신분증/통장 사본 제출 흐름
 
 실제 Firebase, 날씨 API, 작업 데이터 API 연결은 별도 단계에서 진행합니다.
