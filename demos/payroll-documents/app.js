@@ -68,6 +68,17 @@ const supportedBanks = [
   },
 ];
 
+function syncStepTitles() {
+  Object.entries(stepIndicators).forEach(([stepName, indicator]) => {
+    const title = indicator.dataset.stepTitle;
+    const progressLabel = indicator.querySelector(".progress-label");
+    const sectionTitle = steps[stepName].querySelector("h2");
+
+    progressLabel.textContent = title;
+    sectionTitle.textContent = title;
+  });
+}
+
 function setMessage(text, type = "info") {
   message.textContent = text;
   message.classList.toggle("error", type === "error");
@@ -348,6 +359,7 @@ if (!worker) {
 } else if (!isPayrollDocumentRequired(worker)) {
   window.location.replace(dashboardPath);
 } else {
+  syncStepTitles();
   renderWorker(worker);
 }
 
