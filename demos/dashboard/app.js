@@ -5,11 +5,9 @@ const tabLabels = {
   profile: "프로필",
 };
 
-const scheduleStatus = {
-  done: "완료",
-  active: "진행중",
-  break: "휴식",
-  todo: "대기중",
+const qrSeeds = {
+  meal: 17,
+  water: 31,
 };
 
 function setText(selector, text) {
@@ -18,6 +16,29 @@ function setText(selector, text) {
   if (element) {
     element.textContent = text;
   }
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function classToken(value) {
+  return String(value).replace(/[^a-z0-9_-]/gi, "");
+}
+
+function percentValue(value) {
+  const number = Number(value);
+
+  if (!Number.isFinite(number)) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, number));
 }
 
 function getSavedWorker() {
@@ -65,35 +86,40 @@ function getDashboardData() {
     return dashboardData;
   }
 
-  return {
-    ...dashboardData,
-    user: {
-      ...dashboardData.user,
-      name: savedWorker.name || dashboardData.user.name,
-      phone: savedWorker.phone || dashboardData.user.phone,
-      role: savedWorker.workType || dashboardData.user.role,
-      zone: savedWorker.team || dashboardData.user.zone,
-      status: savedWorker.status || dashboardData.user.status,
-    },
-  };
+  return dashboardData;
 }
 
-function renderWeatherMetrics(weather) {
-  const metrics = [
-    { icon: "≋", label: "풍속", value: `${weather.windSpeed} m/s`, tone: "green" },
-    { icon: "☁", label: "강수 확률", value: `${weather.rainProbability}%`, tone: "green" },
-    { icon: "♨", label: "체감 온도", value: `${weather.feelsLike}°C`, tone: "red" },
-    { icon: "♙", label: "습도", value: `${weather.humidity}%`, tone: "orange" },
-  ];
+function renderDashboardRules(rules) {
+  setText("#dashboard-rule-status", rules.status);
+  document.querySelector("#dashboard-rule-list").innerHTML = rules.items
+    .map(
+      (rule) => `
+        <article>
+          <span aria-hidden="true">${escapeHtml(rule.icon)}</span>
+          <strong>${escapeHtml(rule.title)}</strong>
+          <em aria-label="${rule.checked ? "점검 완료" : "확인 필요"}">${rule.checked ? "●" : "!"}</em>
+        </article>
+      `,
+    )
+    .join("");
+}
 
-  document.querySelector("#weather-metrics").innerHTML = metrics
+function renderQrSummary(qr) {
+  setText("#qr-summary-count", `식권 남은 횟수: ${qr.meal.remaining}회   생수 남은 횟수: ${qr.water.remaining}회`);
+}
+
+function renderWeather(weather) {
+  setText("#weather-alert", weather.alert);
+  setText("#work-index-value", weather.workIndexLabel);
+  document.querySelector("#work-index-bar").style.width = `${percentValue(weather.workIndex)}%`;
+  document.querySelector("#weather-metrics").innerHTML = weather.metrics
     .map(
       (metric) => `
-        <article class="weather-metric ${metric.tone}">
-          <span aria-hidden="true">${metric.icon}</span>
+        <article class="weather-metric ${classToken(metric.tone)}">
+          <span aria-hidden="true">${escapeHtml(metric.icon)}</span>
           <div>
-            <small>${metric.label}</small>
-            <strong>${metric.value}</strong>
+            <small>${escapeHtml(metric.label)}</small>
+            <strong>${escapeHtml(metric.value)}</strong>
           </div>
         </article>
       `,
@@ -102,82 +128,102 @@ function renderWeatherMetrics(weather) {
 }
 
 function renderProgress(progress) {
+  setText("#team-name", progress.team);
   setText("#stage-title", progress.title);
-  setText("#stage-time", progress.time);
+  document.querySelector("#task-note").innerHTML = `
+    <strong>${escapeHtml(progress.note.schedule)}</strong>
+    <span>${escapeHtml(progress.note.task)}</span>
+  `;
+  document.querySelector("#delay-alert").innerHTML = `
+    <strong>△ ${escapeHtml(progress.delay.title)}</strong>
+    <p>${escapeHtml(progress.delay.body)}</p>
+  `;
   setText("#stage-progress-value", `${progress.overall}%`);
-  document.querySelector("#stage-progress-bar").style.width = `${progress.overall}%`;
-
+  document.querySelector("#stage-progress-bar").style.width = `${percentValue(progress.overall)}%`;
   document.querySelector("#stage-breakdown").innerHTML = progress.parts
     .map(
       (part) => `
         <div>
-          <strong>${part.label}</strong>
-          <span>${part.value}%</span>
+          <strong>${escapeHtml(part.label)}</strong>
+          <span>${escapeHtml(part.value)}%</span>
         </div>
       `,
     )
     .join("");
 }
 
-function renderDashboardRules(rules) {
-  document.querySelector("#dashboard-rule-list").innerHTML = rules
-    .slice(1, 3)
-    .map(
-      (rule) => `
-        <article>
-          <span aria-hidden="true">${rule.icon}</span>
-          <strong>${rule.title.replace("안전 ", "안전")}</strong>
-          <em aria-label="점검 완료">●</em>
-        </article>
-      `,
-    )
-    .join("");
-}
-
-function renderTimeline(schedule) {
-  document.querySelector("#timeline").innerHTML = schedule
-    .map((item) => {
-      const progress =
-        typeof item.progress === "number"
-          ? `
-            <div class="timeline-progress-label">
-              <span>진행률</span>
-              <strong>${item.progress}%</strong>
+function renderTeamSchedule(teams) {
+  document.querySelector("#team-schedule").innerHTML = teams
+    .map((team) => {
+      const delayed = team.changedTime
+        ? `
+          <div class="time-change">
+            <div>
+              <small>예정 시간</small>
+              <strong>${escapeHtml(team.originalTime)}</strong>
             </div>
-            <div class="timeline-progress" aria-hidden="true">
-              <span style="width: ${item.progress}%"></span>
+            <div>
+              <small>변경 시간</small>
+              <strong>${escapeHtml(team.changedTime)}</strong>
             </div>
-          `
-          : "";
+          </div>
+        `
+        : `
+          <div class="time-change">
+            <div>
+              <small>시작 시간</small>
+              <strong>${escapeHtml(team.startTime)}</strong>
+            </div>
+            <div>
+              <small>완료 예정</small>
+              <strong>${escapeHtml(team.endTime)}</strong>
+            </div>
+          </div>
+        `;
+      const action = team.action ? `<button class="inline-action" type="button">${escapeHtml(team.action)}</button>` : "";
 
       return `
-        <li class="${item.status}">
-          <time>${item.start}</time>
-          <article>
-            <div class="timeline-title">
-              <h3>${item.title}</h3>
-              <span>${scheduleStatus[item.status]}</span>
+        <article class="team-card ${classToken(team.tone)}">
+          <div class="team-card-title">
+            <div>
+              <h3>${escapeHtml(team.name)}</h3>
+              <p>${escapeHtml(team.task)}</p>
             </div>
-            <p>${item.time}</p>
-            ${progress}
-          </article>
-        </li>
+            <span>${escapeHtml(team.status)}</span>
+          </div>
+          ${delayed}
+          <div class="progress-track" aria-hidden="true">
+            <span style="width: ${percentValue(team.progress)}%"></span>
+          </div>
+          <div class="team-card-foot">
+            <strong>진행률 ${escapeHtml(team.progress)}%</strong>
+            ${action}
+          </div>
+        </article>
       `;
     })
     .join("");
 }
 
-function renderSafetyRules(rules) {
-  document.querySelector("#safety-rule-list").innerHTML = rules
+function renderSafety(data) {
+  document.querySelector("#safety-notice").innerHTML = `
+    <strong>▲ ${escapeHtml(data.safetyNotice.title)}</strong>
+    <p>${escapeHtml(data.safetyNotice.body)}</p>
+  `;
+  document.querySelector("#safety-bullets").innerHTML = data.safetyBullets
+    .map((rule) => `<li>${escapeHtml(rule)}</li>`)
+    .join("");
+  setText("#checklist-date", data.event.compactDate);
+  document.querySelector("#safety-rule-list").innerHTML = data.safetyChecklist
     .map(
       (rule) => `
         <article>
-          <span class="rule-icon" aria-hidden="true">${rule.icon}</span>
+          <span class="rule-icon" aria-hidden="true">${escapeHtml(rule.icon)}</span>
           <div>
-            <strong>${rule.title}</strong>
-            <p>${rule.description}</p>
+            <strong>${escapeHtml(rule.title)}</strong>
+            <p>${escapeHtml(rule.description)}</p>
           </div>
-          <em aria-label="확인 완료">♡</em>
+          <span class="check-box" aria-label="${rule.checked ? "완료" : "미완료"}"></span>
         </article>
       `,
     )
@@ -188,34 +234,80 @@ function renderEmergency(emergency) {
   document.querySelector("#manager-call").innerHTML = `
     <span class="profile-icon" aria-hidden="true">♙</span>
     <div>
-      <strong>${emergency.name}</strong>
-      <p>${emergency.phone}</p>
+      <strong>${escapeHtml(emergency.name)}</strong>
+      <p>010-0000-0000</p>
     </div>
-    <a href="tel:${emergency.phone.replaceAll("-", "")}" aria-label="${emergency.name}에게 전화">☎</a>
+    <a href="tel:010-0000-0000" aria-label="${escapeHtml(emergency.name)}에게 전화">☎</a>
   `;
 }
 
-function renderProfile(user) {
-  setText("#profile-name", user.name);
-  setText("#profile-phone", user.phone);
-  setText("#profile-zone", user.zone);
+function renderProfile(data) {
+  setText("#profile-name", data.user.name);
+  setText("#profile-phone", "010-0000-0000");
+  setText("#profile-zone", data.user.zone);
+  setText("#profile-period", data.user.period);
+  document.querySelector("#event-link-list").innerHTML = data.eventLinks
+    .map(
+      (link) => `
+        <button type="button">
+          <span aria-hidden="true">${escapeHtml(link.icon)}</span>
+          ${escapeHtml(link.label)}
+          <strong aria-hidden="true">›</strong>
+        </button>
+      `,
+    )
+    .join("");
+  document.querySelector("#document-status-list").innerHTML = data.documents
+    .map(
+      (doc) => `
+        <article>
+          <span aria-hidden="true">${escapeHtml(doc.icon)}</span>
+          <strong>${escapeHtml(doc.label)}</strong>
+          <em class="${classToken(doc.tone)}">${escapeHtml(doc.status)}</em>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderNotifications(notifications) {
+  document.querySelector("#notification-list").innerHTML = notifications
+    .map(
+      (item) => `
+        <article class="notification-item ${classToken(item.tone)}">
+          <span aria-hidden="true">${escapeHtml(item.icon)}</span>
+          <div>
+            <div class="notification-head">
+              <strong>${escapeHtml(item.title)}</strong>
+              <time>${escapeHtml(item.time)}</time>
+            </div>
+            <p>${escapeHtml(item.body)}</p>
+            ${item.priority ? `<em>${escapeHtml(item.priority)}</em>` : ""}
+          </div>
+        </article>
+      `,
+    )
+    .join("");
 }
 
 function renderDashboard(data) {
   setText("#event-date", data.event.date);
   setText("#event-name", data.event.title);
-  setText("#weather-time", data.event.weatherWindow);
-  setText("#weather-risk-title", `자외선 지수 ${data.weather.uvIndex}`);
-  setText("#weather-risk-detail", data.event.weatherWindow);
-  setText("#schedule-date", data.event.date);
+  setText("#schedule-date", data.event.shortDate);
+  document.querySelector("#schedule-alert").innerHTML = `
+    <strong>▲ ${escapeHtml(data.scheduleAlert.title)}</strong>
+    <p>${escapeHtml(data.scheduleAlert.body)}</p>
+  `;
 
-  renderWeatherMetrics(data.weather);
+  renderDashboardRules(data.dashboardRules);
+  renderQrSummary(data.qr);
+  renderWeather(data.weather);
   renderProgress(data.progress);
-  renderDashboardRules(data.safetyRules);
-  renderTimeline(data.schedule);
-  renderSafetyRules(data.safetyRules);
+  renderTeamSchedule(data.teams);
+  renderSafety(data);
   renderEmergency(data.emergency);
-  renderProfile(data.user);
+  renderProfile(data);
+  renderNotifications(data.notifications);
 }
 
 function activateTab(nextTab) {
@@ -255,22 +347,27 @@ function buildQrCells(seed) {
   return cells.join("");
 }
 
-function openQrModal(type, data) {
+function renderQrModal(type, data) {
   const qr = data.qr[type];
-  const modal = document.querySelector("#qr-modal");
-
   setText("#qr-modal-date", data.event.date);
-  setText("#qr-modal-title", qr.title);
+  setText("#qr-modal-count", `${qr.label} 남은 횟수: ${qr.remaining}회`);
   setText("#qr-modal-help", qr.help);
-  document.querySelector("#qr-code").innerHTML = buildQrCells(type === "meal" ? 17 : 31);
-  modal.hidden = false;
-  document.body.classList.add("modal-open");
-  document.querySelector(".modal-close").focus();
+  document.querySelector("#qr-code").innerHTML = buildQrCells(qrSeeds[type]);
+  document.querySelectorAll(".qr-tab").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.qrType === type);
+  });
 }
 
-function closeQrModal() {
-  document.querySelector("#qr-modal").hidden = true;
-  document.body.classList.remove("modal-open");
+function openModal(selector) {
+  document.querySelector(selector).hidden = false;
+  document.body.classList.add("modal-open");
+}
+
+function closeModal(modal) {
+  modal.hidden = true;
+  if (!document.querySelector(".modal-backdrop:not([hidden])")) {
+    document.body.classList.remove("modal-open");
+  }
 }
 
 function setupInteractions(data) {
@@ -278,21 +375,39 @@ function setupInteractions(data) {
     button.addEventListener("click", () => activateTab(button.dataset.tab));
   });
 
-  document.querySelectorAll("[data-qr-type]").forEach((button) => {
-    button.addEventListener("click", () => openQrModal(button.dataset.qrType, data));
+  document.querySelectorAll("[data-tab-jump]").forEach((button) => {
+    button.addEventListener("click", () => activateTab(button.dataset.tabJump));
   });
 
-  document.querySelector(".modal-close").addEventListener("click", closeQrModal);
-  document.querySelector(".modal-action").addEventListener("click", closeQrModal);
-  document.querySelector("#qr-modal").addEventListener("click", (event) => {
-    if (event.target.id === "qr-modal") {
-      closeQrModal();
-    }
+  document.querySelector("[data-qr-open]").addEventListener("click", () => {
+    renderQrModal("meal", data);
+    openModal("#qr-modal");
+    document.querySelector("#qr-modal .modal-close").focus();
+  });
+
+  document.querySelectorAll(".qr-tab").forEach((button) => {
+    button.addEventListener("click", () => renderQrModal(button.dataset.qrType, data));
+  });
+
+  document.querySelector(".header-alert-button").addEventListener("click", () => {
+    openModal("#notification-modal");
+    document.querySelector("#notification-modal .modal-close").focus();
+  });
+
+  document.querySelectorAll(".modal-backdrop").forEach((modal) => {
+    modal.querySelectorAll(".modal-close, .modal-action").forEach((button) => {
+      button.addEventListener("click", () => closeModal(modal));
+    });
+    modal.addEventListener("click", (event) => {
+      if (event.target === modal) {
+        closeModal(modal);
+      }
+    });
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !document.querySelector("#qr-modal").hidden) {
-      closeQrModal();
+    if (event.key === "Escape") {
+      document.querySelectorAll(".modal-backdrop:not([hidden])").forEach(closeModal);
     }
   });
 }
