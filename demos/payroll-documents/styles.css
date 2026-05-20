@@ -315,18 +315,9 @@ select:focus {
 .bank-field {
   display: grid;
   gap: 8px;
-}
-
-.bank-field > label {
-  display: block;
   color: #333943;
   font-size: 0.94rem;
   font-weight: 850;
-}
-
-#bank-name {
-  font-size: 0.94rem;
-  font-weight: 400;
 }
 
 .bank-toggle {

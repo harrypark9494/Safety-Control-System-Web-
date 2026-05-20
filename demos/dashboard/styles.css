@@ -843,7 +843,6 @@ button {
 }
 
 .profile-link-list button,
-.document-status-list article,
 .settings-link {
   display: grid;
   grid-template-columns: 34px 1fr 24px;
@@ -857,6 +856,17 @@ button {
   font-weight: 900;
 }
 
+.document-status-list article {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) max-content;
+  align-items: center;
+  min-height: 54px;
+  gap: 10px;
+  color: #333943;
+  text-align: left;
+  font-weight: 900;
+}
+
 .profile-link-list button:first-child {
   border-top: 0;
 }
@@ -866,15 +876,20 @@ button {
 }
 
 .document-status-list article {
-  min-height: 48px;
   border: 1px solid var(--line);
   border-radius: 4px;
   padding: 0 10px;
   background: #f7f4f6;
 }
 
+.document-status-list article strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .document-status-list em {
   justify-self: end;
+  white-space: nowrap;
   border-radius: 2px;
   padding: 4px 8px;
   font-style: normal;
