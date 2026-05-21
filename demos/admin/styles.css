@@ -22,13 +22,11 @@
 }
 
 body {
-  min-width: 1180px;
+  min-width: 1100px;
+  min-height: 100vh;
   margin: 0;
   color: var(--ink);
-  background:
-    linear-gradient(#d8dde5 1px, transparent 1px),
-    linear-gradient(90deg, #d8dde5 1px, transparent 1px), #f7f4f5;
-  background-size: 24px 24px;
+  background: var(--surface);
 }
 
 body.modal-open {
@@ -84,22 +82,22 @@ td {
 
 .admin-shell {
   display: grid;
-  grid-template-columns: 280px minmax(900px, 1fr);
-  width: min(100%, 1480px);
+  grid-template-columns: clamp(240px, 18vw, 280px) minmax(0, 1fr);
+  width: 100%;
   min-height: 100vh;
-  margin: 0 auto;
-  border: 1px solid var(--line-strong);
-  border-radius: 14px;
-  overflow: hidden;
+  margin: 0;
   background: var(--surface);
 }
 
 .admin-sidebar {
+  position: sticky;
+  top: 0;
   display: flex;
   flex-direction: column;
   gap: 34px;
-  min-height: 100vh;
+  height: 100vh;
   padding: 24px 18px;
+  overflow-y: auto;
   border-right: 1px solid var(--line-strong);
   background: #f7f5f6;
 }
@@ -184,6 +182,8 @@ td {
 
 .admin-main {
   min-width: 0;
+  min-height: 100vh;
+  background: var(--surface);
 }
 
 .admin-view {
@@ -191,7 +191,9 @@ td {
 }
 
 .admin-view.is-active {
-  display: block;
+  display: grid;
+  min-height: 100vh;
+  grid-template-rows: auto 1fr;
 }
 
 .page-header {
@@ -229,11 +231,12 @@ td {
 }
 
 .page-content {
-  padding: 28px;
+  width: 100%;
+  padding: clamp(20px, 2vw, 32px);
 }
 
 .narrow-page {
-  max-width: 1070px;
+  max-width: none;
 }
 
 .dashboard-content {
@@ -261,8 +264,8 @@ td {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(640px, 1fr) 370px;
-  gap: 28px;
+  grid-template-columns: minmax(620px, 1fr) minmax(320px, 0.42fr);
+  gap: clamp(20px, 2vw, 32px);
   align-items: start;
 }
 
@@ -342,8 +345,8 @@ td {
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 28px;
-  padding: 28px 30px;
+  gap: clamp(14px, 1.5vw, 28px);
+  padding: clamp(20px, 2vw, 30px);
 }
 
 .metric-card {
@@ -511,8 +514,8 @@ td {
 .stage-list {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 28px;
-  padding: 30px;
+  gap: clamp(16px, 2vw, 28px);
+  padding: clamp(20px, 2vw, 30px);
 }
 
 .stage-list small,
@@ -565,8 +568,8 @@ td {
 
 .weather-layout {
   display: grid;
-  grid-template-columns: minmax(650px, 1fr) 370px;
-  gap: 28px;
+  grid-template-columns: minmax(620px, 1fr) minmax(320px, 0.42fr);
+  gap: clamp(20px, 2vw, 32px);
 }
 
 .title-row {
@@ -735,7 +738,7 @@ td {
 
 .station-grid {
   display: grid;
-  grid-template-columns: minmax(420px, 1fr) 230px;
+  grid-template-columns: minmax(420px, 1fr) minmax(230px, 0.34fr);
   gap: 14px;
 }
 
@@ -820,6 +823,7 @@ td {
 }
 
 .schedule-board {
+  min-height: calc(100vh - 76px);
   overflow: auto;
 }
 
@@ -1315,22 +1319,26 @@ td {
   color: var(--green) !important;
 }
 
-@media (max-width: 1240px) {
-  body {
-    min-width: 1100px;
-  }
-
-  .admin-shell {
-    grid-template-columns: 250px minmax(850px, 1fr);
-  }
-
+@media (max-width: 1320px) {
   .dashboard-grid,
   .weather-layout {
     grid-template-columns: 1fr;
   }
 
+  .metric-grid,
+  .weather-current,
+  .stage-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .weather-log-card,
   .threshold-card {
     grid-column: 1;
+  }
+}
+
+@media (max-width: 1240px) {
+  .admin-shell {
+    grid-template-columns: 250px minmax(0, 1fr);
   }
 }
