@@ -1,25 +1,62 @@
 # Agent Guide
 
-이 문서는 Safety Control System Web 작업 방향을 정리합니다. 현재 목표는 실제
-백엔드 연결 전 GitHub Pages에서 확인 가능한 정적 UI 데모를 빠르게 구성하는
-것입니다.
+이 문서는 Safety Control System Web 작업 방향을 정리합니다. 현재 목표는
+GitHub Pages에서 확인하던 정적 UI 데모를 Vite + React + TypeScript +
+Firebase Hosting, Firestore, Storage, Authentication 기반 실사용 구조로
+단계적으로 전환하는 것입니다.
 
 ## Current Direction
 
-- 루트 페이지는 데모 허브입니다.
-- 기능 화면은 `/demos/{demo-name}/` 아래에 독립 데모로 둡니다.
-- Firebase, Google Sheets, 외부 API, 서버, Cloud Functions는 아직 실제 연결하지 않습니다.
-- 인증 코드는 API 어댑터 구조만 준비하고, 기본 실행 모드는 mock으로 둡니다.
-- 데모 데이터는 화면 흐름 확인용 mock 데이터로만 둡니다.
+- Firebase Hosting 배포 대상은 Vite 빌드 결과인 `dist/`입니다.
+- 실제 동작하는 앱은 Vite + React + TypeScript 기준으로 작성하며, 소스는 `src/`
+  아래에 둡니다.
+- 정적 HTML/CSS/JS 데모는 실제 앱 소스가 아니라 UI 참고 원본입니다. 모두
+  `demos/` 아래에 둡니다.
+- 기존 GitHub Pages 비교용 mock 화면은 `/demos/{demo-name}/` 아래에 보존합니다.
+- Firebase 실사용 전환은 Hosting, Auth, Firestore, Storage 순서로 진행합니다.
+- Google Sheets를 브라우저에서 직접 호출하지 않습니다.
+- 실제 운영 데이터는 Firestore와 Storage에 저장하고, 기존 mock 데이터는 전환 중 fallback으로만 유지합니다.
+- 민감 파일 원본은 Storage에 저장하고, Firestore에는 파일 metadata와 상태값만 저장합니다.
 
-## Current Repository State
+## Source Ownership
+
+현재 repo는 정적 데모와 실제 앱을 같은 저장소 안에 함께 둡니다. 단, 역할은
+명확히 분리합니다.
+
+| Path | Role | Edit 기준 |
+| --- | --- | --- |
+| `src/` | 실제 Firebase Hosting에 올라갈 Vite + React + TypeScript 앱 소스 | 신규 기능과 실사용 전환 작업은 여기에서 진행 |
+| `dist/` | `npm run build`로 생성되는 Vite 빌드 결과 | 직접 수정하지 않음, Firebase Hosting 배포 대상 |
+| `demos/` | 기존 HTML/CSS/JS 정적 UI 데모 보존 영역 | UI 비교, 레이아웃 참고, 임시 mock 검증용 |
+| root `index.html` | Vite 앱 진입점 | 데모 허브가 아니라 React 앱 mount 파일 |
+| root config files | Firebase, Vite, TypeScript, 문서 설정 | 배포/빌드/규칙 설정 관리 |
+
+따라서 새 실사용 화면을 만들 때는 `demos/`에 HTML을 추가하는 방식이 아니라
+`src/pages/`, `src/features/`, `src/data/`, `src/styles/`를 기준으로 작업합니다.
+`demos/`의 파일은 안정화된 UI를 React로 옮길 때 참고하는 원본으로 유지합니다.
+
+## Repository Structure Guide
 
 ```text
 Safety-Control-System-Web-/
 ├─ index.html
-├─ styles.css
 ├─ README.md
 ├─ GUIDE.md
+├─ FIREBASE_SETUP.md
+├─ firebase.json
+├─ firestore.rules
+├─ firestore.indexes.json
+├─ storage.rules
+├─ package.json
+├─ vite.config.ts
+├─ tsconfig.json
+├─ src/
+│  ├─ App.tsx
+│  ├─ main.tsx
+│  ├─ pages/
+│  ├─ features/
+│  ├─ data/
+│  └─ styles/
 └─ demos/
    ├─ login/
    ├─ shared/
@@ -29,9 +66,19 @@ Safety-Control-System-Web-/
    └─ payroll-documents/
 ```
 
+위 구조는 앞으로 유지할 기준입니다. `src/`는 Firebase Hosting에 올라갈 React 앱
+소스입니다. `dist/`는 빌드 결과이며 배포 대상입니다. `demos/`는 기존 GitHub
+Pages mock 데모를 보존하는 비교용 폴더입니다. 루트 `index.html`은 React 앱
+진입점이므로 데모 허브 역할을 하지 않습니다.
+
 ## Dashboard Demo Status
 
-경로:
+운영 경로:
+
+- source: `src/pages/DashboardPage.tsx`
+- Firebase Hosting: `/dashboard/`
+
+데모 보존 경로:
 
 - local: `demos/dashboard/index.html`
 - Pages: `https://harrypark9494.github.io/Safety-Control-System-Web-/demos/dashboard/`
@@ -48,7 +95,7 @@ Safety-Control-System-Web-/
 
 현재 날씨 데이터 구조:
 
-- `demos/dashboard/weather-api.js`가 기상청 mock 원천값, 현장 보정 프로필, 위험 기준을 관리합니다.
+- `src/data/demoData.ts`가 React 전환 단계의 mock 데이터를 관리합니다.
 - `dashboard-data.js`는 `buildDashboardWeather()` 결과를 워터밤 행사 mock 데이터와 합쳐 하단 탭 화면에 전달합니다.
 - 실제 기상청 API 연결 시에는 `weather-api.js`의 `mockKmaForecastResponse`를 API 응답 어댑터로 교체합니다.
 - 특보는 일반 날씨 예보와 같은 값으로 섞지 않고 별도 채널에서 받은 뒤, 위험 등급 상향 조건으로만 합산합니다.
@@ -56,7 +103,12 @@ Safety-Control-System-Web-/
 
 ## Payroll Document Submission Demo Status
 
-경로:
+운영 경로:
+
+- source: `src/pages/PayrollDocumentsPage.tsx`
+- Firebase Hosting: `/payroll-documents/`
+
+데모 보존 경로:
 
 - local: `demos/payroll-documents/index.html`
 - Pages: `https://harrypark9494.github.io/Safety-Control-System-Web-/demos/payroll-documents/`
@@ -77,15 +129,15 @@ Safety-Control-System-Web-/
 
 현재 구현 방식:
 
-- 급여 서류 대상자 판별은 `demos/shared/auth/auth-config.js`의
-  `payrollDocumentRequiredWorkTypes` mock 설정으로 처리합니다.
+- 급여 서류 대상자 판별은 `src/features/auth/session.ts`의 mock 세션
+  어댑터로 처리합니다.
 - 현재 mock 고용 유형은 `직접 고용`, `외부 고용` 두 가지이며, `직접 고용`
   계정만 급여 정보 등록 화면으로 이동합니다.
 - 제출 완료 여부는 GitHub Pages 정적 데모에 맞춰 브라우저 `localStorage`에 저장합니다.
-- 데모 허브에서 급여 정보 등록 화면으로 바로 진입할 때는 `?demo=1` 쿼리로
+- 급여 정보 등록 화면으로 바로 진입할 때는 `?demo=1` 쿼리로
   mock 사용자 세션을 준비해 GitHub Pages의 새 브라우저 저장소에서도 첫 화면을
   확인할 수 있게 합니다.
-- 대시보드에 직접 접근해도 미제출 대상자이면 `demos/payroll-documents/`로 다시 보냅니다.
+- 대시보드에 직접 접근해도 미제출 대상자이면 `/payroll-documents/`로 다시 보냅니다.
 - 현재 데모에서는 텍스트 입력값과 파일명/크기/형식만 제출 기록에 저장합니다.
 - 데모 재테스트나 재제출이 필요하면 대시보드 프로필 탭의 `급여 서류 재제출`을 누릅니다.
 
@@ -134,7 +186,12 @@ Safety-Control-System-Web-/
 
 ## Admin Desktop Demo Status
 
-경로:
+운영 경로:
+
+- source: `src/pages/AdminPage.tsx`
+- Firebase Hosting: `/admin/`
+
+데모 보존 경로:
 
 - local: `demos/admin/index.html`
 - Pages: `https://harrypark9494.github.io/Safety-Control-System-Web-/demos/admin/`
@@ -157,8 +214,8 @@ Safety-Control-System-Web-/
 
 현재 구현 방식:
 
-- `demos/admin/app.js`에서 사이드바 메뉴 전환과 어드민 계정 추가 모달만 처리합니다.
-- 모든 데이터는 HTML에 포함된 mock 데이터입니다.
+- `src/pages/AdminPage.tsx`에서 사이드바 메뉴 전환과 관리자 화면 골격을 처리합니다.
+- 모든 데이터는 React 전환 단계의 mock 데이터입니다.
 - 관리자 화면은 모바일보다 데스크탑 운영 환경을 우선 기준으로 구성합니다.
 
 권장 로그인 응답 필드:
@@ -175,11 +232,10 @@ retentionUntil
 deletedAt
 ```
 
-실제 업로드 API를 붙일 때는 `auth-config.js`의
-`endpoints.submitPayrollDocuments` 값을 사용하고, 파일은 브라우저에서 Google
-Sheets로 직접 보내지 않습니다. Firebase Storage, Cloud Functions, Apps Script
-등 서버 측 경계를 둔 후 Sheets에는 파일 URL이나 상태값만 기록하는 방향을
-기본값으로 둡니다.
+실제 Firebase 전환 시 파일은 Storage의 `payroll/{workerId}/...` 경로에 저장하고,
+Firestore `payrollDocuments/{workerId}` 문서에는 제출 상태와 파일 metadata만
+저장합니다. Google Sheets로 직접 보내지 않습니다.
+초기 보안 기준은 `firestore.rules`, `storage.rules`에 둡니다.
 
 ## HTML/CSS Structure Guide
 
@@ -225,24 +281,33 @@ CSS 작성 기준:
 - 새 대시보드 섹션은 기본적으로 `app-card`를 붙이고, 제목 줄은 가능하면
   `section-title-row` 구조를 재사용합니다.
 
+## Firebase Transition Files
+
+- `firebase.json`: `dist/` Hosting, Firestore rules, Storage rules 배포 설정
+- `firestore.rules`: 관리자/근로자/급여 서류 접근 제어 초안
+- `storage.rules`: 급여 파일 업로드 경로와 파일 제한 초안
+- `firestore.indexes.json`: Firestore 인덱스 placeholder
+- `FIREBASE_SETUP.md`: Firebase 실사용 전환 준비 문서
+
 ## Non-Negotiable Rules
 
-- Firebase Emulator를 실행하지 않습니다.
-- Firebase SDK를 설치하거나 import하지 않습니다.
 - Google Sheets API를 브라우저에서 직접 호출하지 않습니다.
 - 외부 날씨 API를 호출하지 않습니다.
 - 기상 특보 데이터를 일반 예보 mock에 직접 섞지 않습니다.
-- 실제 API URL이 정해지기 전까지 `auth-config.js`의 기본 모드는 `mock`으로 유지합니다.
-- 서버나 백엔드 라우터를 만들지 않습니다.
+- Firebase 프로젝트 ID와 Web App config는 공개 repo에 실서비스 값을 직접 박지 않습니다.
+- Firebase SDK 연동은 mock fallback을 유지한 채 단계적으로 적용합니다.
+- Cloud Functions가 필요해지기 전까지 브라우저가 직접 민감 외부 API나 Google Sheets를 호출하지 않습니다.
 - 실제 개인정보처럼 보이는 데이터는 넣지 않습니다.
 - 급여/세무 서류 제출 데모에서도 실제 주민등록번호, 계좌번호, 신분증 이미지,
   통장 이미지, 실명 기반 파일명을 넣지 않습니다.
-- 새 데모를 만들면 루트 `index.html` 링크와 `README.md` 데모 표를 함께 갱신합니다.
+- 새 정적 데모를 만들면 `README.md` 데모 표를 함께 갱신합니다.
+- 새 실사용 화면을 만들면 `src/App.tsx` 라우팅과 관련 `src/pages/` 파일을 함께 갱신합니다.
 
 ## Suggested Next Work
 
-1. 로그인 성공 후 어느 대시보드로 이동할지 역할별 목적지를 확정합니다.
-2. 일반 사용자 대시보드와 관리자 대시보드를 분리할지 결정합니다.
-3. 사용자 DB 컬럼, 작업 상태 값, 날씨 위험 등급 기준을 문서화합니다.
-4. 실제 API 연결 단계에서 `dashboard-data.js`를 API 응답 어댑터로 교체합니다.
-5. 실제 API 연결 단계에서 급여 서류 제출 상태를 로그인 API 응답과 제출 API로 교체합니다.
+1. React/TypeScript 앱 빌드를 검증합니다.
+2. Firebase 프로젝트 ID와 Web App config 환경변수 전달 방식을 결정합니다.
+3. Firebase Auth 로그인 방식을 확정합니다.
+4. `workers/{uid}`, `adminUsers/{uid}`, `payrollDocuments/{uid}` 초기 문서 구조를 만듭니다.
+5. 로그인 성공 후 Firestore 사용자 문서를 읽어 역할별 목적지를 결정합니다.
+6. 급여 서류 제출을 Storage 업로드 + Firestore metadata 저장 흐름으로 교체합니다.

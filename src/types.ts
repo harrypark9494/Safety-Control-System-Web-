@@ -1,0 +1,57 @@
+export type UserRole = "worker" | "admin";
+
+export type WorkType = "직접 고용" | "외부 고용";
+
+export type PayrollDocumentStatus =
+  | "missing"
+  | "submitted"
+  | "reviewing"
+  | "approved"
+  | "rejected";
+
+export interface WorkerSession {
+  uid: string;
+  role: "worker";
+  name: string;
+  phone: string;
+  workType: WorkType;
+  team: string;
+  supervisor: string;
+  schedule: string;
+  status: string;
+  payrollDocumentStatus: PayrollDocumentStatus;
+}
+
+export interface AdminSession {
+  uid: string;
+  role: "admin";
+  name: string;
+  email: string;
+}
+
+export type AppSession = WorkerSession | AdminSession;
+
+export interface DemoWorkerAccount {
+  label: string;
+  uid: string;
+  name: string;
+  phone: string;
+  code: string;
+  password: string;
+  workType: WorkType;
+  team: string;
+  supervisor: string;
+  payrollDocumentStatus: PayrollDocumentStatus;
+}
+
+export interface PayrollSubmission {
+  workType: WorkType;
+  residentNumber: string;
+  postcode: string;
+  address: string;
+  addressDetail: string;
+  bankName: string;
+  accountHolder: string;
+  accountNumber: string;
+  submittedAt: string;
+}
