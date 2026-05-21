@@ -1,11 +1,9 @@
 import { FormEvent, useState } from "react";
 import { getSession, markPayrollSubmitted } from "../features/auth/session";
-import type { WorkType } from "../types";
 
 export function PayrollDocumentsPage() {
   const session = getSession();
   const [step, setStep] = useState<"basic" | "documents">("basic");
-  const [workType, setWorkType] = useState<WorkType>("직접 고용");
   const [message, setMessage] = useState("");
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -29,7 +27,6 @@ export function PayrollDocumentsPage() {
             <p className="eyebrow">Payroll / Tax</p>
             <h2>{step === "basic" ? "기본 정보 확인" : "서류 제출"}</h2>
           </div>
-          <span className="status-pill">Firebase Storage 준비</span>
         </div>
 
         <section className="info-strip">
@@ -39,19 +36,12 @@ export function PayrollDocumentsPage() {
           </div>
           <div>
             <small>근무 일정</small>
-            <strong>{session?.role === "worker" ? session.schedule : "DB 근무 일정 연동 예정"}</strong>
+            <strong>{session?.role === "worker" ? session.schedule : "근무 일정 확인 필요"}</strong>
           </div>
         </section>
 
         {step === "basic" ? (
           <div className="form-grid two-col">
-            <label>
-              근무 유형
-              <select value={workType} onChange={(event) => setWorkType(event.target.value as WorkType)} required>
-                <option>직접 고용</option>
-                <option>외부 고용</option>
-              </select>
-            </label>
             <label>
               주민등록번호
               <input placeholder="000000-0000000" required />
