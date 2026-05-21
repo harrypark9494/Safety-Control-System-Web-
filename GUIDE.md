@@ -7,8 +7,8 @@ GitHub Pages에서 확인하던 정적 UI 데모를 Vite + React + TypeScript
 
 ## Current Direction
 
-- 실제 동작하는 앱은 Vite + React + TypeScript 기준으로 작성하며, 소스는 `src/`
-  아래에 둡니다.
+- 실제 동작하는 프론트엔드 앱은 Vite + React + TypeScript 기준으로 작성하며,
+  소스는 `frontend/src/` 아래에 둡니다.
 - 프론트엔드 스택은 Vite + React + TypeScript를 기준으로 합니다.
 - 실제 운영 백엔드는 Java + Spring Boot를 기본 후보로 둡니다.
 - Spring Boot 백엔드는 로그인, 권한, 사용자 연동, DB 접근, 민감 데이터 보호를
@@ -16,7 +16,8 @@ GitHub Pages에서 확인하던 정적 UI 데모를 Vite + React + TypeScript
 - Firebase 관련 파일은 현재 repo에 남아 있는 전환/배포 검토 산출물입니다. 실제
   운영 백엔드가 Spring Boot로 확정되면 Firebase Auth, Firestore, Storage 사용
   여부는 별도 결정하고, 브라우저에서 직접 DB성 데이터를 쓰는 구조는 피합니다.
-- Firebase Hosting을 계속 사용할 경우에도 배포 대상은 Vite 빌드 결과인 `dist/`입니다.
+- Firebase Hosting을 계속 사용할 경우에도 배포 대상은 Vite 빌드 결과인
+  `frontend/dist/`입니다.
 - 정적 HTML/CSS/JS 데모는 실제 앱 소스가 아니라 UI 참고 원본입니다. 모두
   `demos/` 아래에 둡니다.
 - 기존 GitHub Pages 비교용 mock 화면은 `/demos/{demo-name}/` 아래에 보존합니다.
@@ -33,14 +34,16 @@ GitHub Pages에서 확인하던 정적 UI 데모를 Vite + React + TypeScript
 
 | Path | Role | Edit 기준 |
 | --- | --- | --- |
-| `src/` | 실제 Firebase Hosting에 올라갈 Vite + React + TypeScript 앱 소스 | 신규 기능과 실사용 전환 작업은 여기에서 진행 |
-| `dist/` | `npm run build`로 생성되는 Vite 빌드 결과 | 직접 수정하지 않음, Firebase Hosting 배포 대상 |
+| `frontend/src/` | 실제 Firebase Hosting에 올라갈 Vite + React + TypeScript 앱 소스 | 신규 기능과 실사용 전환 작업은 여기에서 진행 |
+| `frontend/dist/` | `frontend`에서 `npm run build`로 생성되는 Vite 빌드 결과 | 직접 수정하지 않음, Firebase Hosting 배포 대상 |
+| `backend/` | Spring Boot 백엔드 작업 영역 | API, 인증, 권한, DB 접근, 민감 데이터 보호 담당 |
 | `demos/` | 기존 HTML/CSS/JS 정적 UI 데모 보존 영역 | UI 비교, 레이아웃 참고, 임시 mock 검증용 |
-| root `index.html` | Vite 앱 진입점 | 데모 허브가 아니라 React 앱 mount 파일 |
-| root config files | Firebase, Vite, TypeScript, 문서 설정 | 배포/빌드/규칙 설정 관리 |
+| `frontend/index.html` | Vite 앱 진입점 | 데모 허브가 아니라 React 앱 mount 파일 |
+| root config files | Firebase, 문서, 공통 규칙 설정 | 배포/규칙/프로젝트 방향 관리 |
 
 따라서 새 실사용 화면을 만들 때는 `demos/`에 HTML을 추가하는 방식이 아니라
-`src/pages/`, `src/features/`, `src/data/`, `src/styles/`를 기준으로 작업합니다.
+`frontend/src/pages/`, `frontend/src/features/`, `frontend/src/data/`,
+`frontend/src/styles/`를 기준으로 작업합니다.
 `demos/`의 파일은 안정화된 UI를 React로 옮길 때 참고하는 원본으로 유지합니다.
 
 ## Login-First Development Roadmap
@@ -144,7 +147,6 @@ DB 누수를 막기 위한 기본 원칙:
 
 ```text
 Safety-Control-System-Web-/
-├─ index.html
 ├─ README.md
 ├─ GUIDE.md
 ├─ FIREBASE_SETUP.md
@@ -152,16 +154,20 @@ Safety-Control-System-Web-/
 ├─ firestore.rules
 ├─ firestore.indexes.json
 ├─ storage.rules
-├─ package.json
-├─ vite.config.ts
-├─ tsconfig.json
-├─ src/
-│  ├─ App.tsx
-│  ├─ main.tsx
-│  ├─ pages/
-│  ├─ features/
-│  ├─ data/
-│  └─ styles/
+├─ frontend/
+│  ├─ index.html
+│  ├─ package.json
+│  ├─ vite.config.ts
+│  ├─ tsconfig.json
+│  └─ src/
+│     ├─ App.tsx
+│     ├─ main.tsx
+│     ├─ pages/
+│     ├─ features/
+│     ├─ data/
+│     └─ styles/
+├─ backend/
+│  └─ README.md
 └─ demos/
    ├─ login/
    ├─ shared/
@@ -171,17 +177,18 @@ Safety-Control-System-Web-/
    └─ payroll-documents/
 ```
 
-위 구조는 앞으로 유지할 기준입니다. `src/`는 Firebase Hosting에 올라갈 React 앱
-소스입니다. `dist/`는 빌드 결과이며 배포 대상입니다. `demos/`는 기존 GitHub
-Pages mock 데모를 보존하는 비교용 폴더입니다. 루트 `index.html`은 React 앱
+위 구조는 앞으로 유지할 기준입니다. `frontend/src/`는 Firebase Hosting에 올라갈
+React 앱 소스입니다. `frontend/dist/`는 빌드 결과이며 배포 대상입니다.
+`backend/`는 Spring Boot 백엔드 작업 영역입니다. `demos/`는 기존 GitHub Pages
+mock 데모를 보존하는 비교용 폴더입니다. `frontend/index.html`은 React 앱
 진입점이므로 데모 허브 역할을 하지 않습니다.
 
 ## Dashboard Demo Status
 
 운영 경로:
 
-- source: `src/pages/DashboardPage.tsx`
-- Firebase Hosting: `/dashboard/`
+- source: `frontend/src/pages/DashboardPage.tsx`
+- Firebase Hosting: `/app/` 보안 진입점에서 근로자 세션 상태에 따라 표시
 
 데모 보존 경로:
 
@@ -200,7 +207,7 @@ Pages mock 데모를 보존하는 비교용 폴더입니다. 루트 `index.html`
 
 현재 날씨 데이터 구조:
 
-- `src/data/demoData.ts`가 React 전환 단계의 mock 데이터를 관리합니다.
+- `frontend/src/data/demoData.ts`가 React 전환 단계의 mock 데이터를 관리합니다.
 - `dashboard-data.js`는 `buildDashboardWeather()` 결과를 워터밤 행사 mock 데이터와 합쳐 하단 탭 화면에 전달합니다.
 - 실제 기상청 API 연결 시에는 `weather-api.js`의 `mockKmaForecastResponse`를 API 응답 어댑터로 교체합니다.
 - 특보는 일반 날씨 예보와 같은 값으로 섞지 않고 별도 채널에서 받은 뒤, 위험 등급 상향 조건으로만 합산합니다.
@@ -210,8 +217,8 @@ Pages mock 데모를 보존하는 비교용 폴더입니다. 루트 `index.html`
 
 운영 경로:
 
-- source: `src/pages/PayrollDocumentsPage.tsx`
-- Firebase Hosting: `/payroll-documents/`
+- source: `frontend/src/pages/PayrollDocumentsPage.tsx`
+- Firebase Hosting: `/app/` 보안 진입점에서 급여 서류 제출 대상자에게 표시
 
 데모 보존 경로:
 
@@ -234,15 +241,15 @@ Pages mock 데모를 보존하는 비교용 폴더입니다. 루트 `index.html`
 
 현재 구현 방식:
 
-- 급여 서류 대상자 판별은 `src/features/auth/session.ts`의 mock 세션
+- 급여 서류 대상자 판별은 `frontend/src/features/auth/session.ts`의 mock 세션
   어댑터로 처리합니다.
 - 현재 mock 고용 유형은 `직접 고용`, `외부 고용` 두 가지이며, `직접 고용`
   계정만 급여 정보 등록 화면으로 이동합니다.
 - 제출 완료 여부는 GitHub Pages 정적 데모에 맞춰 브라우저 `localStorage`에 저장합니다.
-- 급여 정보 등록 화면으로 바로 진입할 때는 `?demo=1` 쿼리로
-  mock 사용자 세션을 준비해 GitHub Pages의 새 브라우저 저장소에서도 첫 화면을
-  확인할 수 있게 합니다.
-- 대시보드에 직접 접근해도 미제출 대상자이면 `/payroll-documents/`로 다시 보냅니다.
+- 로그인 이후 화면은 URL에 `/dashboard/`, `/payroll-documents/`, `/admin/`을
+  직접 노출하지 않고 `/app/` 보안 진입점에서 세션 상태에 따라 분기합니다.
+- 대시보드 표시 대상이어도 미제출 대상자이면 `/app/` 안에서 급여 서류 제출
+  화면을 먼저 표시합니다.
 - 현재 데모에서는 텍스트 입력값과 파일명/크기/형식만 제출 기록에 저장합니다.
 - 데모 재테스트나 재제출이 필요하면 대시보드 프로필 탭의 `급여 서류 재제출`을 누릅니다.
 
@@ -293,8 +300,8 @@ Pages mock 데모를 보존하는 비교용 폴더입니다. 루트 `index.html`
 
 운영 경로:
 
-- source: `src/pages/AdminPage.tsx`
-- Firebase Hosting: `/admin/`
+- source: `frontend/src/pages/AdminPage.tsx`
+- Firebase Hosting: `/app/` 보안 진입점에서 관리자 세션 상태에 따라 표시
 
 데모 보존 경로:
 
@@ -319,7 +326,7 @@ Pages mock 데모를 보존하는 비교용 폴더입니다. 루트 `index.html`
 
 현재 구현 방식:
 
-- `src/pages/AdminPage.tsx`에서 사이드바 메뉴 전환과 관리자 화면 골격을 처리합니다.
+- `frontend/src/pages/AdminPage.tsx`에서 사이드바 메뉴 전환과 관리자 화면 골격을 처리합니다.
 - 모든 데이터는 React 전환 단계의 mock 데이터입니다.
 - 관리자 화면은 모바일보다 데스크탑 운영 환경을 우선 기준으로 구성합니다.
 
@@ -392,7 +399,7 @@ CSS 작성 기준:
 백엔드가 실제 운영 방향으로 확정되면, Firebase를 Hosting 용도로만 남길지,
 Auth/Firestore/Storage까지 사용할지 별도 결정합니다.
 
-- `firebase.json`: `dist/` Hosting, Firestore rules, Storage rules 배포 설정
+- `firebase.json`: `frontend/dist/` Hosting, Firestore rules, Storage rules 배포 설정
 - `firestore.rules`: 관리자/근로자/급여 서류 접근 제어 초안
 - `storage.rules`: 급여 파일 업로드 경로와 파일 제한 초안
 - `firestore.indexes.json`: Firestore 인덱스 placeholder
@@ -412,7 +419,8 @@ Auth/Firestore/Storage까지 사용할지 별도 결정합니다.
 - 급여/세무 서류 제출 데모에서도 실제 주민등록번호, 계좌번호, 신분증 이미지,
   통장 이미지, 실명 기반 파일명을 넣지 않습니다.
 - 새 정적 데모를 만들면 `README.md` 데모 표를 함께 갱신합니다.
-- 새 실사용 화면을 만들면 `src/App.tsx` 라우팅과 관련 `src/pages/` 파일을 함께 갱신합니다.
+- 새 실사용 화면을 만들면 `frontend/src/App.tsx` 라우팅과 관련
+  `frontend/src/pages/` 파일을 함께 갱신합니다.
 
 ## Suggested Next Work
 
