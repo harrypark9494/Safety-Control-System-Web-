@@ -30,6 +30,13 @@ ui-debug.log*
 dist/
 build/
 coverage/
+*.tsbuildinfo
+target/
+.gradle/
+out/
+
+# Vite local cache
+.vite/
 
 # Firebase local cache
 .firebase/

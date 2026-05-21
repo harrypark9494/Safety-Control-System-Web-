@@ -45,11 +45,25 @@ export function findDemoWorker(phone: string): DemoWorkerAccount | undefined {
   return demoWorkers.find((worker) => worker.phone === phone);
 }
 
-export function signInDemoWorker(phone: string, code: string, password: string): WorkerSession {
+export function signInDemoWorker(
+  phone: string,
+  code: string,
+  password: string,
+  name?: string,
+  workType?: DemoWorkerAccount["workType"],
+): WorkerSession {
   const worker = findDemoWorker(phone);
 
   if (!worker) {
     throw new Error("등록된 작업자를 찾을 수 없습니다.");
+  }
+
+  if (name && worker.name !== name.trim()) {
+    throw new Error("등록된 이름과 연락처가 일치하지 않습니다.");
+  }
+
+  if (workType && worker.workType !== workType) {
+    throw new Error("선택한 고용 유형과 등록 계정이 일치하지 않습니다.");
   }
 
   if (code !== worker.code) {
