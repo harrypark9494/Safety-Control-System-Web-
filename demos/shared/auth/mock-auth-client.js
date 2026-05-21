@@ -32,19 +32,13 @@ function createMockAuthClient(config = SAFETY_CONTROL_AUTH_CONFIG) {
 
   function validateCode(code) {
     if (code !== "123456") {
-      throw new Error("mock 인증 코드는 123456입니다.");
+      throw new Error("인증 코드가 일치하지 않습니다.");
     }
   }
 
   function validatePassword(password) {
     if (!password || password.length < 8) {
       throw new Error("비밀번호는 8자 이상으로 입력하세요.");
-    }
-  }
-
-  function validateWorkTypeSelection(worker, selectedWorkType) {
-    if (selectedWorkType !== worker.workType) {
-      throw new Error("DB에 등록된 고용 유형과 선택값이 일치하지 않습니다.");
     }
   }
 
@@ -78,28 +72,26 @@ function createMockAuthClient(config = SAFETY_CONTROL_AUTH_CONFIG) {
       }
 
       return {
-        delivery: "mock",
         maskedPhone: phone.replace(/\d(?=\d{4})/g, "*"),
       };
     },
 
-    async registerWorker({ phone, code, password, workType }) {
+    async registerWorker({ phone, code, password }) {
       await wait();
 
-      if (!phone || !code || !password || !workType) {
-        throw new Error("연락처, 근무 유형, 인증 코드, 비밀번호를 모두 입력하세요.");
+      if (!phone || !code || !password) {
+        throw new Error("연락처, 인증 코드, 비밀번호를 모두 입력하세요.");
       }
 
       const normalizedPhone = normalizePhone(phone);
       const worker = registeredWorkers.get(normalizedPhone);
 
       if (!worker) {
-        throw new Error("DB에 등록된 사용자가 아닙니다.");
+        throw new Error("등록된 사용자가 아닙니다.");
       }
 
       validateCode(code);
       validatePassword(password);
-      validateWorkTypeSelection(worker, workType);
 
       worker.password = password;
 
@@ -109,22 +101,22 @@ function createMockAuthClient(config = SAFETY_CONTROL_AUTH_CONFIG) {
       };
     },
 
-    async signInWorker({ name, phone, code, password, workType }) {
+    async signInWorker({ name, phone, code, password }) {
       await wait();
 
-      if (!name || !phone || !code || !password || !workType) {
-        throw new Error("이름, 연락처, 근무 유형, 인증 코드, 비밀번호를 모두 입력하세요.");
+      if (!name || !phone || !code || !password) {
+        throw new Error("이름, 연락처, 인증 코드, 비밀번호를 모두 입력하세요.");
       }
 
       const normalizedPhone = normalizePhone(phone);
       const worker = registeredWorkers.get(normalizedPhone);
 
       if (!worker) {
-        throw new Error("DB에 등록된 사용자가 아닙니다.");
+        throw new Error("등록된 사용자가 아닙니다.");
       }
 
       if (worker.name !== name.trim()) {
-        throw new Error("DB에 등록된 이름과 연락처가 일치하지 않습니다.");
+        throw new Error("등록된 이름과 연락처가 일치하지 않습니다.");
       }
 
       if (!worker.password) {
@@ -132,7 +124,6 @@ function createMockAuthClient(config = SAFETY_CONTROL_AUTH_CONFIG) {
       }
 
       validateCode(code);
-      validateWorkTypeSelection(worker, workType);
 
       if (worker.password !== password) {
         throw new Error("비밀번호가 일치하지 않습니다.");
@@ -145,7 +136,7 @@ function createMockAuthClient(config = SAFETY_CONTROL_AUTH_CONFIG) {
       await wait();
 
       const email = window.prompt(
-        "Mock Google 로그인 이메일을 입력하세요.",
+        "Google 로그인 이메일을 입력하세요.",
         "admin@safetycontrol.local",
       );
 

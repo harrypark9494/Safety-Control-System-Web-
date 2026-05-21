@@ -15,7 +15,6 @@ export function DashboardPage() {
   }
 
   const worker = session?.role === "worker" ? session : null;
-  const documentLabel = worker?.workType === "직접 고용" ? "제출 완료" : "대상 아님";
 
   function logout() {
     clearSession();
@@ -141,15 +140,8 @@ export function DashboardPage() {
               <dt>소속 팀</dt>
               <dd>{worker?.team ?? "인프라팀"}</dd>
             </div>
-            <div>
-              <dt>급여 서류</dt>
-              <dd>{documentLabel}</dd>
-            </div>
           </dl>
         </section>
-        <button className="primary-button" onClick={() => (window.location.href = "/payroll-documents/?demo=1")} type="button">
-          급여 서류 재제출
-        </button>
         <button className="danger-button" onClick={logout} type="button">
           로그아웃
         </button>

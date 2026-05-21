@@ -1,22 +1,30 @@
 # Agent Guide
 
 이 문서는 Safety Control System Web 작업 방향을 정리합니다. 현재 목표는
-GitHub Pages에서 확인하던 정적 UI 데모를 Vite + React + TypeScript +
-Firebase Hosting, Firestore, Storage, Authentication 기반 실사용 구조로
-단계적으로 전환하는 것입니다.
+GitHub Pages에서 확인하던 정적 UI 데모를 Vite + React + TypeScript
+프론트엔드 앱으로 전환하고, 로그인과 대시보드 액션을 mock 기반으로 먼저 검증한 뒤
+실제 운영 백엔드와 데이터베이스를 단계적으로 연결하는 것입니다.
 
 ## Current Direction
 
-- Firebase Hosting 배포 대상은 Vite 빌드 결과인 `dist/`입니다.
 - 실제 동작하는 앱은 Vite + React + TypeScript 기준으로 작성하며, 소스는 `src/`
   아래에 둡니다.
+- 프론트엔드 스택은 Vite + React + TypeScript를 기준으로 합니다.
+- 실제 운영 백엔드는 Java + Spring Boot를 기본 후보로 둡니다.
+- Spring Boot 백엔드는 로그인, 권한, 사용자 연동, DB 접근, 민감 데이터 보호를
+  담당하며, 프론트엔드가 DB나 민감 외부 API에 직접 접근하지 않게 합니다.
+- Firebase 관련 파일은 현재 repo에 남아 있는 전환/배포 검토 산출물입니다. 실제
+  운영 백엔드가 Spring Boot로 확정되면 Firebase Auth, Firestore, Storage 사용
+  여부는 별도 결정하고, 브라우저에서 직접 DB성 데이터를 쓰는 구조는 피합니다.
+- Firebase Hosting을 계속 사용할 경우에도 배포 대상은 Vite 빌드 결과인 `dist/`입니다.
 - 정적 HTML/CSS/JS 데모는 실제 앱 소스가 아니라 UI 참고 원본입니다. 모두
   `demos/` 아래에 둡니다.
 - 기존 GitHub Pages 비교용 mock 화면은 `/demos/{demo-name}/` 아래에 보존합니다.
-- Firebase 실사용 전환은 Hosting, Auth, Firestore, Storage 순서로 진행합니다.
 - Google Sheets를 브라우저에서 직접 호출하지 않습니다.
-- 실제 운영 데이터는 Firestore와 Storage에 저장하고, 기존 mock 데이터는 전환 중 fallback으로만 유지합니다.
-- 민감 파일 원본은 Storage에 저장하고, Firestore에는 파일 metadata와 상태값만 저장합니다.
+- 실제 운영 데이터는 프론트엔드 mock 데이터가 아니라 백엔드 API와 운영 DB를 통해
+  관리합니다.
+- 민감 파일 원본은 프론트엔드 repo나 mock 데이터에 두지 않습니다. 파일 저장소를
+  쓰는 경우에도 백엔드 권한 검사를 통과한 뒤 접근하게 합니다.
 
 ## Source Ownership
 
@@ -34,6 +42,103 @@ Firebase Hosting, Firestore, Storage, Authentication 기반 실사용 구조로
 따라서 새 실사용 화면을 만들 때는 `demos/`에 HTML을 추가하는 방식이 아니라
 `src/pages/`, `src/features/`, `src/data/`, `src/styles/`를 기준으로 작업합니다.
 `demos/`의 파일은 안정화된 UI를 React로 옮길 때 참고하는 원본으로 유지합니다.
+
+## Login-First Development Roadmap
+
+앞으로의 개발은 로그인 시스템을 우선순위 1번으로 두고, 대시보드 클릭 액션은
+mock 기반으로 병행 확인합니다. 실제 DB/API 연결은 로그인 흐름과 권한 구조가
+정리된 뒤 붙입니다.
+
+권장 단계:
+
+1. 로그인 UI와 사용자 흐름을 확정합니다.
+2. 프론트엔드에서 mock 로그인 상태 관리를 구현합니다.
+3. 대시보드 클릭 액션은 mock 데이터로 먼저 확인합니다.
+4. 백엔드 로그인 API 계약을 설계합니다.
+5. Spring Boot 인증과 권한 검사를 연결합니다.
+6. 실제 DB 사용자 테이블과 운영 데이터를 연결합니다.
+
+개발 순서:
+
+```text
+Frontend first
+→ 로그인 화면과 대시보드 액션을 mock으로 검증
+
+Backend next
+→ 로그인 API, 사용자 권한, DB 스키마 설계
+
+Integration
+→ mock auth를 실제 API auth로 교체
+```
+
+로그인에서 먼저 확정할 항목:
+
+- 관리자와 일반 사용자 역할 구분
+- 로그인 성공/실패 상태
+- 세션 또는 토큰 저장 위치
+- 로그인 후 이동 경로
+- 로그아웃 동작
+
+대시보드 클릭 액션에서 먼저 확인할 항목:
+
+- 메뉴 클릭
+- 카드 클릭
+- 상세 패널 열림
+- 상태 변경 버튼
+- 모달 또는 페이지 이동
+
+코드 분리 기준:
+
+```text
+UI component
+→ 화면 표시만 담당
+
+auth service
+→ 로그인 요청과 인증 상태 조율 담당
+
+mock auth adapter
+→ 현재 단계의 가짜 로그인 담당
+
+api auth adapter
+→ 나중에 Spring Boot API 연결 담당
+```
+
+이 구조를 유지하면 현재는 정적 또는 mock 환경에서 UI를 검증하고, 이후
+Spring Boot 백엔드가 준비되면 auth adapter와 API 호출부를 교체해 실제 인증으로
+전환할 수 있습니다.
+
+## Backend Direction
+
+실제 운영, 관리자 시스템, 사용자 연동, DB 보호가 필요한 조건에서는 Java +
+Spring Boot를 기본 백엔드 방향으로 둡니다.
+
+권장 백엔드 책임:
+
+- 로그인 API와 토큰 또는 세션 발급
+- 관리자/일반 사용자 권한 검사
+- 사용자, 현장, 급여 서류, 대시보드 데이터 접근 제어
+- DB 접속 정보와 외부 API 키 보호
+- 민감 정보가 로그, 프론트엔드 번들, 공개 repo에 노출되지 않도록 차단
+- 프론트엔드에 필요한 데이터만 선별해서 API로 전달
+
+권장 운영 구조:
+
+```text
+Frontend: Vite + React + TypeScript
+Backend: Java + Spring Boot
+Auth: Spring Security + JWT 또는 서버 세션
+Database: MySQL 또는 PostgreSQL
+Deploy: 정적 프론트 배포 + Spring Boot API 서버 + private DB
+```
+
+DB 누수를 막기 위한 기본 원칙:
+
+- 브라우저에서 DB에 직접 접근하지 않습니다.
+- 프론트엔드 코드에 DB 주소, DB 계정, 비밀번호, 운영 API key를 넣지 않습니다.
+- 운영 DB는 백엔드 서버에서만 접근하게 합니다.
+- 관리자 API와 일반 사용자 API는 권한 검사를 분리합니다.
+- 로그에는 비밀번호, 토큰, 주민등록번호, 계좌번호, 파일 원본 경로를 남기지 않습니다.
+- mock 데이터에도 실제 개인정보처럼 보이는 값을 넣지 않습니다.
 
 ## Repository Structure Guide
 
@@ -283,6 +388,10 @@ CSS 작성 기준:
 
 ## Firebase Transition Files
 
+아래 파일은 현재 repo에 남아 있는 Firebase 전환 검토 산출물입니다. Spring Boot
+백엔드가 실제 운영 방향으로 확정되면, Firebase를 Hosting 용도로만 남길지,
+Auth/Firestore/Storage까지 사용할지 별도 결정합니다.
+
 - `firebase.json`: `dist/` Hosting, Firestore rules, Storage rules 배포 설정
 - `firestore.rules`: 관리자/근로자/급여 서류 접근 제어 초안
 - `storage.rules`: 급여 파일 업로드 경로와 파일 제한 초안
@@ -295,8 +404,10 @@ CSS 작성 기준:
 - 외부 날씨 API를 호출하지 않습니다.
 - 기상 특보 데이터를 일반 예보 mock에 직접 섞지 않습니다.
 - Firebase 프로젝트 ID와 Web App config는 공개 repo에 실서비스 값을 직접 박지 않습니다.
-- Firebase SDK 연동은 mock fallback을 유지한 채 단계적으로 적용합니다.
+- Firebase SDK 또는 Spring Boot API 연동은 mock fallback을 유지한 채 단계적으로 적용합니다.
 - Cloud Functions가 필요해지기 전까지 브라우저가 직접 민감 외부 API나 Google Sheets를 호출하지 않습니다.
+- 운영 DB는 브라우저에서 직접 접근하지 않습니다.
+- 프론트엔드 번들에 DB 접속 정보, 운영 API key, 관리자 권한 판단 로직을 넣지 않습니다.
 - 실제 개인정보처럼 보이는 데이터는 넣지 않습니다.
 - 급여/세무 서류 제출 데모에서도 실제 주민등록번호, 계좌번호, 신분증 이미지,
   통장 이미지, 실명 기반 파일명을 넣지 않습니다.
@@ -305,9 +416,10 @@ CSS 작성 기준:
 
 ## Suggested Next Work
 
-1. React/TypeScript 앱 빌드를 검증합니다.
-2. Firebase 프로젝트 ID와 Web App config 환경변수 전달 방식을 결정합니다.
-3. Firebase Auth 로그인 방식을 확정합니다.
-4. `workers/{uid}`, `adminUsers/{uid}`, `payrollDocuments/{uid}` 초기 문서 구조를 만듭니다.
-5. 로그인 성공 후 Firestore 사용자 문서를 읽어 역할별 목적지를 결정합니다.
-6. 급여 서류 제출을 Storage 업로드 + Firestore metadata 저장 흐름으로 교체합니다.
+1. React/TypeScript 로그인 화면과 현재 mock 세션 흐름을 점검합니다.
+2. 관리자/일반 사용자 역할, 로그인 성공/실패, 로그아웃, 로그인 후 이동 경로를 확정합니다.
+3. 대시보드에서 우선 확인할 클릭 액션 목록을 정하고 mock 데이터로 연결합니다.
+4. Spring Boot 기준 로그인 API 계약 초안을 작성합니다.
+5. 사용자/관리자/급여 서류/대시보드 데이터의 초기 DB 테이블 또는 ERD를 설계합니다.
+6. mock auth adapter를 유지한 상태에서 api auth adapter가 Spring Boot API를 호출하도록 전환합니다.
+7. 운영 DB와 파일 저장소는 백엔드 권한 검사를 통과한 경로로만 연결합니다.

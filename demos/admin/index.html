@@ -360,7 +360,7 @@
                 <tr><td>◎ <strong>super_admin</strong></td><td>관리자 A</td><td>2024-01-15</td><td><em>전체 권한</em></td><td>✎ 🗑</td></tr>
                 <tr><td>◎ <strong>ops_manager_01</strong></td><td>관리자 B</td><td>2024-03-22</td><td><em class="blue">운영 권한</em></td><td>✎ 🗑</td></tr>
                 <tr><td>◎ <strong>safety_inspector_01</strong></td><td>관리자 C</td><td>2024-05-10</td><td><em class="blue">안전 조회</em></td><td>✎ 🗑</td></tr>
-                <tr><td>◎ <strong>staff_admin_temp</strong></td><td>관리자 D</td><td>2024-06-02</td><td><em class="gray">임시 권한</em></td><td>✎ 🗑</td></tr>
+                <tr><td>◎ <strong>staff_admin_ops</strong></td><td>관리자 D</td><td>2024-06-02</td><td><em class="gray">운영 권한</em></td><td>✎ 🗑</td></tr>
               </tbody></table>
             </section>
           </div>
@@ -377,9 +377,9 @@
         <form class="account-form" id="admin-account-form">
           <div class="modal-body">
             <label>이름<input name="name" placeholder="예: 관리자 E" autocomplete="off" required /></label>
-            <label>아이디<input name="accountId" placeholder="예: admin_demo_05" autocomplete="off" required /></label>
+            <label>아이디<input name="accountId" placeholder="예: admin_ops_05" autocomplete="off" required /></label>
             <label>비밀번호<span><input name="password" type="password" placeholder="초기 비밀번호 입력" autocomplete="new-password" required /><button type="button" data-password-toggle aria-label="비밀번호 보기">◉</button></span></label>
-            <label>권한 설정<select name="role"><option>전체 권한</option><option>운영 권한</option><option>안전 조회</option><option>임시 권한</option></select></label>
+            <label>권한 설정<select name="role"><option>전체 권한</option><option>운영 권한</option><option>안전 조회</option><option>현장 조회</option></select></label>
             <p>ⓘ 계정 등록 후 초기 비밀번호는 시스템 보안 정책에 따라 즉시 변경을 권장합니다.</p>
             <strong class="modal-message" role="status" aria-live="polite"></strong>
           </div>

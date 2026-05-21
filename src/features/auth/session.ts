@@ -53,7 +53,7 @@ export function signInDemoWorker(phone: string, code: string, password: string):
   }
 
   if (code !== worker.code) {
-    throw new Error("mock 인증 코드는 123456입니다.");
+    throw new Error("인증 코드가 일치하지 않습니다.");
   }
 
   if (password !== worker.password) {

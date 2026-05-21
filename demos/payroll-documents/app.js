@@ -2,7 +2,6 @@ const dashboardPath = "../dashboard/";
 const loginPath = "../login/";
 const form = document.querySelector("#documents-form");
 const message = document.querySelector("#documents-message");
-const workTypeSelect = document.querySelector("#work-type");
 const residentNumberInput = document.querySelector("#resident-number");
 const bankNameInput = document.querySelector("#bank-name");
 const bankListToggle = document.querySelector("#bank-list-toggle");
@@ -17,7 +16,6 @@ const stepIndicators = {
   document: document.querySelector("#document-step-indicator"),
 };
 const basicStepFields = [
-  "#work-type",
   "#resident-number",
   "#postcode",
   "#address",
@@ -126,17 +124,6 @@ function saveWorkerSession(user) {
   window.sessionStorage.setItem("safetyControlUser", JSON.stringify(user));
 }
 
-function renderWorkTypeOptions(worker) {
-  SAFETY_CONTROL_AUTH_CONFIG.workTypeOptions.forEach((workType) => {
-    const option = document.createElement("option");
-    option.value = workType;
-    option.textContent = workType;
-    workTypeSelect.append(option);
-  });
-
-  workTypeSelect.value = worker.workType || "";
-}
-
 function renderBankOptions() {
   bankList.innerHTML = supportedBanks
     .map((bankGroup) => {
@@ -179,8 +166,7 @@ function renderWorker(worker) {
     `${worker.name || "작업자"}님, 안녕하세요.`;
   document.querySelector("#worker-phone").textContent = worker.phone || "-";
   document.querySelector("#worker-schedule").textContent =
-    worker.schedule || "DB 근무 일정 연동 예정";
-  renderWorkTypeOptions(worker);
+    worker.schedule || "근무 일정 확인 필요";
 }
 
 function setStep(stepName) {
@@ -332,7 +318,6 @@ function getFormPayload(idCardFile, bankbookFile) {
   const formData = new FormData(form);
 
   return {
-    workType: formData.get("workType"),
     residentNumber: formData.get("residentNumber"),
     postcode: formData.get("postcode"),
     address: formData.get("address"),
@@ -408,7 +393,7 @@ document.querySelector("#search-address").addEventListener("click", () => {
     document.querySelector("#postcode").value = "00000";
     document.querySelector("#address").value = "서울특별시 00구 00로 00";
     document.querySelector("#address-detail").focus();
-    setMessage("우편번호 스크립트를 불러오지 못해 데모 주소를 입력했습니다.");
+    setMessage("주소를 직접 입력해 주세요.");
     return;
   }
 

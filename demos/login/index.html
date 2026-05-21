@@ -18,7 +18,6 @@
             <p class="eyebrow">Safety Control</p>
             <h2 id="login-title">로그인</h2>
           </div>
-          <span class="status-pill">Mock 인증</span>
         </div>
 
         <div class="tabs" role="tablist" aria-label="로그인 유형">
@@ -40,15 +39,6 @@
             </button>
           </div>
 
-          <aside class="demo-account" aria-label="자동 승인 데모 계정">
-            <div>
-              <strong>자동 승인 데모 계정</strong>
-              <span id="demo-account-summary"></span>
-            </div>
-            <select id="demo-account-select" aria-label="데모 계정 선택"></select>
-            <button class="secondary-button" id="fill-demo-worker" type="button">입력</button>
-          </aside>
-
           <form class="worker-flow active" id="worker-register-form">
             <label>
               연락처
@@ -56,16 +46,9 @@
             </label>
 
             <label>
-              근무 유형
-              <select id="register-work-type" name="workType" required>
-                <option value="">선택하세요</option>
-              </select>
-            </label>
-
-            <label>
               인증 코드
               <div class="code-row">
-                <input id="register-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="mock: 123456" maxlength="6" required />
+                <input id="register-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required />
                 <button class="secondary-button request-code" type="button" data-phone-input="register-phone">코드 요청</button>
               </div>
             </label>
@@ -81,7 +64,7 @@
           <form class="worker-flow" id="worker-login-form" hidden>
             <label>
               이름
-              <input id="login-name" name="name" type="text" autocomplete="name" placeholder="예: 직접 고용 작업자" required />
+              <input id="login-name" name="name" type="text" autocomplete="name" required />
             </label>
 
             <label>
@@ -90,16 +73,9 @@
             </label>
 
             <label>
-              근무 유형
-              <select id="login-work-type" name="workType" required>
-                <option value="">선택하세요</option>
-              </select>
-            </label>
-
-            <label>
               인증 코드
               <div class="code-row">
-                <input id="login-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" placeholder="mock: 123456" maxlength="6" required />
+                <input id="login-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required />
                 <button class="secondary-button request-code" type="button" data-phone-input="login-phone">코드 요청</button>
               </div>
             </label>

@@ -1,5 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
-import { demoWorkers, workTypeOptions } from "../data/demoData";
+import { FormEvent, useState } from "react";
 import {
   requiresPayrollDocuments,
   signInDemoAdmin,
@@ -17,28 +16,11 @@ function formatPhone(value: string): string {
 export function LoginPage() {
   const [tab, setTab] = useState<"worker" | "admin">("worker");
   const [mode, setMode] = useState<"register" | "login">("register");
-  const [selectedPhone, setSelectedPhone] = useState(demoWorkers[0].phone);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [workType, setWorkType] = useState("");
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  const selectedWorker = useMemo(
-    () => demoWorkers.find((worker) => worker.phone === selectedPhone) ?? demoWorkers[0],
-    [selectedPhone],
-  );
-
-  function fillDemoWorker() {
-    setTab("worker");
-    setMode("login");
-    setName(selectedWorker.name);
-    setPhone(selectedWorker.phone);
-    setWorkType(selectedWorker.workType);
-    setCode(selectedWorker.code);
-    setPassword(selectedWorker.password);
-    setMessage(`${selectedWorker.label}이 입력되었습니다.`);
-  }
 
   function submitWorker(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -70,7 +52,6 @@ export function LoginPage() {
             <p className="eyebrow">Safety Control</p>
             <h2>로그인</h2>
           </div>
-          <span className="status-pill">Firebase 전환 준비</span>
         </div>
 
         <div className="segmented">
@@ -93,25 +74,6 @@ export function LoginPage() {
               </button>
             </div>
 
-            <aside className="demo-account">
-              <div>
-                <strong>자동 승인 데모 계정</strong>
-                <span>
-                  {selectedWorker.name} · {selectedWorker.phone} · {selectedWorker.workType} · 코드 {selectedWorker.code}
-                </span>
-              </div>
-              <select value={selectedPhone} onChange={(event) => setSelectedPhone(event.target.value)}>
-                {demoWorkers.map((worker) => (
-                  <option value={worker.phone} key={worker.uid}>
-                    {worker.label}
-                  </option>
-                ))}
-              </select>
-              <button className="secondary-button" onClick={fillDemoWorker} type="button">
-                입력
-              </button>
-            </aside>
-
             <form className="form-grid" onSubmit={submitWorker}>
               {mode === "login" && (
                 <label>
@@ -129,21 +91,10 @@ export function LoginPage() {
                 />
               </label>
               <label>
-                근무 유형
-                <select value={workType} onChange={(event) => setWorkType(event.target.value)} required>
-                  <option value="">선택하세요</option>
-                  {workTypeOptions.map((option) => (
-                    <option value={option} key={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
                 인증 코드
                 <div className="code-row">
-                  <input value={code} onChange={(event) => setCode(event.target.value)} placeholder="mock: 123456" required />
-                  <button className="secondary-button" onClick={() => setMessage("mock 인증 코드를 보냈습니다.")} type="button">
+                  <input value={code} onChange={(event) => setCode(event.target.value)} required />
+                  <button className="secondary-button" onClick={() => setMessage("인증 코드를 보냈습니다.")} type="button">
                     코드 요청
                   </button>
                 </div>

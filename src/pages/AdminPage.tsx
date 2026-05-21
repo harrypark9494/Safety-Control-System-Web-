@@ -72,7 +72,6 @@ export function AdminPage() {
             <section className="app-card admin-panel">
               <div className="section-title-row">
                 <h2>{active}</h2>
-                <span className="status-pill">Firestore 전환 예정</span>
               </div>
               <table>
                 <thead>
@@ -84,8 +83,8 @@ export function AdminPage() {
                 </thead>
                 <tbody>
                   <tr>
-                    <td>{active} mock 데이터</td>
-                    <td>Firebase 연결 준비</td>
+                    <td>{active} 항목</td>
+                    <td>운영 중</td>
                     <td>보기</td>
                   </tr>
                 </tbody>

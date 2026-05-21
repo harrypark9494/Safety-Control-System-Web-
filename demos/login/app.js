@@ -1,6 +1,4 @@
 const authClient = createAuthClient();
-const demoWorkers = authClient.getDemoWorkerAccounts();
-const approvedWorker = authClient.getApprovedWorkerAccount();
 
 const tabs = {
   user: document.querySelector("#user-tab"),
@@ -17,9 +15,6 @@ const workerRegisterForm = document.querySelector("#worker-register-form");
 const workerLoginForm = document.querySelector("#worker-login-form");
 const requestCodeButtons = document.querySelectorAll(".request-code");
 const googleLoginButton = document.querySelector("#google-login");
-const fillDemoWorkerButton = document.querySelector("#fill-demo-worker");
-const demoAccountSelect = document.querySelector("#demo-account-select");
-const demoAccountSummary = document.querySelector("#demo-account-summary");
 const dashboardPath = "../dashboard/";
 const payrollDocumentsPath = "../payroll-documents/";
 const workerModes = {
@@ -30,7 +25,6 @@ const workerFlows = {
   register: workerRegisterForm,
   login: workerLoginForm,
 };
-const workTypeSelects = document.querySelectorAll('select[name="workType"]');
 const phoneInputs = document.querySelectorAll('input[name="phone"]');
 
 function setMessage(text, type = "info") {
@@ -90,40 +84,6 @@ function activateWorkerMode(modeName, options = {}) {
   }
 }
 
-function getSelectedDemoWorker() {
-  return demoWorkers.find((worker) => worker.phone === demoAccountSelect.value) || approvedWorker;
-}
-
-function renderDemoWorkerOptions() {
-  demoWorkers.forEach((worker) => {
-    const option = document.createElement("option");
-    option.value = worker.phone;
-    option.textContent = worker.label || `${worker.name} 계정`;
-    demoAccountSelect.append(option);
-  });
-
-  demoAccountSelect.value = approvedWorker.phone;
-}
-
-function renderDemoAccountSummary(worker = getSelectedDemoWorker()) {
-  demoAccountSummary.textContent = `${worker.name} · ${worker.phone} · ${worker.workType} · 코드 ${worker.code}`;
-}
-
-function fillApprovedWorkerLogin() {
-  const worker = getSelectedDemoWorker();
-
-  activateTab("user");
-  activateWorkerMode("login", { keepMessage: true });
-  document.querySelector("#login-name").value = worker.name;
-  document.querySelector("#login-phone").value = worker.phone;
-  document.querySelector("#login-work-type").value = worker.workType;
-  document.querySelector("#login-code").value = worker.code;
-  document.querySelector("#login-password").value = worker.password;
-  setMessage(
-    `${worker.label || worker.name}이 입력되었습니다. 직접 고용 계정만 급여 정보 등록으로 이동합니다.`,
-  );
-}
-
 function saveWorkerSession(user) {
   window.sessionStorage.setItem("safetyControlUser", JSON.stringify(user));
 }
@@ -141,23 +101,6 @@ function goToNextPage(user) {
   goToDashboard();
 }
 
-function renderWorkTypeOptions() {
-  workTypeSelects.forEach((select) => {
-    SAFETY_CONTROL_AUTH_CONFIG.workTypeOptions.forEach((workType) => {
-      const option = document.createElement("option");
-      option.value = workType;
-      option.textContent = workType;
-      select.append(option);
-    });
-  });
-}
-
-renderWorkTypeOptions();
-renderDemoWorkerOptions();
-document.querySelector("#register-work-type").value = approvedWorker.workType;
-
-renderDemoAccountSummary();
-
 phoneInputs.forEach((input) => {
   input.addEventListener("input", () => {
     input.value = formatPhoneNumber(input.value);
@@ -168,8 +111,6 @@ tabs.user.addEventListener("click", () => activateTab("user"));
 tabs.admin.addEventListener("click", () => activateTab("admin"));
 workerModes.register.addEventListener("click", () => activateWorkerMode("register"));
 workerModes.login.addEventListener("click", () => activateWorkerMode("login"));
-fillDemoWorkerButton.addEventListener("click", fillApprovedWorkerLogin);
-demoAccountSelect.addEventListener("change", () => renderDemoAccountSummary());
 
 requestCodeButtons.forEach((button) => {
   button.addEventListener("click", async () => {
@@ -185,7 +126,7 @@ requestCodeButtons.forEach((button) => {
 
     try {
       const result = await authClient.requestWorkerCode({ phone });
-      setMessage(`${result.maskedPhone} 연락처로 mock 인증 코드를 보냈습니다.`);
+      setMessage(`${result.maskedPhone} 연락처로 인증 코드를 보냈습니다.`);
     } catch (error) {
       setMessage(error.message, "error");
     } finally {
@@ -200,7 +141,7 @@ workerRegisterForm.addEventListener("submit", async (event) => {
   const formData = new FormData(workerRegisterForm);
   const payload = Object.fromEntries(formData.entries());
 
-  setMessage("DB 등록 여부와 인증 코드를 확인하는 중입니다.");
+  setMessage("등록 정보와 인증 코드를 확인하는 중입니다.");
 
   try {
     const user = await authClient.registerWorker(payload);
@@ -232,7 +173,7 @@ workerLoginForm.addEventListener("submit", async (event) => {
 
 googleLoginButton.addEventListener("click", async () => {
   googleLoginButton.disabled = true;
-  setMessage("Mock Google 로그인 흐름을 시작합니다.");
+  setMessage("Google 로그인 흐름을 시작합니다.");
 
   try {
     const admin = await authClient.signInAdminWithGoogle();

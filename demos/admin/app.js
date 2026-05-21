@@ -59,7 +59,7 @@ function getRoleClass(role) {
     return "blue";
   }
 
-  if (role === "임시 권한") {
+  if (role === "현장 조회") {
     return "gray";
   }
 
