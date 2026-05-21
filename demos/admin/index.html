@@ -142,7 +142,7 @@
 
             <section class="app-card stage-card">
               <div class="card-head">
-                <h2><span>▣</span> 근로자 체크리스트 점검</h2>
+                <h2><span>▣</span> 설치 공정률</h2>
               </div>
               <div class="stage-list">
                 <article>
@@ -317,11 +317,11 @@
             <section class="app-card search-card"><input type="search" placeholder="이름 또는 연락처 검색" /><select><option>담당 구역 전체</option></select><button type="button">≡</button></section>
             <section class="app-card workers-table data-table-card">
               <table><thead><tr><th>이름</th><th>연락처</th><th>담당 구역</th><th>관리</th></tr></thead><tbody>
-                <tr><td><span class="avatar">김</span>김민수</td><td>010-1234-5678</td><td><em>Stage Alpha</em></td><td>⋮</td></tr>
-                <tr><td><span class="avatar">이</span>이서연</td><td>010-9876-5432</td><td><em>Stage Bravo</em></td><td>⋮</td></tr>
-                <tr><td><span class="avatar">박</span>박지훈</td><td>010-5566-7788</td><td><em>Main Entry</em></td><td>⋮</td></tr>
-                <tr><td><span class="avatar">최</span>최동욱</td><td>010-2211-3344</td><td><em>VIP Lounge</em></td><td>⋮</td></tr>
-                <tr><td><span class="avatar">한</span>한예슬</td><td>010-4499-0011</td><td><em>Stage Alpha</em></td><td>⋮</td></tr>
+                <tr><td><span class="avatar">A</span>작업자 A</td><td>000-0000-0000</td><td><em>Stage Alpha</em></td><td>⋮</td></tr>
+                <tr><td><span class="avatar">B</span>작업자 B</td><td>000-0000-0000</td><td><em>Stage Bravo</em></td><td>⋮</td></tr>
+                <tr><td><span class="avatar">C</span>작업자 C</td><td>000-0000-0000</td><td><em>Main Entry</em></td><td>⋮</td></tr>
+                <tr><td><span class="avatar">D</span>작업자 D</td><td>000-0000-0000</td><td><em>VIP Lounge</em></td><td>⋮</td></tr>
+                <tr><td><span class="avatar">E</span>작업자 E</td><td>000-0000-0000</td><td><em>Stage Alpha</em></td><td>⋮</td></tr>
               </tbody></table>
               <div class="table-foot"><span>총 128명의 근로자 중 1-5 표시</span><div class="pagination"><button disabled>‹</button><button class="is-active">1</button><button>2</button><button>3</button><span>...</span><button>26</button><button>›</button></div></div>
             </section>
@@ -355,12 +355,12 @@
           <div class="page-content narrow-page">
             <section class="app-card admin-add-card"><div class="card-head"><h2>♙ 어드민 계정 추가</h2></div><button class="dark-button" type="button" data-modal-open>⊕ 어드민 계정 추가하기</button></section>
             <section class="app-card data-table-card admin-table">
-              <div class="section-toolbar"><h2>☰ 현재 등록된 어드민 목록</h2><span class="count-pill">총 4명</span></div>
+              <div class="section-toolbar"><h2>☰ 현재 등록된 어드민 목록</h2><span class="count-pill" data-admin-count>총 4명</span></div>
               <table><thead><tr><th>아이디</th><th>이름</th><th>등록일</th><th>권한</th><th>관리</th></tr></thead><tbody>
-                <tr><td>◎ <strong>super_admin</strong></td><td>박재형</td><td>2024-01-15</td><td><em>전체 권한</em></td><td>✎ 🗑</td></tr>
-                <tr><td>◎ <strong>ops_manager_01</strong></td><td>김민수</td><td>2024-03-22</td><td><em class="blue">운영 권한</em></td><td>✎ 🗑</td></tr>
-                <tr><td>◎ <strong>safety_inspector_01</strong></td><td>이영희</td><td>2024-05-10</td><td><em class="blue">안전 조회</em></td><td>✎ 🗑</td></tr>
-                <tr><td>◎ <strong>staff_admin_temp</strong></td><td>최정윤</td><td>2024-06-02</td><td><em class="gray">임시 권한</em></td><td>✎ 🗑</td></tr>
+                <tr><td>◎ <strong>super_admin</strong></td><td>관리자 A</td><td>2024-01-15</td><td><em>전체 권한</em></td><td>✎ 🗑</td></tr>
+                <tr><td>◎ <strong>ops_manager_01</strong></td><td>관리자 B</td><td>2024-03-22</td><td><em class="blue">운영 권한</em></td><td>✎ 🗑</td></tr>
+                <tr><td>◎ <strong>safety_inspector_01</strong></td><td>관리자 C</td><td>2024-05-10</td><td><em class="blue">안전 조회</em></td><td>✎ 🗑</td></tr>
+                <tr><td>◎ <strong>staff_admin_temp</strong></td><td>관리자 D</td><td>2024-06-02</td><td><em class="gray">임시 권한</em></td><td>✎ 🗑</td></tr>
               </tbody></table>
             </section>
           </div>
@@ -374,17 +374,20 @@
           <h2 id="modal-title">어드민 계정 추가</h2>
           <button type="button" aria-label="닫기" data-modal-close>×</button>
         </header>
-        <div class="modal-body">
-          <label>이름<input placeholder="이름을 입력하세요" /></label>
-          <label>아이디<input placeholder="아이디를 입력하세요" /></label>
-          <label>비밀번호<span><input type="password" value="password" /><button type="button">◉</button></span></label>
-          <label>권한 설정<select><option>전체 권한</option><option>운영 권한</option><option>안전 조회</option></select></label>
-          <p>ⓘ 계정 등록 후 초기 비밀번호는 시스템 보안 정책에 따라 즉시 변경을 권장합니다.</p>
-        </div>
-        <footer>
-          <button class="light-button" type="button" data-modal-close>취소</button>
-          <button class="dark-button" type="button" data-modal-close>등록하기</button>
-        </footer>
+        <form class="account-form" id="admin-account-form">
+          <div class="modal-body">
+            <label>이름<input name="name" placeholder="예: 관리자 E" autocomplete="off" required /></label>
+            <label>아이디<input name="accountId" placeholder="예: admin_demo_05" autocomplete="off" required /></label>
+            <label>비밀번호<span><input name="password" type="password" placeholder="초기 비밀번호 입력" autocomplete="new-password" required /><button type="button" data-password-toggle aria-label="비밀번호 보기">◉</button></span></label>
+            <label>권한 설정<select name="role"><option>전체 권한</option><option>운영 권한</option><option>안전 조회</option><option>임시 권한</option></select></label>
+            <p>ⓘ 계정 등록 후 초기 비밀번호는 시스템 보안 정책에 따라 즉시 변경을 권장합니다.</p>
+            <strong class="modal-message" role="status" aria-live="polite"></strong>
+          </div>
+          <footer>
+            <button class="light-button" type="button" data-modal-close>취소</button>
+            <button class="dark-button" type="submit">등록하기</button>
+          </footer>
+        </form>
       </section>
     </div>
 

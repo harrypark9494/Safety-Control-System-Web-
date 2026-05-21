@@ -101,6 +101,7 @@ button {
   color: var(--navy);
   background: transparent;
   font-size: 1.35rem;
+  line-height: 1;
 }
 
 .header-alert-button {
@@ -150,6 +151,13 @@ button {
   font-weight: 950;
 }
 
+.section-title-row h2 {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
 .date-card {
   display: flex;
   justify-content: space-between;
@@ -173,7 +181,13 @@ button {
 }
 
 .section-title-row h2 span {
-  margin-right: 8px;
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  place-items: center;
+  margin-right: 0;
+  line-height: 1;
 }
 
 .status-pill,
@@ -217,9 +231,13 @@ button {
 }
 
 .mini-rule-list span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
   color: #61748c;
   font-size: 1.2rem;
-  text-align: center;
+  line-height: 1;
 }
 
 .mini-rule-list em {
@@ -232,6 +250,7 @@ button {
   background: var(--green);
   font-style: normal;
   font-size: 0.86rem;
+  line-height: 1;
 }
 
 .outline-action {
@@ -271,6 +290,7 @@ button {
   color: #fff;
   background: var(--navy);
   font-size: 2rem;
+  line-height: 1;
 }
 
 .qr-summary strong,
@@ -356,8 +376,12 @@ button {
 }
 
 .weather-metric span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
   font-size: 1.35rem;
-  text-align: center;
+  line-height: 1;
 }
 
 .weather-metric small {
@@ -692,6 +716,7 @@ button {
   color: #fff;
   background: #182436;
   font-size: 1.35rem;
+  line-height: 1;
 }
 
 .safety-rule-list strong {
@@ -757,6 +782,7 @@ button {
   background: var(--navy);
   text-decoration: none;
   font-size: 1.35rem;
+  line-height: 1;
 }
 
 .emergency-actions {
@@ -795,6 +821,7 @@ button {
   border-radius: 12px;
   background: #ede8eb;
   font-size: 2rem;
+  line-height: 1;
 }
 
 .profile-main strong,
@@ -854,6 +881,16 @@ button {
   background: #fff;
   text-align: left;
   font-weight: 900;
+}
+
+.profile-link-list button > span,
+.settings-link > span,
+.document-status-list article > span {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  line-height: 1;
 }
 
 .document-status-list article {
@@ -952,11 +989,13 @@ button {
 .tab-button {
   display: grid;
   place-items: center;
+  align-content: center;
   gap: 4px;
   color: #6f7480;
   background: transparent;
   font-size: 0.76rem;
   font-weight: 950;
+  line-height: 1;
 }
 
 .tab-button span {
@@ -966,6 +1005,7 @@ button {
   place-items: center;
   border-radius: 10px;
   font-size: 1.35rem;
+  line-height: 1;
 }
 
 .tab-button.is-active {
@@ -1138,6 +1178,7 @@ button {
   border-radius: 4px;
   background: #f0eef1;
   font-size: 1.1rem;
+  line-height: 1;
 }
 
 .notification-item.danger > span {

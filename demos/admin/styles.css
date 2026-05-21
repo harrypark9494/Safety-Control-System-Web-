@@ -46,6 +46,13 @@ button {
   border: 0;
 }
 
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgba(7, 184, 79, 0.34);
+  outline-offset: 2px;
+}
+
 h1,
 h2,
 p {
@@ -275,6 +282,7 @@ td {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
+  flex-wrap: wrap;
 }
 
 .card-head {
@@ -339,6 +347,10 @@ td {
 }
 
 .metric-card {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  align-content: start;
+  gap: 4px 10px;
   min-height: 158px;
   padding: 22px 18px 16px;
   border: 1px solid var(--line);
@@ -354,8 +366,8 @@ td {
 }
 
 .metric-icon {
-  float: left;
-  margin-right: 14px;
+  grid-row: 1 / span 2;
+  margin: 0;
   color: #0e1a2c;
   font-size: 1.25rem;
   font-weight: 950;
@@ -367,8 +379,8 @@ td {
 }
 
 .metric-card strong {
-  clear: both;
-  margin-top: 24px;
+  grid-column: 1 / -1;
+  margin-top: 14px;
   font-size: 1.45rem;
   font-weight: 950;
 }
@@ -379,16 +391,22 @@ td {
 }
 
 .metric-card b {
+  grid-column: 1 / -1;
   margin-top: 4px;
   font-size: 0.78rem;
 }
 
 .metric-card em {
-  margin: -28px 0 8px 76px;
+  grid-column: 1 / -1;
+  margin: 0 0 8px;
   color: #ff1b2a;
   font-style: normal;
   font-size: 0.76rem;
   font-weight: 950;
+}
+
+.metric-card .bar {
+  grid-column: 1 / -1;
 }
 
 .bar {
@@ -568,6 +586,10 @@ td {
 }
 
 .weather-current article {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-content: start;
+  gap: 10px 12px;
   min-height: 134px;
   padding: 20px;
   border: 1px solid var(--line-strong);
@@ -582,18 +604,23 @@ td {
 .weather-current small {
   color: #53647d;
   font-weight: 950;
-  letter-spacing: 0.04em;
+  letter-spacing: 0;
 }
 
 .weather-current strong {
-  margin: 12px 0 34px;
+  grid-column: 1 / -1;
+  margin: 0 0 24px;
   font-size: 1.35rem;
   font-weight: 950;
 }
 
 .weather-current .badge {
-  float: right;
-  margin-top: -4px;
+  justify-self: end;
+  margin-left: auto;
+}
+
+.weather-current .bar {
+  grid-column: 1 / -1;
 }
 
 .forecast-card,
@@ -988,7 +1015,7 @@ td {
 }
 
 .data-table-card {
-  overflow: hidden;
+  overflow-x: auto;
 }
 
 .data-table-card .section-toolbar {
@@ -1016,6 +1043,10 @@ td {
   grid-template-columns: 1fr 170px 44px;
   gap: 16px;
   margin-bottom: 26px;
+}
+
+.rules-page .search-card {
+  grid-template-columns: 1fr 170px 170px;
 }
 
 .search-card button {
@@ -1256,6 +1287,12 @@ td {
   color: #333b49;
   font-size: 0.82rem;
   line-height: 1.55;
+}
+
+.modal-message {
+  min-height: 20px;
+  color: #087c35;
+  font-size: 0.82rem;
 }
 
 .account-modal footer {

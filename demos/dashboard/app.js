@@ -86,7 +86,52 @@ function getDashboardData() {
     return dashboardData;
   }
 
-  return dashboardData;
+  const isPayrollTarget = isPayrollDocumentTarget(savedWorker);
+  const payrollSubmitted = !isPayrollDocumentRequired(savedWorker);
+  const payrollDocuments = isPayrollTarget
+    ? [
+        {
+          icon: "♙",
+          label: "신분증 사본",
+          status: payrollSubmitted ? "제출 완료" : "미제출",
+          tone: payrollSubmitted ? "info" : "danger",
+        },
+        {
+          icon: "▣",
+          label: "통장 사본",
+          status: payrollSubmitted ? "제출 완료" : "미제출",
+          tone: payrollSubmitted ? "info" : "danger",
+        },
+      ]
+    : [
+        {
+          icon: "▣",
+          label: "급여 서류",
+          status: "대상 아님",
+          tone: "info",
+        },
+      ];
+
+  return {
+    ...dashboardData,
+    user: {
+      ...dashboardData.user,
+      name: savedWorker.name || dashboardData.user.name,
+      role: savedWorker.workType || dashboardData.user.role,
+      phone: savedWorker.phone || dashboardData.user.phone,
+      zone: savedWorker.team || dashboardData.user.zone,
+      status: savedWorker.status || dashboardData.user.status,
+    },
+    progress: {
+      ...dashboardData.progress,
+      team: `내 팀: [${savedWorker.team || dashboardData.user.zone}]`,
+    },
+    emergency: {
+      ...dashboardData.emergency,
+      name: savedWorker.supervisor || dashboardData.emergency.name,
+    },
+    documents: payrollDocuments,
+  };
 }
 
 function renderDashboardRules(rules) {
@@ -231,19 +276,21 @@ function renderSafety(data) {
 }
 
 function renderEmergency(emergency) {
+  const phone = emergency.phone || "010-0000-0000";
+
   document.querySelector("#manager-call").innerHTML = `
     <span class="profile-icon" aria-hidden="true">♙</span>
     <div>
       <strong>${escapeHtml(emergency.name)}</strong>
-      <p>010-0000-0000</p>
+      <p>${escapeHtml(phone)}</p>
     </div>
-    <a href="tel:010-0000-0000" aria-label="${escapeHtml(emergency.name)}에게 전화">☎</a>
+    <a href="tel:${escapeHtml(phone)}" aria-label="${escapeHtml(emergency.name)}에게 전화">☎</a>
   `;
 }
 
 function renderProfile(data) {
   setText("#profile-name", data.user.name);
-  setText("#profile-phone", "010-0000-0000");
+  setText("#profile-phone", data.user.phone || "010-0000-0000");
   setText("#profile-zone", data.user.zone);
   setText("#profile-period", data.user.period);
   document.querySelector("#event-link-list").innerHTML = data.eventLinks
@@ -409,6 +456,11 @@ function setupInteractions(data) {
     if (event.key === "Escape") {
       document.querySelectorAll(".modal-backdrop:not([hidden])").forEach(closeModal);
     }
+  });
+
+  document.querySelector("#logout-button").addEventListener("click", () => {
+    window.sessionStorage.removeItem("safetyControlUser");
+    window.location.href = "../login/";
   });
 }
 
