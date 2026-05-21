@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -p tsconfig.json && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:preview": "npm run build && firebase hosting:channel:deploy ui-check --expires 7d --project museon-worker-dashboard"
   },
   "dependencies": {
     "firebase": "^12.0.0",
