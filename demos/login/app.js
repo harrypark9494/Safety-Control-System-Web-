@@ -176,6 +176,10 @@ requestCodeButtons.forEach((button) => {
     const phoneInput = document.querySelector(`#${button.dataset.phoneInput}`);
     const phone = phoneInput.value.trim();
 
+    if (!phoneInput.reportValidity()) {
+      return;
+    }
+
     button.disabled = true;
     setMessage("인증 코드를 요청하는 중입니다.");
 
