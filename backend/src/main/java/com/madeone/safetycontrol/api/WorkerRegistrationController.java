@@ -1,6 +1,7 @@
 package com.madeone.safetycontrol.api;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 
 import com.madeone.safetycontrol.domain.WorkerRegistration;
@@ -13,6 +14,7 @@ import jakarta.validation.constraints.Size;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,8 +32,8 @@ class WorkerRegistrationController {
 	}
 
 	@PostMapping("/api/worker-registrations")
-	RegistrationResponse requestRegistration(@Valid @RequestBody RegistrationRequest request) {
-		return registrations.requestRegistration(request);
+	RegistrationResponse completeOnboarding(@Valid @RequestBody OnboardingRequest request) {
+		return registrations.completeOnboarding(request);
 	}
 
 	@PostMapping("/api/auth/worker-login")
@@ -44,17 +46,26 @@ class WorkerRegistrationController {
 		return registrations.list();
 	}
 
-	@PostMapping("/api/admin/worker-registrations/{phone}/approve")
-	RegistrationResponse approveRegistration(@PathVariable String phone) {
-		return registrations.approve(phone);
+	@PostMapping("/api/admin/worker-registrations")
+	RegistrationResponse createRegistration(@Valid @RequestBody AdminRegistrationRequest request) {
+		return registrations.createRegistration(request);
 	}
 
-	@PostMapping("/api/admin/worker-registrations/{phone}/reject")
-	RegistrationResponse rejectRegistration(@PathVariable String phone) {
-		return registrations.reject(phone);
+	@DeleteMapping("/api/admin/worker-registrations/{phone}")
+	void deleteRegistration(@PathVariable String phone) {
+		registrations.delete(phone);
 	}
 
-	record RegistrationRequest(
+	record AdminRegistrationRequest(
+		@NotBlank String name,
+		@NotBlank String phone,
+		@NotBlank String workType,
+		@NotBlank String team,
+		@NotBlank String supervisor
+	) {
+	}
+
+	record OnboardingRequest(
 		@NotBlank String name,
 		@NotBlank String phone,
 		@NotBlank String code,
@@ -80,9 +91,8 @@ class WorkerRegistrationController {
 		String supervisor,
 		String registrationStatus,
 		String payrollDocumentStatus,
-		Instant requestedAt,
-		Instant approvedAt,
-		Instant rejectedAt
+		Instant registeredAt,
+		Instant onboardedAt
 	) {
 	}
 
@@ -114,72 +124,72 @@ class WorkerRegistrationService {
 	}
 
 	@Transactional
-	WorkerRegistrationController.RegistrationResponse requestRegistration(
-		WorkerRegistrationController.RegistrationRequest request
+	WorkerRegistrationController.RegistrationResponse createRegistration(
+		WorkerRegistrationController.AdminRegistrationRequest request
 	) {
-		WorkerRegistration worker = registrations.findByPhone(request.phone())
+		String phone = normalizePhone(request.phone());
+		String workType = normalizeWorkType(request.workType());
+
+		WorkerRegistration worker = registrations.findByPhone(phone)
 			.map(existing -> {
-				if ("approved".equals(existing.getRegistrationStatus())) {
-					throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 승인된 등록 정보입니다.");
-				}
-				existing.updateRequest(
+				existing.updateRegistration(
 					request.name().trim(),
-					passwordEncoder.encode(request.password()),
-					request.code(),
-					request.workType()
+					workType,
+					request.team().trim(),
+					request.supervisor().trim()
 				);
 				return existing;
 			})
 			.orElseGet(() -> new WorkerRegistration(
 				request.name().trim(),
-				request.phone(),
-				passwordEncoder.encode(request.password()),
-				request.code(),
-				request.workType(),
-				"직접 고용".equals(request.workType()) ? "직접 고용 확인 대기" : "협력사 확인 대기",
-				"관리자 배정 전",
-				"pending",
-				"직접 고용".equals(request.workType()) ? "missing" : "approved"
+				phone,
+				workType,
+				request.team().trim(),
+				request.supervisor().trim(),
+				"직접 고용".equals(workType) ? "missing" : "approved"
 			));
 
 		return toResponse(registrations.save(worker));
 	}
 
+	@Transactional
+	WorkerRegistrationController.RegistrationResponse completeOnboarding(
+		WorkerRegistrationController.OnboardingRequest request
+	) {
+		String workType = normalizeWorkType(request.workType());
+		WorkerRegistration worker = find(request.phone());
+
+		if (!worker.getName().equals(request.name().trim()) || !worker.getWorkType().equals(workType)) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자가 등록한 근로자 정보와 일치하지 않습니다.");
+		}
+
+		worker.completeOnboarding(passwordEncoder.encode(request.password()), request.code().trim());
+		return toResponse(worker);
+	}
+
 	List<WorkerRegistrationController.RegistrationResponse> list() {
-		return registrations.findAllByOrderByRequestedAtDesc().stream()
+		return registrations.findAllByOrderByRegisteredAtDesc().stream()
 			.map(this::toResponse)
 			.toList();
 	}
 
 	@Transactional
-	WorkerRegistrationController.RegistrationResponse approve(String phone) {
+	void delete(String phone) {
 		WorkerRegistration worker = find(phone);
-		worker.approve();
-		return toResponse(worker);
-	}
-
-	@Transactional
-	WorkerRegistrationController.RegistrationResponse reject(String phone) {
-		WorkerRegistration worker = find(phone);
-		worker.reject();
-		return toResponse(worker);
+		registrations.delete(worker);
 	}
 
 	WorkerRegistrationController.WorkerLoginResponse login(WorkerRegistrationController.WorkerLoginRequest request) {
 		WorkerRegistration worker = find(request.phone());
 
+		if (!"onboarded".equals(worker.getRegistrationStatus())) {
+			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "회원가입 절차가 완료되지 않았습니다.");
+		}
+
 		if (!worker.getName().equals(request.name().trim())
 			|| !worker.getVerificationCode().equals(request.code())
 			|| !passwordEncoder.matches(request.password(), worker.getPasswordHash())) {
 			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "등록 정보가 일치하지 않습니다.");
-		}
-
-		if ("pending".equals(worker.getRegistrationStatus())) {
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자 승인 전입니다.");
-		}
-
-		if ("rejected".equals(worker.getRegistrationStatus())) {
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "등록 요청이 반려되었습니다.");
 		}
 
 		return new WorkerRegistrationController.WorkerLoginResponse(
@@ -191,15 +201,39 @@ class WorkerRegistrationService {
 			worker.getTeam(),
 			worker.getSupervisor(),
 			"근무 일정 배정 전",
-			"등록 승인",
+			"온보딩 완료",
 			"직접 고용".equals(worker.getWorkType()) && "missing".equals(worker.getPayrollDocumentStatus()),
 			worker.getPayrollDocumentStatus()
 		);
 	}
 
 	private WorkerRegistration find(String phone) {
-		return registrations.findByPhone(phone)
-			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "등록 정보를 찾을 수 없습니다."));
+		return registrations.findByPhone(normalizePhone(phone))
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "관리자가 등록한 근로자 정보를 찾을 수 없습니다."));
+	}
+
+	private String normalizePhone(String phone) {
+		String digits = phone == null ? "" : phone.replaceAll("\\D", "");
+
+		if (digits.length() == 11) {
+			return digits.substring(0, 3) + "-" + digits.substring(3, 7) + "-" + digits.substring(7);
+		}
+
+		if (digits.length() == 10) {
+			return digits.substring(0, 3) + "-" + digits.substring(3, 6) + "-" + digits.substring(6);
+		}
+
+		throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "연락처는 숫자 10자리 또는 11자리여야 합니다.");
+	}
+
+	private String normalizeWorkType(String workType) {
+		String normalized = workType == null ? "" : workType.trim();
+
+		if (Arrays.asList("직접 고용", "외부 고용").contains(normalized)) {
+			return normalized;
+		}
+
+		throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "지원하지 않는 고용 유형입니다.");
 	}
 
 	private WorkerRegistrationController.RegistrationResponse toResponse(WorkerRegistration worker) {
@@ -212,9 +246,8 @@ class WorkerRegistrationService {
 			worker.getSupervisor(),
 			worker.getRegistrationStatus(),
 			worker.getPayrollDocumentStatus(),
-			worker.getRequestedAt(),
-			worker.getApprovedAt(),
-			worker.getRejectedAt()
+			worker.getRegisteredAt(),
+			worker.getOnboardedAt()
 		);
 	}
 }

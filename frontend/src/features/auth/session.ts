@@ -1,6 +1,8 @@
 import type { AppSession, WorkerRegistrationAccount, WorkerSession, WorkType } from "../../types";
+import { formatPhone } from "../phone";
 
 const SESSION_KEY = "safetyControlSession";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
 type WorkerRegistrationResponse = {
   uid: string;
@@ -11,9 +13,8 @@ type WorkerRegistrationResponse = {
   supervisor: string;
   registrationStatus: WorkerRegistrationAccount["registrationStatus"];
   payrollDocumentStatus: WorkerSession["payrollDocumentStatus"];
-  requestedAt: string;
-  approvedAt?: string;
-  rejectedAt?: string;
+  registeredAt: string;
+  onboardedAt?: string;
 };
 
 type WorkerLoginResponse = WorkerSession & {
@@ -21,17 +22,22 @@ type WorkerLoginResponse = WorkerSession & {
 };
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",
       ...init?.headers,
     },
   });
+  const contentType = response.headers.get("content-type") ?? "";
 
   if (!response.ok) {
     const text = await response.text();
     throw new Error(text || "요청 처리에 실패했습니다.");
+  }
+
+  if (!contentType.includes("application/json")) {
+    throw new Error("API 서버 응답이 JSON이 아닙니다. 백엔드 서버 또는 API 배포 연결을 확인해 주세요.");
   }
 
   return response.json() as Promise<T>;
@@ -47,9 +53,8 @@ function toRegistrationAccount(worker: WorkerRegistrationResponse): WorkerRegist
     supervisor: worker.supervisor,
     registrationStatus: worker.registrationStatus,
     payrollDocumentStatus: worker.payrollDocumentStatus,
-    requestedAt: worker.requestedAt,
-    approvedAt: worker.approvedAt,
-    rejectedAt: worker.rejectedAt,
+    registeredAt: worker.registeredAt,
+    onboardedAt: worker.onboardedAt,
   };
 }
 
@@ -76,7 +81,7 @@ export function clearSession(): void {
   window.sessionStorage.removeItem(SESSION_KEY);
 }
 
-export async function requestWorkerRegistration(
+export async function completeWorkerOnboarding(
   name: string,
   phone: string,
   code: string,
@@ -85,7 +90,7 @@ export async function requestWorkerRegistration(
 ): Promise<WorkerRegistrationAccount> {
   const worker = await requestJson<WorkerRegistrationResponse>("/api/worker-registrations", {
     method: "POST",
-    body: JSON.stringify({ name, phone, code, password, workType }),
+    body: JSON.stringify({ name, phone: formatPhone(phone), code, password, workType }),
   });
 
   return toRegistrationAccount(worker);
@@ -96,20 +101,30 @@ export async function getRegisteredWorkers(): Promise<WorkerRegistrationAccount[
   return workers.map(toRegistrationAccount);
 }
 
-export async function approveWorkerRegistration(phone: string): Promise<WorkerRegistrationAccount> {
-  const worker = await requestJson<WorkerRegistrationResponse>(`/api/admin/worker-registrations/${encodeURIComponent(phone)}/approve`, {
+export async function createRegisteredWorker(
+  name: string,
+  phone: string,
+  workType: WorkType,
+  team: string,
+  supervisor: string,
+): Promise<WorkerRegistrationAccount> {
+  const worker = await requestJson<WorkerRegistrationResponse>("/api/admin/worker-registrations", {
     method: "POST",
+    body: JSON.stringify({ name, phone: formatPhone(phone), workType, team, supervisor }),
   });
 
   return toRegistrationAccount(worker);
 }
 
-export async function rejectWorkerRegistration(phone: string): Promise<WorkerRegistrationAccount> {
-  const worker = await requestJson<WorkerRegistrationResponse>(`/api/admin/worker-registrations/${encodeURIComponent(phone)}/reject`, {
-    method: "POST",
+export async function deleteRegisteredWorker(phone: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/worker-registrations/${encodeURIComponent(formatPhone(phone))}`, {
+    method: "DELETE",
   });
 
-  return toRegistrationAccount(worker);
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || "근로자 삭제에 실패했습니다.");
+  }
 }
 
 export async function signInWorker(
@@ -120,7 +135,7 @@ export async function signInWorker(
 ): Promise<WorkerSession> {
   const session = await requestJson<WorkerLoginResponse>("/api/auth/worker-login", {
     method: "POST",
-    body: JSON.stringify({ name, phone, code, password }),
+    body: JSON.stringify({ name, phone: formatPhone(phone), code, password }),
   });
 
   saveSession(session);

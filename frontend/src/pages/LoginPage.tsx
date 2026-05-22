@@ -2,20 +2,13 @@ import { FormEvent, useState } from "react";
 import "../styles/login.css";
 import { workTypeOptions } from "../data/workTypes";
 import {
-  requestWorkerRegistration,
+  completeWorkerOnboarding,
   signInAdmin,
   signInWorker,
 } from "../features/auth/session";
 import { SECURE_ENTRY_PATH, navigateTo } from "../features/navigation";
+import { formatPhone } from "../features/phone";
 import type { WorkType } from "../types";
-
-function formatPhone(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 11);
-
-  if (digits.length <= 3) return digits;
-  if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
-}
 
 export function LoginPage() {
   const [tab, setTab] = useState<"worker" | "admin">("worker");
@@ -41,8 +34,8 @@ export function LoginPage() {
 
     try {
       if (mode === "register") {
-        await requestWorkerRegistration(registerName, phone, code, password, registerWorkType);
-        setMessage("등록 승인 요청을 보냈습니다. 관리자가 근로자 관리에서 승인하면 로그인할 수 있습니다.");
+        await completeWorkerOnboarding(registerName, phone, code, password, registerWorkType);
+        setMessage("등록된 근로자 정보와 일치합니다. 이제 로그인할 수 있습니다.");
         setMode("login");
         setLoginName(registerName);
         setLoginPhone(registerPhone);
@@ -229,7 +222,7 @@ export function LoginPage() {
                 </label>
 
                 <button className="primary-button" type="submit">
-                  {mode === "register" ? "등록 승인 요청" : "대시보드로 로그인"}
+                  {mode === "register" ? "회원가입 완료" : "대시보드로 로그인"}
                 </button>
               </form>
             </div>

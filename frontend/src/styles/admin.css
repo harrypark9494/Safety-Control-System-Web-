@@ -22,12 +22,12 @@
 }
 
 body {
-  min-width: 1100px;
+  min-width: 0;
   height: 100vh;
   margin: 0;
   color: var(--ink);
   background: var(--surface);
-  overflow: hidden;
+  overflow: auto;
 }
 
 body.modal-open {
@@ -83,7 +83,8 @@ td {
 
 .admin-shell {
   display: grid;
-  grid-template-columns: clamp(240px, 18vw, 280px) minmax(0, 1fr);
+  grid-template-columns: clamp(220px, 18vw, 280px) minmax(0, 1fr);
+  min-width: 0;
   width: 100%;
   height: 100vh;
   margin: 0;
@@ -205,6 +206,7 @@ td {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 18px;
   min-height: 76px;
   padding: 0 28px;
   border-bottom: 1px solid var(--line-strong);
@@ -212,6 +214,7 @@ td {
 }
 
 .page-header h1 {
+  min-width: 0;
   font-size: 1.35rem;
   font-weight: 950;
 }
@@ -233,6 +236,8 @@ td {
 .actions-row div {
   display: flex;
   gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .page-content {
@@ -258,7 +263,7 @@ td {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 380px;
+  width: min(380px, 100%);
   min-height: 68px;
   gap: 18px;
   border-radius: 5px;
@@ -274,7 +279,7 @@ td {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: minmax(620px, 1fr) minmax(320px, 0.42fr);
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.42fr);
   gap: clamp(20px, 2vw, 32px);
   align-items: start;
 }
@@ -353,7 +358,7 @@ td {
 
 .metric-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: clamp(14px, 1.5vw, 28px);
   padding: clamp(20px, 2vw, 30px);
 }
@@ -522,7 +527,7 @@ td {
 
 .stage-list {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: clamp(16px, 2vw, 28px);
   padding: clamp(20px, 2vw, 30px);
 }
@@ -577,7 +582,7 @@ td {
 
 .weather-layout {
   display: grid;
-  grid-template-columns: minmax(620px, 1fr) minmax(320px, 0.42fr);
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.42fr);
   gap: clamp(20px, 2vw, 32px);
 }
 
@@ -593,7 +598,7 @@ td {
 .weather-current {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
   gap: 14px;
 }
 
@@ -709,7 +714,7 @@ td {
 
 .search-inline {
   display: grid;
-  grid-template-columns: 300px 120px;
+  grid-template-columns: minmax(180px, 300px) 120px;
 }
 
 .search-inline input,
@@ -747,7 +752,7 @@ td {
 
 .station-grid {
   display: grid;
-  grid-template-columns: minmax(420px, 1fr) minmax(230px, 0.34fr);
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 0.34fr);
   gap: 14px;
 }
 
@@ -937,7 +942,7 @@ td {
 
 .filter-card {
   display: grid;
-  grid-template-columns: 1fr 260px;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 260px);
   gap: 10px 20px;
 }
 
@@ -1031,6 +1036,10 @@ td {
   overflow-x: auto;
 }
 
+.data-table-card table {
+  min-width: 720px;
+}
+
 .data-table-card .section-toolbar {
   min-height: 60px;
   margin: 0;
@@ -1053,7 +1062,7 @@ td {
 
 .search-card {
   display: grid;
-  grid-template-columns: 1fr 170px 44px;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 190px) 44px;
   gap: 16px;
   margin-bottom: 26px;
 }
@@ -1138,7 +1147,7 @@ td {
 }
 
 .rule-summary {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
 .rule-summary article {
@@ -1228,59 +1237,76 @@ td {
 
 .worker-management {
   display: grid;
-  gap: 26px;
+  gap: 24px;
 }
 
-.worker-approval-card .section-toolbar p {
-  margin-top: 8px;
-  color: #4f5663;
-  font-size: 0.86rem;
-  font-weight: 850;
-}
-
-.approval-list {
-  display: grid;
-  gap: 14px;
-  padding: 20px;
-}
-
-.approval-item {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  align-items: center;
-  gap: 18px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  padding: 18px;
-  background: #fbf9fa;
-}
-
-.approval-item strong,
-.approval-item span,
-.approval-item small {
-  display: block;
-}
-
-.approval-item strong {
-  font-size: 1.05rem;
-  font-weight: 950;
-}
-
-.approval-item span {
-  margin-top: 6px;
-  color: #3f4654;
+.form-message {
+  border: 1px solid #cdebd7;
+  padding: 14px 16px;
+  color: #087c35;
+  background: #f0fff5;
   font-weight: 900;
 }
 
-.approval-item small {
-  margin-top: 8px;
-  color: #d85c00;
+.worker-search-card {
+  margin-bottom: 0;
+}
+
+.workers-table {
+  border-radius: 6px;
+}
+
+.workers-table table {
+  table-layout: fixed;
+  min-width: 760px;
+}
+
+.workers-table th:first-child,
+.workers-table td:first-child {
+  width: 28%;
+}
+
+.workers-table th:nth-child(2),
+.workers-table td:nth-child(2) {
+  width: 24%;
+}
+
+.workers-table th:nth-child(3),
+.workers-table td:nth-child(3) {
+  width: 22%;
+}
+
+.workers-table th:nth-child(4),
+.workers-table td:nth-child(4) {
+  width: 14%;
+}
+
+.workers-table th:last-child,
+.workers-table td:last-child {
+  width: 12%;
+  text-align: center;
+}
+
+.empty-table-state {
+  padding: 32px 0;
+  color: #596273;
+  text-align: center;
   font-weight: 900;
 }
 
-.approval-actions {
-  display: flex;
-  gap: 8px;
+.worker-count-card {
+  width: min(330px, 100%);
+  margin-top: 0;
+}
+
+.table-action-danger {
+  min-height: 34px;
+  border: 1px solid #ffc8c8;
+  border-radius: 3px;
+  padding: 0 12px;
+  color: var(--red);
+  background: #fff7f7;
+  font-weight: 900;
 }
 
 .empty-state {
@@ -1315,11 +1341,15 @@ td {
 }
 
 .account-modal {
-  width: 450px;
+  width: min(450px, calc(100vw - 32px));
   overflow: hidden;
   border-radius: 4px;
   background: #fff;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+}
+
+.account-modal.worker-modal {
+  width: min(520px, calc(100vw - 32px));
 }
 
 .account-modal header {
@@ -1404,14 +1434,9 @@ td {
 
 @media (max-width: 1320px) {
   .dashboard-grid,
-  .weather-layout {
+  .weather-layout,
+  .station-grid {
     grid-template-columns: 1fr;
-  }
-
-  .metric-grid,
-  .weather-current,
-  .stage-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .weather-log-card,
@@ -1422,6 +1447,149 @@ td {
 
 @media (max-width: 1240px) {
   .admin-shell {
-    grid-template-columns: 250px minmax(0, 1fr);
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  .admin-sidebar {
+    padding: 20px 12px;
+  }
+
+  .nav-item {
+    grid-template-columns: 30px 1fr;
+    padding: 0 12px;
+    font-size: 0.82rem;
+  }
+
+  .page-header {
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: center;
+    padding: 14px 20px;
+  }
+
+  .page-header--actions div {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  th,
+  td {
+    padding: 14px 16px;
+    font-size: 0.92rem;
+  }
+}
+
+@media (max-width: 980px) {
+  .admin-shell {
+    grid-template-columns: 76px minmax(0, 1fr);
+  }
+
+  .brand-block strong,
+  .brand-block span,
+  .nav-item:not(.is-active) {
+    overflow: hidden;
+  }
+
+  .brand-block {
+    padding: 0 4px 14px;
+  }
+
+  .brand-block strong {
+    font-size: 0;
+  }
+
+  .brand-block strong::first-letter {
+    font-size: 0;
+  }
+
+  .brand-block span {
+    display: none;
+  }
+
+  .nav-item {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    min-height: 52px;
+    padding: 0;
+    font-size: 0;
+  }
+
+  .nav-icon {
+    font-size: 1.25rem;
+  }
+
+  .page-content {
+    padding: 14px;
+  }
+
+  .search-card,
+  .rules-page .search-card {
+    grid-template-columns: 1fr;
+  }
+
+  .search-card button {
+    min-height: 44px;
+  }
+
+  .date-strip {
+    grid-template-columns: 38px repeat(10, 92px) 38px 38px;
+  }
+
+  .storm-map {
+    min-height: 320px;
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-shell {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .admin-sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    height: auto;
+    max-height: 42vh;
+    border-right: 0;
+    border-bottom: 1px solid var(--line-strong);
+  }
+
+  .admin-nav,
+  .sidebar-footer {
+    grid-auto-flow: column;
+    grid-auto-columns: 58px;
+    overflow-x: auto;
+  }
+
+  .sidebar-footer {
+    grid-column: 1 / -1;
+    margin-top: 0;
+    padding-top: 10px;
+  }
+
+  .admin-main {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .page-header {
+    position: static;
+  }
+
+  .metric-grid,
+  .weather-current,
+  .stage-list {
+    grid-template-columns: 1fr;
+  }
+
+  .heatmap-panel,
+  .storm-map {
+    margin-right: 16px;
+    margin-left: 16px;
   }
 }

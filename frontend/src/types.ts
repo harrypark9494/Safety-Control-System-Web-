@@ -9,7 +9,7 @@ export type PayrollDocumentStatus =
   | "approved"
   | "rejected";
 
-export type WorkerRegistrationStatus = "pending" | "approved" | "rejected";
+export type WorkerRegistrationStatus = "registered" | "onboarded";
 
 export interface WorkerSession {
   uid: string;
@@ -42,9 +42,8 @@ export interface WorkerRegistrationAccount {
   supervisor: string;
   registrationStatus: WorkerRegistrationStatus;
   payrollDocumentStatus: PayrollDocumentStatus;
-  requestedAt: string;
-  approvedAt?: string;
-  rejectedAt?: string;
+  registeredAt: string;
+  onboardedAt?: string;
 }
 
 export interface PayrollSubmission {

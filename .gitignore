@@ -15,7 +15,27 @@ skills-lock.json
 .env
 .env.*
 !.env.example
+!**/.env.example
 .runtimeconfig.json
+*.local
+*.secret
+*.secrets
+
+# Spring Boot local configuration / generated DB files
+application-local.yml
+application-local.yaml
+application-secret.yml
+application-secret.yaml
+backend/src/main/resources/application-local.yml
+backend/src/main/resources/application-local.yaml
+backend/src/main/resources/application-secret.yml
+backend/src/main/resources/application-secret.yaml
+*.mv.db
+*.trace.db
+*.h2.db
+*.sqlite
+*.sqlite3
+*.db
 
 # Logs
 *.log
@@ -41,3 +61,27 @@ out/
 # Firebase local cache
 .firebase/
 .firebaserc
+
+# Cloud credentials / private keys
+*serviceAccount*.json
+*service-account*.json
+firebase-adminsdk*.json
+google-credentials*.json
+credentials.json
+client_secret*.json
+*.pem
+*.key
+*.p8
+*.p12
+*.jks
+*.keystore
+
+# Local uploads and sensitive document samples
+uploads/
+tmp/
+temp/
+backend/uploads/
+backend/tmp/
+frontend/uploads/
+**/payroll/uploads/
+**/payroll-documents/uploads/

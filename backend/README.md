@@ -40,21 +40,25 @@ Invoke-RestMethod http://localhost:8080/api/health
 Worker registration state is persisted through JPA. The default local profile
 uses H2, while the production profile is configured for PostgreSQL through
 environment variables.
+Flyway migrations under `src/main/resources/db/migration/` create the database
+schema, and JPA validates that schema on startup.
 
-- `POST /api/worker-registrations`: worker registration request from the login
-  page. Public endpoint.
+- `POST /api/worker-registrations`: worker onboarding completion from the login
+  page. Public endpoint that must match an existing admin-created worker record.
 - `POST /api/auth/worker-login`: worker login. Public endpoint that only allows
-  approved registrations.
-- `GET /api/admin/worker-registrations`: admin list of pending and approved
-  registrations. Protected endpoint.
-- `POST /api/admin/worker-registrations/{phone}/approve`: approve a matched
-  registration. Protected endpoint.
-- `POST /api/admin/worker-registrations/{phone}/reject`: reject a registration.
+  onboarded registrations.
+- `GET /api/admin/worker-registrations`: admin list of worker records and
+  onboarding status. Protected endpoint.
+- `POST /api/admin/worker-registrations`: create or update an expected worker
+  record. Protected endpoint.
+- `DELETE /api/admin/worker-registrations/{phone}`: delete a worker record.
   Protected endpoint.
 
-When a `직접 고용` worker is approved and has `payrollDocumentStatus=missing`,
+When a `직접 고용` worker is onboarded and has `payrollDocumentStatus=missing`,
 the login response sets `payrollDocumentsRequired=true`; the frontend should
 route that worker to the payroll document submission page before the dashboard.
+Phone numbers are normalized to the `010-1234-5678` style before persistence and
+lookup. `workType` only accepts `직접 고용` or `외부 고용`.
 
 The admin registration endpoints are temporarily open in local development
 until administrator authentication is wired. Before production exposure, move

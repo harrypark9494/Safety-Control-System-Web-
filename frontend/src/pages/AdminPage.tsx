@@ -1,12 +1,14 @@
 import { FormEvent, useEffect, useState } from "react";
 import "../styles/admin.css";
+import { workTypeOptions } from "../data/workTypes";
 import {
-  approveWorkerRegistration,
   clearSession,
+  createRegisteredWorker,
+  deleteRegisteredWorker,
   getRegisteredWorkers,
-  rejectWorkerRegistration,
 } from "../features/auth/session";
 import { navigateTo } from "../features/navigation";
+import { formatPhone } from "../features/phone";
 import type { WorkerRegistrationAccount } from "../types";
 
 const navItems = [
@@ -250,98 +252,137 @@ function WorkersView({
   message: string;
   onRefresh: () => Promise<void>;
 }) {
-  const pendingWorkers = workers.filter((worker) => worker.registrationStatus === "pending");
-  const approvedWorkers = workers.filter((worker) => worker.registrationStatus === "approved");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [workType, setWorkType] = useState<(typeof workTypeOptions)[number]>(workTypeOptions[0]);
+  const [team, setTeam] = useState("");
+  const [supervisor, setSupervisor] = useState("");
+  const [formMessage, setFormMessage] = useState("");
+  const [actionMessage, setActionMessage] = useState("");
+  const [registerModalOpen, setRegisterModalOpen] = useState(false);
+  const onboardedCount = workers.filter((worker) => worker.registrationStatus === "onboarded").length;
 
-  async function approve(phone: string) {
-    await approveWorkerRegistration(phone);
-    await onRefresh();
+  function resetRegistrationForm() {
+    setName("");
+    setPhone("");
+    setWorkType(workTypeOptions[0]);
+    setTeam("");
+    setSupervisor("");
   }
 
-  async function reject(phone: string) {
-    await rejectWorkerRegistration(phone);
-    await onRefresh();
+  async function registerWorker(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    try {
+      await createRegisteredWorker(name, phone, workType, team, supervisor);
+      resetRegistrationForm();
+      setFormMessage("근로자 등록 정보가 저장되었습니다.");
+      setActionMessage("");
+      setRegisterModalOpen(false);
+      await onRefresh();
+    } catch (error) {
+      setActionMessage(error instanceof Error ? error.message : "근로자 등록에 실패했습니다.");
+    }
+  }
+
+  async function removeWorker(phone: string) {
+    try {
+      await deleteRegisteredWorker(phone);
+      setFormMessage("근로자 등록 정보가 삭제되었습니다.");
+      await onRefresh();
+    } catch (error) {
+      setActionMessage(error instanceof Error ? error.message : "근로자 삭제에 실패했습니다.");
+    }
   }
 
   return (
-    <section className="admin-view is-active">
-      <header className="page-header page-header--actions">
-        <h1>근로자 관리</h1>
-        <div>
-          <button className="light-button" type="button">⇩ 엑셀 다운로드</button>
-          <button className="dark-button" type="button">＋ 사람 등록</button>
-        </div>
-      </header>
-      <div className="page-content narrow-page worker-management">
-        <section className="app-card search-card">
-          <input type="search" placeholder="이름 또는 연락처 검색" />
-          <select><option>전체</option><option>승인 대기</option><option>승인 완료</option></select>
-          <button type="button">≡</button>
-        </section>
-        {message ? <p className="admin-message" role="status">{message}</p> : null}
+    <>
+      <section className="admin-view is-active">
+        <header className="page-header page-header--actions">
+          <h1>근로자 관리</h1>
+          <div>
+            <button className="light-button" type="button">⇩ 엑셀 다운로드</button>
+            <button className="dark-button" type="button" onClick={() => setRegisterModalOpen(true)}>＋ 근로자 등록</button>
+          </div>
+        </header>
+        <div className="page-content narrow-page worker-management">
+          <section className="app-card search-card worker-search-card">
+            <input type="search" placeholder="이름 또는 연락처 검색" />
+            <select><option>담당 구역 전체</option><option>Stage Alpha</option><option>Stage Bravo</option><option>Main Entry</option></select>
+            <button type="button">≡</button>
+          </section>
+          {message || actionMessage ? <p className="admin-message" role="status">{message || actionMessage}</p> : null}
+          {formMessage ? <p className="form-message" role="status">{formMessage}</p> : null}
 
-        <section className="app-card worker-approval-card">
-          <div className="section-toolbar">
-            <div>
-              <h2>사람 등록 승인</h2>
-              <p>로그인 페이지에서 들어온 등록 요청을 실제 등록 인원과 대조한 뒤 승인합니다.</p>
-            </div>
-            <span className="count-pill">승인 대기 {pendingWorkers.length}명</span>
-          </div>
-          <div className="approval-list">
-            {pendingWorkers.length > 0 ? pendingWorkers.map((worker) => (
-              <article key={worker.uid} className="approval-item">
-                <div>
-                  <strong>{worker.name}</strong>
-                  <span>{worker.phone} · {worker.workType} · {worker.team}</span>
-                  <small>{worker.workType === "직접 고용" ? "승인 후 최초 로그인 시 급여 서류 제출 화면으로 이동" : "승인 후 대시보드로 이동"}</small>
-                </div>
-                <em className="state draft">대조 필요</em>
-                <div className="approval-actions">
-                  <button className="light-button" type="button" onClick={() => reject(worker.phone)}>반려</button>
-                  <button className="dark-button" type="button" onClick={() => approve(worker.phone)}>등록 승인</button>
-                </div>
-              </article>
-            )) : (
-              <p className="empty-state">현재 승인 대기 중인 등록 요청이 없습니다.</p>
-            )}
-          </div>
-        </section>
-
-        <section className="app-card data-table-card workers-table">
-          <div className="section-toolbar">
-            <h2>승인된 근로자 목록</h2>
-            <span className="count-pill">총 {approvedWorkers.length}명</span>
-          </div>
+          <section className="app-card data-table-card workers-table">
           <table>
             <thead>
               <tr>
                 <th>이름</th>
                 <th>연락처</th>
-                <th>고용 유형</th>
-                <th>서류 상태</th>
+                <th>담당 구역</th>
+                <th>온보딩</th>
                 <th>관리</th>
               </tr>
             </thead>
             <tbody>
-              {approvedWorkers.map((worker) => (
+              {workers.length > 0 ? workers.map((worker) => (
                 <tr key={worker.uid}>
-                  <td><span className="avatar">{worker.name.slice(0, 1)}</span><strong>{worker.name}</strong><small>{worker.team}</small></td>
+                  <td><span className="avatar">{worker.name.slice(0, 1)}</span><strong>{worker.name}</strong></td>
                   <td>{worker.phone}</td>
-                  <td><em>{worker.workType}</em></td>
-                  <td>{worker.payrollDocumentStatus === "missing" ? <em className="orange-text">서류 필요</em> : <em className="green-text">완료</em>}</td>
-                  <td>보기</td>
+                  <td><em>{worker.team}</em></td>
+                  <td>{worker.registrationStatus === "onboarded" ? <em className="green-text">완료</em> : <em className="orange-text">대기</em>}</td>
+                  <td><button className="table-action-danger" type="button" onClick={() => removeWorker(worker.phone)}>삭제</button></td>
                 </tr>
-              ))}
+              )) : (
+                <tr>
+                  <td colSpan={5}><p className="empty-table-state">등록된 근로자가 없습니다.</p></td>
+                </tr>
+              )}
             </tbody>
           </table>
           <div className="table-foot">
-            <span>표시 중: 1 - {approvedWorkers.length}</span>
-            <div className="pagination"><button>‹</button><button className="is-active">1</button><button>›</button></div>
+            <span>총 {workers.length}명의 근로자 중 1-{Math.min(workers.length, 5)} 표시</span>
+            <div className="pagination"><button>‹</button><button className="is-active">1</button><button>2</button><button>3</button><button>›</button></div>
           </div>
         </section>
-      </div>
-    </section>
+
+          <article className="app-card count-card worker-count-card">
+            <span>♙</span>
+            <div>
+              <small>등록 인원</small>
+              <strong>{workers.length} 명</strong>
+              <small>온보딩 완료 {onboardedCount} 명</small>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      {registerModalOpen ? (
+        <div className="modal-backdrop">
+          <section className="account-modal worker-modal" role="dialog" aria-modal="true" aria-labelledby="worker-modal-title">
+            <header>
+              <h2 id="worker-modal-title">근로자 등록</h2>
+              <button type="button" aria-label="닫기" onClick={() => setRegisterModalOpen(false)}>×</button>
+            </header>
+            <form className="account-form" onSubmit={registerWorker}>
+              <div className="modal-body">
+                <label>이름<input value={name} onChange={(event) => setName(event.target.value)} autoComplete="off" required /></label>
+                <label>연락처<input value={phone} onChange={(event) => setPhone(formatPhone(event.target.value))} placeholder="010-1234-5678" autoComplete="off" maxLength={13} required /></label>
+                <label>고용 유형<select value={workType} onChange={(event) => setWorkType(event.target.value as (typeof workTypeOptions)[number])}>{workTypeOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+                <label>담당 구역<input value={team} onChange={(event) => setTeam(event.target.value)} placeholder="예: Stage Alpha" autoComplete="off" required /></label>
+                <label>담당 관리자<input value={supervisor} onChange={(event) => setSupervisor(event.target.value)} placeholder="예: 관리자 A" autoComplete="off" required /></label>
+                <p>등록된 이름, 연락처, 고용 유형은 근로자 회원가입 시 대조 기준으로 사용됩니다.</p>
+                {actionMessage ? <strong className="modal-message" role="status">{actionMessage}</strong> : null}
+              </div>
+              <footer>
+                <button className="light-button" type="button" onClick={() => setRegisterModalOpen(false)}>취소</button>
+                <button className="dark-button" type="submit">등록 저장</button>
+              </footer>
+            </form>
+          </section>
+        </div>
+      ) : null}
+    </>
   );
 }
 
