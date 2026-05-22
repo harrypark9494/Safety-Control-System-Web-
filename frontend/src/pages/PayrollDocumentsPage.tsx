@@ -1,33 +1,9 @@
 import { ChangeEvent, FormEvent, useState } from "react";
 import "../styles/payroll-documents.css";
-import { getSession, markPayrollSubmitted, saveSession } from "../features/auth/session";
+import { getSession, markPayrollSubmitted } from "../features/auth/session";
 import { SECURE_ENTRY_PATH, navigateTo } from "../features/navigation";
-import type { WorkerSession } from "../types";
 
 const banks = ["국민", "신한", "우리", "하나", "농협", "기업", "카카오뱅크", "토스뱅크"];
-
-function ensureDemoSession() {
-  const current = getSession();
-
-  if (current || !window.location.search.includes("demo=1")) {
-    return current;
-  }
-
-  const demoSession: WorkerSession = {
-    uid: "worker-direct-demo",
-    role: "worker" as const,
-    name: "직접 고용 작업자",
-    phone: "010-0000-0000",
-    workType: "직접 고용",
-    team: "직접 고용 A팀",
-    supervisor: "관리자 A",
-    schedule: "05.20(수) 09:00-18:00 / A현장 2구역",
-    status: "출근 확인",
-    payrollDocumentStatus: "missing" as const,
-  };
-  saveSession(demoSession);
-  return demoSession;
-}
 
 function fileLabel(file?: File): string {
   if (!file) return "";
@@ -36,7 +12,7 @@ function fileLabel(file?: File): string {
 }
 
 export function PayrollDocumentsPage() {
-  const session = ensureDemoSession();
+  const session = getSession();
   const [step, setStep] = useState<"basic" | "documents">("basic");
   const [bankOpen, setBankOpen] = useState(false);
   const [bankName, setBankName] = useState("");
@@ -76,9 +52,9 @@ export function PayrollDocumentsPage() {
     }, 650);
   }
 
-  const workerName = session?.role === "worker" ? session.name : "직접 고용 작업자";
-  const workerPhone = session?.role === "worker" ? session.phone : "010-0000-0000";
-  const workerSchedule = session?.role === "worker" ? session.schedule : "05.20(수) 09:00-18:00 / A현장 2구역";
+  const workerName = session?.role === "worker" ? session.name : "";
+  const workerPhone = session?.role === "worker" ? session.phone : "";
+  const workerSchedule = session?.role === "worker" ? session.schedule : "";
 
   return (
     <>

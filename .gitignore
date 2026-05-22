@@ -40,3 +40,4 @@ out/
 
 # Firebase local cache
 .firebase/
+.firebaserc

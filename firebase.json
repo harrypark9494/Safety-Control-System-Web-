@@ -1,6 +1,5 @@
 {
   "hosting": {
-    "site": "museon-worker-dashboard",
     "public": "frontend/dist",
     "ignore": [
       "firebase.json",

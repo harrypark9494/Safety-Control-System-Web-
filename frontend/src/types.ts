@@ -9,6 +9,8 @@ export type PayrollDocumentStatus =
   | "approved"
   | "rejected";
 
+export type WorkerRegistrationStatus = "pending" | "approved" | "rejected";
+
 export interface WorkerSession {
   uid: string;
   role: "worker";
@@ -31,17 +33,18 @@ export interface AdminSession {
 
 export type AppSession = WorkerSession | AdminSession;
 
-export interface DemoWorkerAccount {
-  label: string;
+export interface WorkerRegistrationAccount {
   uid: string;
   name: string;
   phone: string;
-  code: string;
-  password: string;
   workType: WorkType;
   team: string;
   supervisor: string;
+  registrationStatus: WorkerRegistrationStatus;
   payrollDocumentStatus: PayrollDocumentStatus;
+  requestedAt: string;
+  approvedAt?: string;
+  rejectedAt?: string;
 }
 
 export interface PayrollSubmission {

@@ -1226,6 +1226,80 @@ td {
   background: #e7e7e7;
 }
 
+.worker-management {
+  display: grid;
+  gap: 26px;
+}
+
+.worker-approval-card .section-toolbar p {
+  margin-top: 8px;
+  color: #4f5663;
+  font-size: 0.86rem;
+  font-weight: 850;
+}
+
+.approval-list {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+}
+
+.approval-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 18px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 18px;
+  background: #fbf9fa;
+}
+
+.approval-item strong,
+.approval-item span,
+.approval-item small {
+  display: block;
+}
+
+.approval-item strong {
+  font-size: 1.05rem;
+  font-weight: 950;
+}
+
+.approval-item span {
+  margin-top: 6px;
+  color: #3f4654;
+  font-weight: 900;
+}
+
+.approval-item small {
+  margin-top: 8px;
+  color: #d85c00;
+  font-weight: 900;
+}
+
+.approval-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.empty-state {
+  border: 1px dashed var(--line-strong);
+  padding: 22px;
+  color: #4f5663;
+  background: #fbf9fa;
+  text-align: center;
+  font-weight: 900;
+}
+
+.admin-message {
+  border: 1px solid #ffc8c8;
+  padding: 14px 16px;
+  color: var(--red);
+  background: #fff7f7;
+  font-weight: 900;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;

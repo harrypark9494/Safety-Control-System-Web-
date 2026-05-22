@@ -1,7 +1,13 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import "../styles/admin.css";
-import { clearSession } from "../features/auth/session";
+import {
+  approveWorkerRegistration,
+  clearSession,
+  getRegisteredWorkers,
+  rejectWorkerRegistration,
+} from "../features/auth/session";
 import { navigateTo } from "../features/navigation";
+import type { WorkerRegistrationAccount } from "../types";
 
 const navItems = [
   ["dashboard", "▦", "대시보드"],
@@ -23,15 +29,30 @@ export function AdminPage() {
   const [view, setView] = useState<View>("dashboard");
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
+  const [workers, setWorkers] = useState<WorkerRegistrationAccount[]>([]);
+  const [workerMessage, setWorkerMessage] = useState("");
 
   function submitAdmin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setModalMessage("데모 계정이 목록에 추가된 것으로 표시됩니다.");
+    setModalMessage("관리자 계정 등록 API 연동이 필요합니다.");
   }
 
   function logout() {
     clearSession();
     navigateTo("/login/");
+  }
+
+  useEffect(() => {
+    refreshWorkers();
+  }, []);
+
+  async function refreshWorkers() {
+    try {
+      setWorkers(await getRegisteredWorkers());
+      setWorkerMessage("");
+    } catch (error) {
+      setWorkerMessage(error instanceof Error ? error.message : "근로자 목록을 불러오지 못했습니다.");
+    }
   }
 
   return (
@@ -73,7 +94,7 @@ export function AdminPage() {
           {view === "weather" ? <WeatherView /> : null}
           {view === "schedule" ? <ScheduleView /> : null}
           {view === "qr" ? <QrView /> : null}
-          {view === "workers" ? <WorkersView /> : null}
+          {view === "workers" ? <WorkersView workers={workers} message={workerMessage} onRefresh={refreshWorkers} /> : null}
           {view === "rules" ? <RulesView /> : null}
           {view === "admins" ? <AdminsView onOpen={() => setModalOpen(true)} /> : null}
         </section>
@@ -220,8 +241,108 @@ function QrView() {
   return <SimpleTable title="식권/생수 QR 사용 현황" heading="실시간 지급 현황" rows={["13:00 - 14:00|420 건|580 개|피크타임", "12:00 - 13:00|310 건|450 개|정상", "11:00 - 12:00|85 건|320 개|정상"]} />;
 }
 
-function WorkersView() {
-  return <SimpleTable title="근로자 관리" heading="근로자 목록" rows={["작업자 A|000-0000-0000|Stage Alpha|보기", "작업자 B|000-0000-0000|Stage Bravo|보기", "작업자 C|000-0000-0000|Main Entry|보기", "작업자 D|000-0000-0000|VIP Lounge|보기"]} />;
+function WorkersView({
+  workers,
+  message,
+  onRefresh,
+}: {
+  workers: WorkerRegistrationAccount[];
+  message: string;
+  onRefresh: () => Promise<void>;
+}) {
+  const pendingWorkers = workers.filter((worker) => worker.registrationStatus === "pending");
+  const approvedWorkers = workers.filter((worker) => worker.registrationStatus === "approved");
+
+  async function approve(phone: string) {
+    await approveWorkerRegistration(phone);
+    await onRefresh();
+  }
+
+  async function reject(phone: string) {
+    await rejectWorkerRegistration(phone);
+    await onRefresh();
+  }
+
+  return (
+    <section className="admin-view is-active">
+      <header className="page-header page-header--actions">
+        <h1>근로자 관리</h1>
+        <div>
+          <button className="light-button" type="button">⇩ 엑셀 다운로드</button>
+          <button className="dark-button" type="button">＋ 사람 등록</button>
+        </div>
+      </header>
+      <div className="page-content narrow-page worker-management">
+        <section className="app-card search-card">
+          <input type="search" placeholder="이름 또는 연락처 검색" />
+          <select><option>전체</option><option>승인 대기</option><option>승인 완료</option></select>
+          <button type="button">≡</button>
+        </section>
+        {message ? <p className="admin-message" role="status">{message}</p> : null}
+
+        <section className="app-card worker-approval-card">
+          <div className="section-toolbar">
+            <div>
+              <h2>사람 등록 승인</h2>
+              <p>로그인 페이지에서 들어온 등록 요청을 실제 등록 인원과 대조한 뒤 승인합니다.</p>
+            </div>
+            <span className="count-pill">승인 대기 {pendingWorkers.length}명</span>
+          </div>
+          <div className="approval-list">
+            {pendingWorkers.length > 0 ? pendingWorkers.map((worker) => (
+              <article key={worker.uid} className="approval-item">
+                <div>
+                  <strong>{worker.name}</strong>
+                  <span>{worker.phone} · {worker.workType} · {worker.team}</span>
+                  <small>{worker.workType === "직접 고용" ? "승인 후 최초 로그인 시 급여 서류 제출 화면으로 이동" : "승인 후 대시보드로 이동"}</small>
+                </div>
+                <em className="state draft">대조 필요</em>
+                <div className="approval-actions">
+                  <button className="light-button" type="button" onClick={() => reject(worker.phone)}>반려</button>
+                  <button className="dark-button" type="button" onClick={() => approve(worker.phone)}>등록 승인</button>
+                </div>
+              </article>
+            )) : (
+              <p className="empty-state">현재 승인 대기 중인 등록 요청이 없습니다.</p>
+            )}
+          </div>
+        </section>
+
+        <section className="app-card data-table-card workers-table">
+          <div className="section-toolbar">
+            <h2>승인된 근로자 목록</h2>
+            <span className="count-pill">총 {approvedWorkers.length}명</span>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>이름</th>
+                <th>연락처</th>
+                <th>고용 유형</th>
+                <th>서류 상태</th>
+                <th>관리</th>
+              </tr>
+            </thead>
+            <tbody>
+              {approvedWorkers.map((worker) => (
+                <tr key={worker.uid}>
+                  <td><span className="avatar">{worker.name.slice(0, 1)}</span><strong>{worker.name}</strong><small>{worker.team}</small></td>
+                  <td>{worker.phone}</td>
+                  <td><em>{worker.workType}</em></td>
+                  <td>{worker.payrollDocumentStatus === "missing" ? <em className="orange-text">서류 필요</em> : <em className="green-text">완료</em>}</td>
+                  <td>보기</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="table-foot">
+            <span>표시 중: 1 - {approvedWorkers.length}</span>
+            <div className="pagination"><button>‹</button><button className="is-active">1</button><button>›</button></div>
+          </div>
+        </section>
+      </div>
+    </section>
+  );
 }
 
 function RulesView() {

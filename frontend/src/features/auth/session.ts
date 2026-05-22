@@ -1,20 +1,55 @@
-import { demoWorkers } from "../../data/demoData";
-import type { AppSession, DemoWorkerAccount, WorkerSession } from "../../types";
+import type { AppSession, WorkerRegistrationAccount, WorkerSession, WorkType } from "../../types";
 
-const SESSION_KEY = "safetyControlUser";
+const SESSION_KEY = "safetyControlSession";
 
-function toWorkerSession(account: DemoWorkerAccount): WorkerSession {
+type WorkerRegistrationResponse = {
+  uid: string;
+  name: string;
+  phone: string;
+  workType: WorkType;
+  team: string;
+  supervisor: string;
+  registrationStatus: WorkerRegistrationAccount["registrationStatus"];
+  payrollDocumentStatus: WorkerSession["payrollDocumentStatus"];
+  requestedAt: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+};
+
+type WorkerLoginResponse = WorkerSession & {
+  payrollDocumentsRequired: boolean;
+};
+
+async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(path, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...init?.headers,
+    },
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(text || "요청 처리에 실패했습니다.");
+  }
+
+  return response.json() as Promise<T>;
+}
+
+function toRegistrationAccount(worker: WorkerRegistrationResponse): WorkerRegistrationAccount {
   return {
-    uid: account.uid,
-    role: "worker",
-    name: account.name,
-    phone: account.phone,
-    workType: account.workType,
-    team: account.team,
-    supervisor: account.supervisor,
-    schedule: "05.20(수) 09:00-18:00 / A현장 2구역",
-    status: "출근 확인",
-    payrollDocumentStatus: account.payrollDocumentStatus,
+    uid: worker.uid,
+    name: worker.name,
+    phone: worker.phone,
+    workType: worker.workType,
+    team: worker.team,
+    supervisor: worker.supervisor,
+    registrationStatus: worker.registrationStatus,
+    payrollDocumentStatus: worker.payrollDocumentStatus,
+    requestedAt: worker.requestedAt,
+    approvedAt: worker.approvedAt,
+    rejectedAt: worker.rejectedAt,
   };
 }
 
@@ -41,49 +76,62 @@ export function clearSession(): void {
   window.sessionStorage.removeItem(SESSION_KEY);
 }
 
-export function findDemoWorker(phone: string): DemoWorkerAccount | undefined {
-  return demoWorkers.find((worker) => worker.phone === phone);
-}
-
-export function signInDemoWorker(
+export async function requestWorkerRegistration(
+  name: string,
   phone: string,
   code: string,
   password: string,
-  name?: string,
-  workType?: DemoWorkerAccount["workType"],
-): WorkerSession {
-  const worker = findDemoWorker(phone);
+  workType: WorkType,
+): Promise<WorkerRegistrationAccount> {
+  const worker = await requestJson<WorkerRegistrationResponse>("/api/worker-registrations", {
+    method: "POST",
+    body: JSON.stringify({ name, phone, code, password, workType }),
+  });
 
-  if (!worker) {
-    throw new Error("등록된 작업자를 찾을 수 없습니다.");
-  }
+  return toRegistrationAccount(worker);
+}
 
-  if (name && worker.name !== name.trim()) {
-    throw new Error("등록된 이름과 연락처가 일치하지 않습니다.");
-  }
+export async function getRegisteredWorkers(): Promise<WorkerRegistrationAccount[]> {
+  const workers = await requestJson<WorkerRegistrationResponse[]>("/api/admin/worker-registrations");
+  return workers.map(toRegistrationAccount);
+}
 
-  if (workType && worker.workType !== workType) {
-    throw new Error("선택한 고용 유형과 등록 계정이 일치하지 않습니다.");
-  }
+export async function approveWorkerRegistration(phone: string): Promise<WorkerRegistrationAccount> {
+  const worker = await requestJson<WorkerRegistrationResponse>(`/api/admin/worker-registrations/${encodeURIComponent(phone)}/approve`, {
+    method: "POST",
+  });
 
-  if (code !== worker.code) {
-    throw new Error("인증 코드가 일치하지 않습니다.");
-  }
+  return toRegistrationAccount(worker);
+}
 
-  if (password !== worker.password) {
-    throw new Error("비밀번호가 일치하지 않습니다.");
-  }
+export async function rejectWorkerRegistration(phone: string): Promise<WorkerRegistrationAccount> {
+  const worker = await requestJson<WorkerRegistrationResponse>(`/api/admin/worker-registrations/${encodeURIComponent(phone)}/reject`, {
+    method: "POST",
+  });
 
-  const session = toWorkerSession(worker);
+  return toRegistrationAccount(worker);
+}
+
+export async function signInWorker(
+  phone: string,
+  code: string,
+  password: string,
+  name: string,
+): Promise<WorkerSession> {
+  const session = await requestJson<WorkerLoginResponse>("/api/auth/worker-login", {
+    method: "POST",
+    body: JSON.stringify({ name, phone, code, password }),
+  });
+
   saveSession(session);
   return session;
 }
 
-export function signInDemoAdmin(): AppSession {
+export function signInAdmin(): AppSession {
   const session: AppSession = {
-    uid: "admin-demo",
+    uid: "admin-local-session",
     role: "admin",
-    name: "관리자 A",
+    name: "관리자",
     email: "admin@safetycontrol.local",
   };
 

@@ -1,8 +1,8 @@
 # Safety Control System Web
 
-SafetyControl 화면 프로토타입 저장소입니다. 현재 단계에서는 GitHub Pages에서
-확인하던 정적 데모를 Vite + React + TypeScript + Firebase 기반 실사용 구조로
-전환하기 위한 준비를 시작했습니다.
+SafetyControl 풀스택 작업 저장소입니다. 현재 실제 앱 경로는 Vite + React +
+TypeScript 프론트엔드와 Spring Boot 백엔드를 기준으로 개발하며, 정적 데모는
+비교용 참고 자료로만 보존합니다.
 
 ## GitHub Pages
 
@@ -80,6 +80,12 @@ Safety-Control-System-Web-/
 | Admin Desktop | `frontend/src/pages/AdminPage.tsx` | `/app/` after admin login |
 | Payroll Documents | `frontend/src/pages/PayrollDocumentsPage.tsx` | `/app/` when required after worker login |
 
+## API Contract
+
+프론트엔드와 백엔드는 [API_SPEC.md](API_SPEC.md)를 기준으로 요청/응답 필드명을
+맞춥니다. 새 API를 추가하거나 기존 API 응답을 바꾸면 구현과 함께 이 문서를
+갱신합니다.
+
 ## Preserved Demo Pages
 
 | Demo | Local path | GitHub Pages |
@@ -89,20 +95,16 @@ Safety-Control-System-Web-/
 | Admin Desktop Demo | `demos/admin/index.html` | [Open](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/admin/) |
 | Payroll Documents Demo | `demos/payroll-documents/index.html` | [Open](https://harrypark9494.github.io/Safety-Control-System-Web-/demos/payroll-documents/?demo=1) |
 
-## Current Demo Scope
+## Preserved Demo Scope
 
 - Log in Demo: 일반 사용자 등록/로그인과 관리자 mock Google 로그인 흐름
 - Dashboard Demo: 워터밤 현장 모바일 관제 UI, 하단 4탭, QR 팝업, 날씨/설치 공정/안전 수칙/프로필 mock 표시
 - Admin Desktop Demo: 관리자용 데스크탑 관제 UI, 날씨/스케줄/QR/근로자/안전 수칙/어드민 관리 mock 표시
 - Payroll Documents Demo: HR 급여 처리용 기본 정보, 주민등록번호, Kakao 우편번호 주소 검색, 계좌 정보, 신분증/통장 사본 제출 흐름
 
-Firebase 실사용 전환 기준은 `FIREBASE_SETUP.md`와 `GUIDE.md`를 우선 확인합니다.
 Firebase Hosting 배포 대상은 Vite 빌드 결과인 `frontend/dist/`입니다.
 `frontend/src/`는 실제 React/TypeScript 앱 소스이고, `backend/`는 Spring Boot
-백엔드 작업 영역입니다. `demos/`는 기존 mock 데모 보존용으로 둡니다.
-
-Dashboard의 현재 React 데이터는 `frontend/src/data/demoData.ts`에 mock 데이터로
-분리되어 있습니다. 실제 연동 단계에서 Firestore 조회 어댑터로 교체합니다.
+백엔드 작업 영역입니다. `demos/`는 기존 UI 비교용으로만 둡니다.
 
 Dashboard Demo는 현재 모바일 우선 화면으로 구성되어 있으며 하단 탭은
 `대시보드`, `스케줄`, `안전`, `프로필` 네 가지입니다. QR 코드는 실제 발급값이
@@ -129,26 +131,16 @@ Set-Location ..
 firebase deploy --project YOUR_PROJECT_ID --only hosting,firestore:rules,storage
 ```
 
-## Auth API Adapter
+## Auth API Integration
 
-로그인 화면은 `frontend/src/features/auth/session.ts`의 mock 세션 어댑터를 사용합니다.
-Firebase Auth 전환 전까지는 이 어댑터를 fallback으로 유지합니다.
-
-Firebase Web App config는 코드에 직접 넣지 않고 Vite 환경변수로 주입합니다.
-
-```powershell
-$env:VITE_FIREBASE_API_KEY="..."
-$env:VITE_FIREBASE_AUTH_DOMAIN="..."
-$env:VITE_FIREBASE_PROJECT_ID="..."
-$env:VITE_FIREBASE_STORAGE_BUCKET="..."
-$env:VITE_FIREBASE_APP_ID="..."
-```
+로그인 화면은 `frontend/src/features/auth/session.ts`에서 Spring Boot `/api`
+엔드포인트를 호출합니다. Vite 개발 서버는 `frontend/vite.config.ts`의 proxy로
+`/api` 요청을 `http://localhost:8080`에 전달합니다.
 
 `workTypeOptions`는 로그인/등록 및 급여 정보 등록 화면의 고용 유형 선택값으로
-사용합니다. 현재 mock 값은 `직접 고용`, `외부 고용` 두 가지입니다. 실제
-서비스에서는 관리자 페이지에서 수정 가능한 DB 값으로 대체될 예정입니다.
+사용합니다. 현재 값은 `frontend/src/data/workTypes.ts`에 두며, 이후 관리자
+설정 API 또는 DB 코드 테이블로 옮길 수 있습니다.
 
-`payrollDocumentRequiredWorkTypes`에 포함된 `직접 고용` 사용자는 최초 등록 또는
-로그인 후 급여 정보 등록 화면으로 이동합니다. `외부 고용` 사용자는 대시보드로
-이동합니다. 데모에서는 제출 완료 여부를 브라우저 `localStorage`에 저장하므로,
-제출 후 같은 브라우저에서는 다시 표시되지 않습니다.
+`직접 고용` 사용자는 관리자 등록 승인 후 최초 로그인 시 급여 정보 등록 화면으로
+이동합니다. 이 판단은 백엔드 로그인 응답의 `payrollDocumentsRequired`와
+`payrollDocumentStatus`를 기준으로 확장합니다.

@@ -7,6 +7,8 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -20,10 +22,17 @@ public class SecurityConfig {
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 				.requestMatchers("/api/health", "/actuator/health", "/actuator/info").permitAll()
+				.requestMatchers(HttpMethod.POST, "/api/auth/worker-login", "/api/worker-registrations").permitAll()
+				.requestMatchers("/api/admin/worker-registrations/**").permitAll()
 				.requestMatchers("/api/**").authenticated()
 				.anyRequest().denyAll()
 			)
 			.httpBasic(Customizer.withDefaults())
 			.build();
+	}
+
+	@Bean
+	PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
 	}
 }

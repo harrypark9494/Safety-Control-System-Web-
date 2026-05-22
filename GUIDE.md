@@ -2,8 +2,9 @@
 
 이 문서는 Safety Control System Web 작업 방향을 정리합니다. 현재 목표는
 GitHub Pages에서 확인하던 정적 UI 데모를 Vite + React + TypeScript
-프론트엔드 앱으로 전환하고, 로그인과 대시보드 액션을 mock 기반으로 먼저 검증한 뒤
-실제 운영 백엔드와 데이터베이스를 단계적으로 연결하는 것입니다.
+프론트엔드 앱으로 전환하고, 로그인/등록 승인 흐름부터 Spring Boot 백엔드와
+연결해 풀스택 개발을 진행하는 것입니다. mock은 테스트나 보존 데모에 필요한
+부분으로만 분리합니다.
 
 ## Current Direction
 
@@ -46,32 +47,36 @@ GitHub Pages에서 확인하던 정적 UI 데모를 Vite + React + TypeScript
 `frontend/src/styles/`를 기준으로 작업합니다.
 `demos/`의 파일은 안정화된 UI를 React로 옮길 때 참고하는 원본으로 유지합니다.
 
-## Login-First Development Roadmap
+## Fullstack Login-First Roadmap
 
-앞으로의 개발은 로그인 시스템을 우선순위 1번으로 두고, 대시보드 클릭 액션은
-mock 기반으로 병행 확인합니다. 실제 DB/API 연결은 로그인 흐름과 권한 구조가
-정리된 뒤 붙입니다.
+앞으로의 개발은 로그인 시스템을 우선순위 1번으로 두고, 프론트 운영 경로는
+Spring Boot `/api`를 호출합니다. mock은 정적 데모와 테스트 전용 fixture로만
+남깁니다.
+
+API 요청/응답 필드명과 상태값은 루트의 `API_SPEC.md`를 기준으로 맞춥니다.
+새 API를 만들거나 응답 필드를 바꾸면 코드 변경과 같은 작업 단위에서
+`API_SPEC.md`를 함께 갱신합니다.
 
 권장 단계:
 
 1. 로그인 UI와 사용자 흐름을 확정합니다.
-2. 프론트엔드에서 mock 로그인 상태 관리를 구현합니다.
-3. 대시보드 클릭 액션은 mock 데이터로 먼저 확인합니다.
-4. 백엔드 로그인 API 계약을 설계합니다.
-5. Spring Boot 인증과 권한 검사를 연결합니다.
-6. 실제 DB 사용자 테이블과 운영 데이터를 연결합니다.
+2. 프론트엔드 auth adapter가 Spring Boot API를 호출하게 유지합니다.
+3. 관리자 등록 승인과 근로자 로그인 상태를 DB 기반으로 관리합니다.
+4. Spring Security 관리자 인증을 붙입니다.
+5. 급여 서류 제출 API와 파일 저장소 권한 검사를 연결합니다.
+6. 대시보드 운영 데이터를 API로 단계적으로 교체합니다.
 
 개발 순서:
 
 ```text
-Frontend first
-→ 로그인 화면과 대시보드 액션을 mock으로 검증
+Frontend + Backend together
+→ 로그인 화면은 `/api/worker-registrations`, `/api/auth/worker-login` 호출
 
-Backend next
-→ 로그인 API, 사용자 권한, DB 스키마 설계
+Backend persistence
+→ 사용자 등록 상태는 JPA 저장소를 통해 관리
 
-Integration
-→ mock auth를 실제 API auth로 교체
+Test-only mock
+→ 테스트 fixture와 `demos/` 보존 화면에만 mock 유지
 ```
 
 로그인에서 먼저 확정할 항목:
@@ -99,16 +104,15 @@ UI component
 auth service
 → 로그인 요청과 인증 상태 조율 담당
 
-mock auth adapter
-→ 현재 단계의 가짜 로그인 담당
-
 api auth adapter
-→ 나중에 Spring Boot API 연결 담당
+→ Spring Boot API 호출 담당
+
+test auth fixture
+→ 테스트 환경에서만 가짜 로그인 또는 응답 fixture 담당
 ```
 
-이 구조를 유지하면 현재는 정적 또는 mock 환경에서 UI를 검증하고, 이후
-Spring Boot 백엔드가 준비되면 auth adapter와 API 호출부를 교체해 실제 인증으로
-전환할 수 있습니다.
+운영 경로에서는 mock fallback을 새로 추가하지 않습니다. API가 준비되지 않은
+영역은 화면에서 연동 필요 상태를 명확히 표시하고, 테스트에서만 fixture를 둡니다.
 
 ## Backend Direction
 
@@ -213,9 +217,11 @@ mock 데모를 보존하는 비교용 폴더입니다. `frontend/index.html`은 
 
 현재 날씨 데이터 구조:
 
-- `frontend/src/data/demoData.ts`가 React 전환 단계의 mock 데이터를 관리합니다.
-- `dashboard-data.js`는 `buildDashboardWeather()` 결과를 워터밤 행사 mock 데이터와 합쳐 하단 탭 화면에 전달합니다.
-- 실제 기상청 API 연결 시에는 `weather-api.js`의 `mockKmaForecastResponse`를 API 응답 어댑터로 교체합니다.
+- 운영 앱의 로그인/등록 승인 데이터는 백엔드 API에서 가져옵니다.
+- `demos/dashboard/` 아래의 `dashboard-data.js`와 `weather-api.js`는 보존 데모
+  전용 참고 코드입니다.
+- 실제 기상청 API 연결 시에는 브라우저가 직접 외부 API를 호출하지 않고 백엔드
+  어댑터를 통해 데이터를 전달받습니다.
 - 특보는 일반 날씨 예보와 같은 값으로 섞지 않고 별도 채널에서 받은 뒤, 위험 등급 상향 조건으로만 합산합니다.
 - 보정값은 `correctionProfile`에 따로 두며, 원천값과 보정 후 값을 화면에서 구분해 확인할 수 있게 유지합니다.
 
@@ -239,25 +245,27 @@ mock 데모를 보존하는 비교용 폴더입니다. `frontend/index.html`은 
 현재 로그인 후 흐름:
 
 ```text
-최초 등록 또는 로그인 성공
-→ mock 사용자 세션 저장
-→ `payrollDocumentRequiredWorkTypes`에 포함된 `직접 고용` 사용자이고 제출 기록이 없으면 급여 서류 제출 페이지로 이동
+최초 등록 요청
+→ 관리자 근로자 관리에서 실제 등록 인원 대조
+→ 등록 승인
+→ 로그인 성공 후 사용자 세션 저장
+→ `직접 고용` 사용자이고 제출 기록이 없으면 급여 서류 제출 페이지로 이동
 → 제출 완료 기록이 있거나 대상자가 아니면 대시보드로 이동
 ```
 
 현재 구현 방식:
 
-- 급여 서류 대상자 판별은 `frontend/src/features/auth/session.ts`의 mock 세션
-  어댑터로 처리합니다.
-- 현재 mock 고용 유형은 `직접 고용`, `외부 고용` 두 가지이며, `직접 고용`
-  계정만 급여 정보 등록 화면으로 이동합니다.
-- 제출 완료 여부는 GitHub Pages 정적 데모에 맞춰 브라우저 `localStorage`에 저장합니다.
+- 급여 서류 대상자 판별은 로그인 API 응답의 `workType`과
+  `payrollDocumentStatus`를 기준으로 처리합니다.
+- 현재 고용 유형은 `직접 고용`, `외부 고용` 두 가지이며, `직접 고용` 계정만
+  급여 정보 등록 화면으로 이동합니다.
+- 제출 완료 여부는 이후 급여 서류 제출 API에서 관리해야 하며, 운영 경로에서
+  브라우저 `localStorage`를 원장처럼 쓰지 않습니다.
 - 로그인 이후 화면은 URL에 `/dashboard/`, `/payroll-documents/`, `/admin/`을
   직접 노출하지 않고 `/app/` 보안 진입점에서 세션 상태에 따라 분기합니다.
 - 대시보드 표시 대상이어도 미제출 대상자이면 `/app/` 안에서 급여 서류 제출
   화면을 먼저 표시합니다.
-- 현재 데모에서는 텍스트 입력값과 파일명/크기/형식만 제출 기록에 저장합니다.
-- 데모 재테스트나 재제출이 필요하면 대시보드 프로필 탭의 `급여 서류 재제출`을 누릅니다.
+- 현재 급여 서류 저장 API와 파일 업로드 API는 후속 구현 대상입니다.
 
 현재 표시 항목:
 
@@ -293,11 +301,10 @@ mock 데모를 보존하는 비교용 폴더입니다. `frontend/index.html`은 
 - 파일 선택 UI는 브라우저 내부 상태에서만 동작하는 mock으로 구현합니다.
 - 주소 검색은 Kakao 우편번호 서비스 스크립트를 우선 사용하고, 정적 데모 환경에서
   스크립트를 불러오지 못하면 placeholder 주소를 넣는 fallback을 둡니다.
-- 제출 완료 처리는 `localStorage`에 기록하는 mock 동작으로 구현합니다.
+- 제출 완료 처리는 백엔드 API와 파일 저장소 연동으로 구현합니다.
 - 보관 기간과 파기 기준은 실제 법무/노무 검토 전 확정 문구처럼 쓰지 말고,
   "추후 운영 기준에 따라 명시"하는 가이드 문구로 표현합니다.
-- 관리자 열람, 승인, 반려, 파기 이력은 향후 구현 고려사항으로 문서화하되,
-  현재 데모에서 관리자 기능까지 만들 필요는 없습니다.
+- 관리자 열람, 승인, 반려, 파기 이력은 운영 백엔드 권한 검사와 함께 확장합니다.
 
 나중에 데이터베이스를 붙일 때는 프론트에 전화번호 목록을 두지 말고, 로그인 API가
 사용자별 서류 제출 상태를 내려줘야 합니다.
@@ -333,8 +340,13 @@ mock 데모를 보존하는 비교용 폴더입니다. `frontend/index.html`은 
 현재 구현 방식:
 
 - `frontend/src/pages/AdminPage.tsx`에서 사이드바 메뉴 전환과 관리자 화면 골격을 처리합니다.
-- 모든 데이터는 React 전환 단계의 mock 데이터입니다.
+- 근로자 등록 승인 데이터는 Spring Boot API와 JPA 저장소를 통해 관리합니다.
 - 관리자 화면은 모바일보다 데스크탑 운영 환경을 우선 기준으로 구성합니다.
+- 근로자 관리는 로그인 페이지에서 들어온 최초 등록 요청을 `pending` 상태로
+  보관하고, 관리자가 실제 등록 인원과 대조한 뒤 `등록 승인` 또는 `반려`할 수
+  있는 API 흐름을 포함합니다.
+- 승인된 직접 고용 근로자는 최초 로그인 시 급여 서류 제출 페이지로 먼저
+  이동합니다.
 
 권장 로그인 응답 필드:
 
@@ -417,7 +429,7 @@ Auth/Firestore/Storage까지 사용할지 별도 결정합니다.
 - 외부 날씨 API를 호출하지 않습니다.
 - 기상 특보 데이터를 일반 예보 mock에 직접 섞지 않습니다.
 - Firebase 프로젝트 ID와 Web App config는 공개 repo에 실서비스 값을 직접 박지 않습니다.
-- Firebase SDK 또는 Spring Boot API 연동은 mock fallback을 유지한 채 단계적으로 적용합니다.
+- 운영 경로의 Firebase SDK 또는 Spring Boot API 연동에는 무조건적인 mock fallback을 두지 않습니다.
 - Cloud Functions가 필요해지기 전까지 브라우저가 직접 민감 외부 API나 Google Sheets를 호출하지 않습니다.
 - 운영 DB는 브라우저에서 직접 접근하지 않습니다.
 - 프론트엔드 번들에 DB 접속 정보, 운영 API key, 관리자 권한 판단 로직을 넣지 않습니다.
@@ -430,10 +442,8 @@ Auth/Firestore/Storage까지 사용할지 별도 결정합니다.
 
 ## Suggested Next Work
 
-1. React/TypeScript 로그인 화면과 현재 mock 세션 흐름을 점검합니다.
-2. 관리자/일반 사용자 역할, 로그인 성공/실패, 로그아웃, 로그인 후 이동 경로를 확정합니다.
-3. 대시보드에서 우선 확인할 클릭 액션 목록을 정하고 mock 데이터로 연결합니다.
-4. Spring Boot 기준 로그인 API 계약 초안을 작성합니다.
-5. 사용자/관리자/급여 서류/대시보드 데이터의 초기 DB 테이블 또는 ERD를 설계합니다.
-6. mock auth adapter를 유지한 상태에서 api auth adapter가 Spring Boot API를 호출하도록 전환합니다.
-7. 운영 DB와 파일 저장소는 백엔드 권한 검사를 통과한 경로로만 연결합니다.
+1. 관리자 인증을 Spring Security 정책에 맞춰 연결합니다.
+2. 급여 서류 제출 API와 파일 저장소 권한 검사를 구현합니다.
+3. 대시보드에서 우선 확인할 클릭 액션 목록을 정하고 API 계약을 작성합니다.
+4. 사용자/관리자/급여 서류/대시보드 데이터의 초기 DB 테이블 또는 ERD를 확장합니다.
+5. 운영 DB와 파일 저장소는 백엔드 권한 검사를 통과한 경로로만 연결합니다.

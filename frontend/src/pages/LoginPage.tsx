@@ -1,10 +1,10 @@
 import { FormEvent, useState } from "react";
 import "../styles/login.css";
-import { workTypeOptions } from "../data/demoData";
+import { workTypeOptions } from "../data/workTypes";
 import {
-  saveSession,
-  signInDemoAdmin,
-  signInDemoWorker,
+  requestWorkerRegistration,
+  signInAdmin,
+  signInWorker,
 } from "../features/auth/session";
 import { SECURE_ENTRY_PATH, navigateTo } from "../features/navigation";
 import type { WorkType } from "../types";
@@ -31,22 +31,27 @@ export function LoginPage() {
   const [loginPassword, setLoginPassword] = useState("");
   const [message, setMessage] = useState("");
 
-  function submitWorker(event: FormEvent<HTMLFormElement>) {
+  async function submitWorker(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     const phone = mode === "register" ? registerPhone : loginPhone;
     const code = mode === "register" ? registerCode : loginCode;
     const password = mode === "register" ? registerPassword : loginPassword;
-    const name = mode === "login" ? loginName : undefined;
-    const workType = mode === "register" ? registerWorkType : undefined;
+    const name = mode === "register" ? registerName : loginName;
 
     try {
-      const session = signInDemoWorker(phone, code, password, name, workType);
-
-      if (mode === "register" && registerName.trim()) {
-        saveSession({ ...session, name: registerName.trim() });
+      if (mode === "register") {
+        await requestWorkerRegistration(registerName, phone, code, password, registerWorkType);
+        setMessage("등록 승인 요청을 보냈습니다. 관리자가 근로자 관리에서 승인하면 로그인할 수 있습니다.");
+        setMode("login");
+        setLoginName(registerName);
+        setLoginPhone(registerPhone);
+        setLoginCode(registerCode);
+        setLoginPassword(registerPassword);
+        return;
       }
 
+      await signInWorker(phone, code, password, name);
       navigateTo(SECURE_ENTRY_PATH);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "로그인에 실패했습니다.");
@@ -54,7 +59,7 @@ export function LoginPage() {
   }
 
   function submitAdmin() {
-    signInDemoAdmin();
+    signInAdmin();
     navigateTo(SECURE_ENTRY_PATH);
   }
 
@@ -149,7 +154,7 @@ export function LoginPage() {
                     type="tel"
                     inputMode="tel"
                     autoComplete="tel"
-                    placeholder="010-0000-0000"
+                    placeholder="010-1234-5678"
                     maxLength={13}
                     value={mode === "register" ? registerPhone : loginPhone}
                     onChange={(event) => {
@@ -180,7 +185,7 @@ export function LoginPage() {
                     <button
                       className="secondary-button request-code"
                       type="button"
-                      onClick={() => setMessage("인증 코드를 보냈습니다. 데모 코드는 123456입니다.")}
+                      onClick={() => setMessage("인증 코드 발송 API 연동이 필요합니다. 현재는 발급받은 코드를 입력해 주세요.")}
                     >
                       코드 요청
                     </button>
