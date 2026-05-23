@@ -13,7 +13,6 @@ CREATE TABLE worker_registrations (
     onboarded_at TIMESTAMP WITH TIME ZONE,
     CONSTRAINT pk_worker_registrations PRIMARY KEY (uid),
     CONSTRAINT uk_worker_registrations_phone UNIQUE (phone),
-    CONSTRAINT chk_worker_registrations_work_type CHECK (work_type IN ('직접 고용', '외부 고용')),
     CONSTRAINT chk_worker_registrations_status CHECK (registration_status IN ('registered', 'onboarded')),
     CONSTRAINT chk_worker_registrations_payroll_status CHECK (payroll_document_status IN ('missing', 'submitted', 'reviewing', 'approved', 'rejected'))
 );

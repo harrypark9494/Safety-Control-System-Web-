@@ -1141,6 +1141,66 @@ td {
   font-size: 1.1rem;
 }
 
+.work-type-card {
+  margin-top: 26px;
+}
+
+.work-type-card .section-toolbar {
+  min-height: 58px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--line-strong);
+  background: #f3f0f2;
+}
+
+.work-type-message {
+  margin: 18px 20px 0;
+}
+
+.work-type-list {
+  display: grid;
+  gap: 0;
+}
+
+.work-type-row,
+.work-type-add-form {
+  display: grid;
+  grid-template-columns: minmax(140px, 1fr) minmax(160px, auto) minmax(150px, auto);
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.work-type-row label,
+.work-type-add-form label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #343b49;
+  font-size: 0.88rem;
+  font-weight: 850;
+}
+
+.work-type-row input[type="checkbox"],
+.work-type-add-form input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--green);
+}
+
+.work-type-add-form {
+  grid-template-columns: minmax(160px, 1fr) minmax(150px, auto) 92px;
+  border-bottom: 0;
+}
+
+.work-type-add-form input[type="text"],
+.work-type-add-form input:not([type]) {
+  min-height: 44px;
+  border: 1px solid var(--line-strong);
+  background: var(--field);
+  padding: 0 14px;
+}
+
 .rules-page .actions-row p {
   margin-top: 12px;
   color: #343b49;

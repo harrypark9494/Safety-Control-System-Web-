@@ -54,15 +54,28 @@ schema, and JPA validates that schema on startup.
 - `DELETE /api/admin/worker-registrations/{phone}`: delete a worker record.
   Protected endpoint.
 
-When a `직접 고용` worker is onboarded and has `payrollDocumentStatus=missing`,
-the login response sets `payrollDocumentsRequired=true`; the frontend should
-route that worker to the payroll document submission page before the dashboard.
+When a worker's admin-managed work type has `payrollDocumentsRequired=true`
+and that worker has `payrollDocumentStatus=missing`, the login response sets
+`payrollDocumentsRequired=true`; the frontend should route that worker to the
+payroll document submission page before the dashboard.
 Phone numbers are normalized to the `010-1234-5678` style before persistence and
-lookup. `workType` only accepts `직접 고용` or `외부 고용`.
+lookup. `workType` accepts labels registered in the `work_types` table.
 
 The admin registration endpoints are temporarily open in local development
 until administrator authentication is wired. Before production exposure, move
 them behind the final admin auth policy.
+
+## Admin Login Direction
+
+Administrator entry uses Google login by default. The frontend should obtain a
+Firebase Auth Google ID token and send it to `POST /api/auth/admin-login`.
+The backend must validate the token signature, require a verified email, check
+the Google Workspace domain, and then grant actual admin privileges only for a
+full-email allowlist such as `admin_users(email, name, role, is_active)`.
+
+The Google hosted-domain value is only a login hint on the frontend. It must
+not be treated as the authorization boundary unless the backend has verified
+the token claims and the active admin allowlist.
 
 The default profile uses an in-memory H2 database so the application can start
 before the real database is provisioned. Production database settings are read

@@ -1,14 +1,15 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import "../styles/login.css";
-import { workTypeOptions } from "../data/workTypes";
+import { fallbackWorkTypes } from "../data/workTypes";
 import {
   completeWorkerOnboarding,
+  getWorkTypes,
   signInAdmin,
   signInWorker,
 } from "../features/auth/session";
-import { SECURE_ENTRY_PATH, navigateTo } from "../features/navigation";
+import { getSecureEntryPath, navigateTo } from "../features/navigation";
 import { formatPhone } from "../features/phone";
-import type { WorkType } from "../types";
+import type { WorkType, WorkTypeSetting } from "../types";
 
 export function LoginPage() {
   const [tab, setTab] = useState<"worker" | "admin">("worker");
@@ -17,12 +18,33 @@ export function LoginPage() {
   const [registerPhone, setRegisterPhone] = useState("");
   const [registerCode, setRegisterCode] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
-  const [registerWorkType, setRegisterWorkType] = useState<WorkType>(workTypeOptions[0]);
+  const [workTypes, setWorkTypes] = useState<WorkTypeSetting[]>(fallbackWorkTypes);
+  const [registerWorkType, setRegisterWorkType] = useState<WorkType>(fallbackWorkTypes[0].label);
   const [loginName, setLoginName] = useState("");
   const [loginPhone, setLoginPhone] = useState("");
   const [loginCode, setLoginCode] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getWorkTypes()
+      .then((nextWorkTypes) => {
+        if (!isMounted || nextWorkTypes.length === 0) return;
+        setWorkTypes(nextWorkTypes);
+        setRegisterWorkType((current) =>
+          nextWorkTypes.some((workType) => workType.label === current) ? current : nextWorkTypes[0].label,
+        );
+      })
+      .catch((error) => {
+        setMessage(error instanceof Error ? error.message : "고용 유형 목록을 불러오지 못했습니다.");
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   async function submitWorker(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -45,15 +67,19 @@ export function LoginPage() {
       }
 
       await signInWorker(phone, code, password, name);
-      navigateTo(SECURE_ENTRY_PATH);
+      navigateTo(getSecureEntryPath());
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "로그인에 실패했습니다.");
     }
   }
 
-  function submitAdmin() {
-    signInAdmin();
-    navigateTo(SECURE_ENTRY_PATH);
+  async function submitAdmin() {
+    try {
+      await signInAdmin();
+      navigateTo(getSecureEntryPath());
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "관리자 Google 로그인에 실패했습니다.");
+    }
   }
 
   return (
@@ -194,9 +220,9 @@ export function LoginPage() {
                       onChange={(event) => setRegisterWorkType(event.target.value as WorkType)}
                       required
                     >
-                      {workTypeOptions.map((workTypeOption) => (
-                        <option key={workTypeOption} value={workTypeOption}>
-                          {workTypeOption}
+                      {workTypes.map((workTypeOption) => (
+                        <option key={workTypeOption.label} value={workTypeOption.label}>
+                          {workTypeOption.label}
                         </option>
                       ))}
                     </select>

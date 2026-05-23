@@ -10,6 +10,7 @@ node_modules/
 # Local agent/tooling files
 .agents/
 skills-lock.json
+local-reports/
 
 # Environment / secrets
 .env

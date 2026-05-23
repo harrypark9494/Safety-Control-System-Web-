@@ -1,15 +1,17 @@
 import { FormEvent, useEffect, useState } from "react";
 import "../styles/admin.css";
-import { workTypeOptions } from "../data/workTypes";
+import { fallbackWorkTypes } from "../data/workTypes";
 import {
   clearSession,
   createRegisteredWorker,
   deleteRegisteredWorker,
   getRegisteredWorkers,
+  getWorkTypes,
+  saveWorkType,
 } from "../features/auth/session";
 import { navigateTo } from "../features/navigation";
 import { formatPhone } from "../features/phone";
-import type { WorkerRegistrationAccount } from "../types";
+import type { WorkerRegistrationAccount, WorkType, WorkTypeSetting } from "../types";
 
 const navItems = [
   ["dashboard", "▦", "대시보드"],
@@ -32,6 +34,7 @@ export function AdminPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
   const [workers, setWorkers] = useState<WorkerRegistrationAccount[]>([]);
+  const [workTypes, setWorkTypes] = useState<WorkTypeSetting[]>(fallbackWorkTypes);
   const [workerMessage, setWorkerMessage] = useState("");
 
   function submitAdmin(event: FormEvent<HTMLFormElement>) {
@@ -46,6 +49,7 @@ export function AdminPage() {
 
   useEffect(() => {
     refreshWorkers();
+    refreshWorkTypes();
   }, []);
 
   async function refreshWorkers() {
@@ -54,6 +58,17 @@ export function AdminPage() {
       setWorkerMessage("");
     } catch (error) {
       setWorkerMessage(error instanceof Error ? error.message : "근로자 목록을 불러오지 못했습니다.");
+    }
+  }
+
+  async function refreshWorkTypes() {
+    try {
+      const nextWorkTypes = await getWorkTypes({ includeDisabled: true });
+      if (nextWorkTypes.length > 0) {
+        setWorkTypes(nextWorkTypes);
+      }
+    } catch (error) {
+      setWorkerMessage(error instanceof Error ? error.message : "고용 유형 목록을 불러오지 못했습니다.");
     }
   }
 
@@ -96,7 +111,15 @@ export function AdminPage() {
           {view === "weather" ? <WeatherView /> : null}
           {view === "schedule" ? <ScheduleView /> : null}
           {view === "qr" ? <QrView /> : null}
-          {view === "workers" ? <WorkersView workers={workers} message={workerMessage} onRefresh={refreshWorkers} /> : null}
+          {view === "workers" ? (
+            <WorkersView
+              workers={workers}
+              workTypes={workTypes}
+              message={workerMessage}
+              onRefresh={refreshWorkers}
+              onRefreshWorkTypes={refreshWorkTypes}
+            />
+          ) : null}
           {view === "rules" ? <RulesView /> : null}
           {view === "admins" ? <AdminsView onOpen={() => setModalOpen(true)} /> : null}
         </section>
@@ -245,16 +268,22 @@ function QrView() {
 
 function WorkersView({
   workers,
+  workTypes,
   message,
   onRefresh,
+  onRefreshWorkTypes,
 }: {
   workers: WorkerRegistrationAccount[];
+  workTypes: WorkTypeSetting[];
   message: string;
   onRefresh: () => Promise<void>;
+  onRefreshWorkTypes: () => Promise<void>;
 }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [workType, setWorkType] = useState<(typeof workTypeOptions)[number]>(workTypeOptions[0]);
+  const enabledWorkTypes = workTypes.filter((option) => option.enabled);
+  const selectableWorkTypes = enabledWorkTypes.length > 0 ? enabledWorkTypes : fallbackWorkTypes;
+  const [workType, setWorkType] = useState<WorkType>(selectableWorkTypes[0].label);
   const [team, setTeam] = useState("");
   const [supervisor, setSupervisor] = useState("");
   const [formMessage, setFormMessage] = useState("");
@@ -265,10 +294,16 @@ function WorkersView({
   function resetRegistrationForm() {
     setName("");
     setPhone("");
-    setWorkType(workTypeOptions[0]);
+    setWorkType(selectableWorkTypes[0].label);
     setTeam("");
     setSupervisor("");
   }
+
+  useEffect(() => {
+    if (!selectableWorkTypes.some((option) => option.label === workType)) {
+      setWorkType(selectableWorkTypes[0].label);
+    }
+  }, [selectableWorkTypes, workType]);
 
   async function registerWorker(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -354,6 +389,8 @@ function WorkersView({
               <small>온보딩 완료 {onboardedCount} 명</small>
             </div>
           </article>
+
+          <WorkTypeManager workTypes={workTypes} onRefresh={onRefreshWorkTypes} />
         </div>
       </section>
 
@@ -368,7 +405,7 @@ function WorkersView({
               <div className="modal-body">
                 <label>이름<input value={name} onChange={(event) => setName(event.target.value)} autoComplete="off" required /></label>
                 <label>연락처<input value={phone} onChange={(event) => setPhone(formatPhone(event.target.value))} placeholder="010-1234-5678" autoComplete="off" maxLength={13} required /></label>
-                <label>고용 유형<select value={workType} onChange={(event) => setWorkType(event.target.value as (typeof workTypeOptions)[number])}>{workTypeOptions.map((option) => <option key={option}>{option}</option>)}</select></label>
+                <label>고용 유형<select value={workType} onChange={(event) => setWorkType(event.target.value)}>{selectableWorkTypes.map((option) => <option key={option.label}>{option.label}</option>)}</select></label>
                 <label>담당 구역<input value={team} onChange={(event) => setTeam(event.target.value)} placeholder="예: Stage Alpha" autoComplete="off" required /></label>
                 <label>담당 관리자<input value={supervisor} onChange={(event) => setSupervisor(event.target.value)} placeholder="예: 관리자 A" autoComplete="off" required /></label>
                 <p>등록된 이름, 연락처, 고용 유형은 근로자 회원가입 시 대조 기준으로 사용됩니다.</p>
@@ -383,6 +420,105 @@ function WorkersView({
         </div>
       ) : null}
     </>
+  );
+}
+
+function WorkTypeManager({
+  workTypes,
+  onRefresh,
+}: {
+  workTypes: WorkTypeSetting[];
+  onRefresh: () => Promise<void>;
+}) {
+  const [label, setLabel] = useState("");
+  const [payrollDocumentsRequired, setPayrollDocumentsRequired] = useState(false);
+  const [message, setMessage] = useState("");
+  const nextSortOrder = Math.max(0, ...workTypes.map((workType) => workType.sortOrder)) + 10;
+
+  async function updateWorkType(workType: WorkTypeSetting, updates: Partial<WorkTypeSetting>) {
+    try {
+      await saveWorkType({
+        label: workType.label,
+        enabled: updates.enabled ?? workType.enabled,
+        payrollDocumentsRequired: updates.payrollDocumentsRequired ?? workType.payrollDocumentsRequired,
+        sortOrder: updates.sortOrder ?? workType.sortOrder,
+      });
+      setMessage("고용 유형 설정이 저장되었습니다.");
+      await onRefresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "고용 유형 설정 저장에 실패했습니다.");
+    }
+  }
+
+  async function addWorkType(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    try {
+      await saveWorkType({
+        label,
+        enabled: true,
+        payrollDocumentsRequired,
+        sortOrder: nextSortOrder,
+      });
+      setLabel("");
+      setPayrollDocumentsRequired(false);
+      setMessage("고용 유형이 추가되었습니다.");
+      await onRefresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "고용 유형 추가에 실패했습니다.");
+    }
+  }
+
+  return (
+    <section className="app-card work-type-card">
+      <div className="section-toolbar">
+        <h2>고용 유형 관리</h2>
+        <span className="count-pill">총 {workTypes.length}개</span>
+      </div>
+      {message ? <p className="form-message work-type-message" role="status">{message}</p> : null}
+      <div className="work-type-list">
+        {workTypes.map((workType) => (
+          <div className="work-type-row" key={workType.label}>
+            <strong>{workType.label}</strong>
+            <label>
+              <input
+                type="checkbox"
+                checked={workType.enabled}
+                onChange={(event) => updateWorkType(workType, { enabled: event.target.checked })}
+              />
+              로그인 선택지 표시
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={workType.payrollDocumentsRequired}
+                onChange={(event) => updateWorkType(workType, { payrollDocumentsRequired: event.target.checked })}
+              />
+              서류 제출 필요
+            </label>
+          </div>
+        ))}
+      </div>
+      <form className="work-type-add-form" onSubmit={addWorkType}>
+        <input
+          value={label}
+          onChange={(event) => setLabel(event.target.value)}
+          placeholder="새 고용 유형"
+          autoComplete="off"
+          maxLength={40}
+          required
+        />
+        <label>
+          <input
+            type="checkbox"
+            checked={payrollDocumentsRequired}
+            onChange={(event) => setPayrollDocumentsRequired(event.target.checked)}
+          />
+          서류 제출 필요
+        </label>
+        <button className="dark-button" type="submit">추가</button>
+      </form>
+    </section>
   );
 }
 

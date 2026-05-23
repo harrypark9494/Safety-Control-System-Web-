@@ -75,10 +75,10 @@ Safety-Control-System-Web-/
 | Page | Local path | Hosting path |
 | --- | --- | --- |
 | Log in | `frontend/src/pages/LoginPage.tsx` | `/`, `/login/` |
-| Secure app entry | `frontend/src/App.tsx` | `/app/` |
-| Dashboard | `frontend/src/pages/DashboardPage.tsx` | `/app/` after worker login |
-| Admin Desktop | `frontend/src/pages/AdminPage.tsx` | `/app/` after admin login |
-| Payroll Documents | `frontend/src/pages/PayrollDocumentsPage.tsx` | `/app/` when required after worker login |
+| Secure app entry | `frontend/src/App.tsx` | `/s/{sessionToken}` after login |
+| Dashboard | `frontend/src/pages/DashboardPage.tsx` | `/s/{sessionToken}` after worker login |
+| Admin Desktop | `frontend/src/pages/AdminPage.tsx` | `/s/{sessionToken}` after admin login |
+| Payroll Documents | `frontend/src/pages/PayrollDocumentsPage.tsx` | `/s/{sessionToken}` when required after worker login |
 
 ## API Contract
 
@@ -137,10 +137,10 @@ firebase deploy --project YOUR_PROJECT_ID --only hosting,firestore:rules,storage
 엔드포인트를 호출합니다. Vite 개발 서버는 `frontend/vite.config.ts`의 proxy로
 `/api` 요청을 `http://localhost:8080`에 전달합니다.
 
-`workTypeOptions`는 로그인/등록 및 급여 정보 등록 화면의 고용 유형 선택값으로
-사용합니다. 현재 값은 `frontend/src/data/workTypes.ts`에 두며, 이후 관리자
-설정 API 또는 DB 코드 테이블로 옮길 수 있습니다.
+고용 유형 선택지는 Spring Boot `/api/work-types`에서 가져오며, 관리자 화면의
+고용 유형 관리에서 활성 여부와 급여/세무 서류 제출 필요 여부를 조절합니다.
+`frontend/src/data/workTypes.ts`는 API 연결 실패 시 사용하는 기본 fallback만 둡니다.
 
-`직접 고용` 사용자는 관리자 등록 승인 후 최초 로그인 시 급여 정보 등록 화면으로
+서류 제출 대상 사용자는 관리자 등록 승인 후 최초 로그인 시 급여 정보 등록 화면으로
 이동합니다. 이 판단은 백엔드 로그인 응답의 `payrollDocumentsRequired`와
-`payrollDocumentStatus`를 기준으로 확장합니다.
+`payrollDocumentStatus`를 기준으로 처리합니다.

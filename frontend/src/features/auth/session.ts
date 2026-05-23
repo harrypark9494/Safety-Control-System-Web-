@@ -1,8 +1,12 @@
-import type { AppSession, WorkerRegistrationAccount, WorkerSession, WorkType } from "../../types";
+import type { AppSession, WorkerRegistrationAccount, WorkerSession, WorkType, WorkTypeSetting } from "../../types";
+import { GoogleAuthProvider, getAuth, signInWithPopup } from "firebase/auth";
+import { createFirebaseApp } from "../firebase/firebaseApp";
+import { clearSecureEntryPath } from "../navigation";
 import { formatPhone } from "../phone";
 
 const SESSION_KEY = "safetyControlSession";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+const ADMIN_GOOGLE_DOMAIN = import.meta.env.VITE_ADMIN_GOOGLE_DOMAIN ?? "";
 
 type WorkerRegistrationResponse = {
   uid: string;
@@ -19,6 +23,10 @@ type WorkerRegistrationResponse = {
 
 type WorkerLoginResponse = WorkerSession & {
   payrollDocumentsRequired: boolean;
+};
+
+type AdminLoginResponse = AppSession & {
+  role: "admin";
 };
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
@@ -79,6 +87,7 @@ export function saveSession(session: AppSession): void {
 
 export function clearSession(): void {
   window.sessionStorage.removeItem(SESSION_KEY);
+  clearSecureEntryPath();
 }
 
 export async function completeWorkerOnboarding(
@@ -94,6 +103,18 @@ export async function completeWorkerOnboarding(
   });
 
   return toRegistrationAccount(worker);
+}
+
+export async function getWorkTypes(options: { includeDisabled?: boolean } = {}): Promise<WorkTypeSetting[]> {
+  const path = options.includeDisabled ? "/api/admin/work-types" : "/api/work-types";
+  return requestJson<WorkTypeSetting[]>(path);
+}
+
+export async function saveWorkType(setting: Pick<WorkTypeSetting, "label" | "enabled" | "payrollDocumentsRequired" | "sortOrder">): Promise<WorkTypeSetting> {
+  return requestJson<WorkTypeSetting>("/api/admin/work-types", {
+    method: "POST",
+    body: JSON.stringify(setting),
+  });
 }
 
 export async function getRegisteredWorkers(): Promise<WorkerRegistrationAccount[]> {
@@ -142,13 +163,25 @@ export async function signInWorker(
   return session;
 }
 
-export function signInAdmin(): AppSession {
-  const session: AppSession = {
-    uid: "admin-local-session",
-    role: "admin",
-    name: "관리자",
-    email: "admin@safetycontrol.local",
-  };
+export async function signInAdmin(): Promise<AppSession> {
+  const firebaseApp = createFirebaseApp();
+
+  if (!firebaseApp) {
+    throw new Error("Firebase Google 로그인 설정이 필요합니다.");
+  }
+
+  const provider = new GoogleAuthProvider();
+  if (ADMIN_GOOGLE_DOMAIN) {
+    provider.setCustomParameters({ hd: ADMIN_GOOGLE_DOMAIN });
+  }
+
+  const auth = getAuth(firebaseApp);
+  const result = await signInWithPopup(auth, provider);
+  const idToken = await result.user.getIdToken();
+  const session = await requestJson<AdminLoginResponse>("/api/auth/admin-login", {
+    method: "POST",
+    body: JSON.stringify({ idToken }),
+  });
 
   saveSession(session);
   return session;
@@ -157,7 +190,7 @@ export function signInAdmin(): AppSession {
 export function requiresPayrollDocuments(session: AppSession | null): boolean {
   return (
     session?.role === "worker" &&
-    session.workType === "직접 고용" &&
+    session.payrollDocumentsRequired &&
     session.payrollDocumentStatus === "missing"
   );
 }

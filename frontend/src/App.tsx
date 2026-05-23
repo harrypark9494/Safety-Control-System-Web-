@@ -4,9 +4,14 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
 import { PayrollDocumentsPage } from "./pages/PayrollDocumentsPage";
 import { getSession, requiresPayrollDocuments } from "./features/auth/session";
-import { APP_NAVIGATION_EVENT, SECURE_ENTRY_PATH, replaceWith } from "./features/navigation";
+import {
+  APP_NAVIGATION_EVENT,
+  getSecureEntryPath,
+  isSecureEntryPath,
+  replaceWith,
+} from "./features/navigation";
 
-const exposedSecurePaths = ["/dashboard", "/payroll-documents", "/admin"];
+const exposedSecurePaths = ["/app", "/dashboard", "/payroll-documents", "/admin"];
 
 export function App() {
   const [path, setPath] = useState(() => window.location.pathname.replace(/\/+$/, "") || "/");
@@ -27,7 +32,7 @@ export function App() {
 
   useEffect(() => {
     if (exposedSecurePaths.some((securePath) => path.endsWith(securePath))) {
-      replaceWith(getSession() ? SECURE_ENTRY_PATH : "/login/");
+      replaceWith(getSession() ? getSecureEntryPath() : "/login/");
     }
   }, [path]);
 
@@ -35,7 +40,7 @@ export function App() {
     return <LoginPage />;
   }
 
-  if (path.endsWith("/app")) {
+  if (isSecureEntryPath(path)) {
     return <SecureEntry />;
   }
 

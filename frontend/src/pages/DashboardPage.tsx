@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
 import { clearSession, getSession, requiresPayrollDocuments } from "../features/auth/session";
-import { SECURE_ENTRY_PATH, navigateTo } from "../features/navigation";
+import { getSecureEntryPath, navigateTo } from "../features/navigation";
 
 type Tab = "dashboard" | "schedule" | "safety" | "profile";
 type IconName =
@@ -481,7 +481,7 @@ export function DashboardPage() {
 
   useEffect(() => {
     if (shouldRedirectToPayroll) {
-      navigateTo(SECURE_ENTRY_PATH);
+    navigateTo(getSecureEntryPath());
     }
   }, [shouldRedirectToPayroll]);
 

@@ -1,6 +1,6 @@
 export type UserRole = "worker" | "admin";
 
-export type WorkType = "직접 고용" | "외부 고용";
+export type WorkType = string;
 
 export type PayrollDocumentStatus =
   | "missing"
@@ -21,6 +21,7 @@ export interface WorkerSession {
   supervisor: string;
   schedule: string;
   status: string;
+  payrollDocumentsRequired: boolean;
   payrollDocumentStatus: PayrollDocumentStatus;
 }
 
@@ -44,6 +45,14 @@ export interface WorkerRegistrationAccount {
   payrollDocumentStatus: PayrollDocumentStatus;
   registeredAt: string;
   onboardedAt?: string;
+}
+
+export interface WorkTypeSetting {
+  label: WorkType;
+  enabled: boolean;
+  payrollDocumentsRequired: boolean;
+  sortOrder: number;
+  updatedAt?: string;
 }
 
 export interface PayrollSubmission {

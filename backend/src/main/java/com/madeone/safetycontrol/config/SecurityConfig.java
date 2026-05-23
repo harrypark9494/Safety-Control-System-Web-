@@ -22,8 +22,9 @@ public class SecurityConfig {
 			.authorizeHttpRequests(auth -> auth
 				.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 				.requestMatchers("/api/health", "/actuator/health", "/actuator/info").permitAll()
+				.requestMatchers(HttpMethod.GET, "/api/work-types").permitAll()
 				.requestMatchers(HttpMethod.POST, "/api/auth/worker-login", "/api/worker-registrations").permitAll()
-				.requestMatchers("/api/admin/worker-registrations/**").permitAll()
+				.requestMatchers("/api/admin/worker-registrations/**", "/api/admin/work-types/**").permitAll()
 				.requestMatchers("/api/**").authenticated()
 				.anyRequest().denyAll()
 			)

@@ -79,13 +79,19 @@ public class WorkerRegistration {
 		}
 	}
 
-	public void updateRegistration(String name, String workType, String team, String supervisor) {
+	public void updateRegistration(
+		String name,
+		String workType,
+		String team,
+		String supervisor,
+		String payrollDocumentStatus
+	) {
 		this.name = name;
 		this.workType = workType;
 		this.team = team;
 		this.supervisor = supervisor;
 		this.registrationStatus = "registered";
-		this.payrollDocumentStatus = "직접 고용".equals(workType) ? "missing" : "approved";
+		this.payrollDocumentStatus = payrollDocumentStatus;
 		this.registeredAt = Instant.now();
 		this.onboardedAt = null;
 		this.passwordHash = null;

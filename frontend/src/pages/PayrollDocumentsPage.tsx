@@ -1,7 +1,7 @@
 import { ChangeEvent, FormEvent, useState } from "react";
 import "../styles/payroll-documents.css";
 import { getSession, markPayrollSubmitted } from "../features/auth/session";
-import { SECURE_ENTRY_PATH, navigateTo } from "../features/navigation";
+import { getSecureEntryPath, navigateTo } from "../features/navigation";
 
 const banks = ["국민", "신한", "우리", "하나", "농협", "기업", "카카오뱅크", "토스뱅크"];
 
@@ -48,7 +48,7 @@ export function PayrollDocumentsPage() {
     markPayrollSubmitted();
     setMessage("급여 정보 등록이 완료되었습니다. 대시보드로 이동합니다.");
     window.setTimeout(() => {
-      navigateTo(SECURE_ENTRY_PATH);
+      navigateTo(getSecureEntryPath());
     }, 650);
   }
 

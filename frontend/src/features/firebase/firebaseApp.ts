@@ -1,4 +1,4 @@
-import { initializeApp, type FirebaseApp } from "firebase/app";
+import { getApps, initializeApp, type FirebaseApp } from "firebase/app";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -11,6 +11,11 @@ const firebaseConfig = {
 export function createFirebaseApp(): FirebaseApp | null {
   if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
     return null;
+  }
+
+  const [existingApp] = getApps();
+  if (existingApp) {
+    return existingApp;
   }
 
   return initializeApp(firebaseConfig);

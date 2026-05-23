@@ -1,9 +1,10 @@
 package com.madeone.safetycontrol.api;
 
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.List;
 
+import com.madeone.safetycontrol.domain.WorkTypeSetting;
+import com.madeone.safetycontrol.domain.WorkTypeSettingRepository;
 import com.madeone.safetycontrol.domain.WorkerRegistration;
 import com.madeone.safetycontrol.domain.WorkerRegistrationRepository;
 
@@ -44,6 +45,21 @@ class WorkerRegistrationController {
 	@GetMapping("/api/admin/worker-registrations")
 	List<RegistrationResponse> listRegistrations() {
 		return registrations.list();
+	}
+
+	@GetMapping("/api/work-types")
+	List<WorkTypeResponse> listEnabledWorkTypes() {
+		return registrations.listEnabledWorkTypes();
+	}
+
+	@GetMapping("/api/admin/work-types")
+	List<WorkTypeResponse> listWorkTypes() {
+		return registrations.listWorkTypes();
+	}
+
+	@PostMapping("/api/admin/work-types")
+	WorkTypeResponse saveWorkType(@Valid @RequestBody WorkTypeRequest request) {
+		return registrations.saveWorkType(request);
 	}
 
 	@PostMapping("/api/admin/worker-registrations")
@@ -110,16 +126,39 @@ class WorkerRegistrationController {
 		String payrollDocumentStatus
 	) {
 	}
+
+	record WorkTypeRequest(
+		@NotBlank String label,
+		boolean enabled,
+		boolean payrollDocumentsRequired,
+		int sortOrder
+	) {
+	}
+
+	record WorkTypeResponse(
+		String label,
+		boolean enabled,
+		boolean payrollDocumentsRequired,
+		int sortOrder,
+		Instant updatedAt
+	) {
+	}
 }
 
 @org.springframework.stereotype.Service
 class WorkerRegistrationService {
 
 	private final WorkerRegistrationRepository registrations;
+	private final WorkTypeSettingRepository workTypes;
 	private final PasswordEncoder passwordEncoder;
 
-	WorkerRegistrationService(WorkerRegistrationRepository registrations, PasswordEncoder passwordEncoder) {
+	WorkerRegistrationService(
+		WorkerRegistrationRepository registrations,
+		WorkTypeSettingRepository workTypes,
+		PasswordEncoder passwordEncoder
+	) {
 		this.registrations = registrations;
+		this.workTypes = workTypes;
 		this.passwordEncoder = passwordEncoder;
 	}
 
@@ -136,7 +175,8 @@ class WorkerRegistrationService {
 					request.name().trim(),
 					workType,
 					request.team().trim(),
-					request.supervisor().trim()
+					request.supervisor().trim(),
+					initialPayrollDocumentStatus(workType)
 				);
 				return existing;
 			})
@@ -146,7 +186,7 @@ class WorkerRegistrationService {
 				workType,
 				request.team().trim(),
 				request.supervisor().trim(),
-				"직접 고용".equals(workType) ? "missing" : "approved"
+				initialPayrollDocumentStatus(workType)
 			));
 
 		return toResponse(registrations.save(worker));
@@ -202,9 +242,31 @@ class WorkerRegistrationService {
 			worker.getSupervisor(),
 			"근무 일정 배정 전",
 			"온보딩 완료",
-			"직접 고용".equals(worker.getWorkType()) && "missing".equals(worker.getPayrollDocumentStatus()),
+			isPayrollDocumentRequired(worker.getWorkType()) && "missing".equals(worker.getPayrollDocumentStatus()),
 			worker.getPayrollDocumentStatus()
 		);
+	}
+
+	List<WorkerRegistrationController.WorkTypeResponse> listEnabledWorkTypes() {
+		return workTypes.findByEnabledTrueOrderBySortOrderAscLabelAsc().stream()
+			.map(this::toWorkTypeResponse)
+			.toList();
+	}
+
+	List<WorkerRegistrationController.WorkTypeResponse> listWorkTypes() {
+		return workTypes.findAllByOrderBySortOrderAscLabelAsc().stream()
+			.map(this::toWorkTypeResponse)
+			.toList();
+	}
+
+	@Transactional
+	WorkerRegistrationController.WorkTypeResponse saveWorkType(WorkerRegistrationController.WorkTypeRequest request) {
+		String label = normalizeWorkTypeLabel(request.label());
+		WorkTypeSetting workType = workTypes.findById(label)
+			.orElseGet(() -> new WorkTypeSetting(label, request.enabled(), request.payrollDocumentsRequired(), request.sortOrder()));
+
+		workType.update(request.enabled(), request.payrollDocumentsRequired(), request.sortOrder());
+		return toWorkTypeResponse(workTypes.save(workType));
 	}
 
 	private WorkerRegistration find(String phone) {
@@ -227,13 +289,33 @@ class WorkerRegistrationService {
 	}
 
 	private String normalizeWorkType(String workType) {
-		String normalized = workType == null ? "" : workType.trim();
+		String normalized = normalizeWorkTypeLabel(workType);
 
-		if (Arrays.asList("직접 고용", "외부 고용").contains(normalized)) {
+		if (workTypes.existsById(normalized)) {
 			return normalized;
 		}
 
 		throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "지원하지 않는 고용 유형입니다.");
+	}
+
+	private String normalizeWorkTypeLabel(String workType) {
+		String normalized = workType == null ? "" : workType.trim();
+
+		if (normalized.isEmpty() || normalized.length() > 40) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "고용 유형은 1자 이상 40자 이하여야 합니다.");
+		}
+
+		return normalized;
+	}
+
+	private String initialPayrollDocumentStatus(String workType) {
+		return isPayrollDocumentRequired(workType) ? "missing" : "approved";
+	}
+
+	private boolean isPayrollDocumentRequired(String workType) {
+		return workTypes.findById(workType)
+			.map(WorkTypeSetting::isPayrollDocumentsRequired)
+			.orElse(false);
 	}
 
 	private WorkerRegistrationController.RegistrationResponse toResponse(WorkerRegistration worker) {
@@ -248,6 +330,16 @@ class WorkerRegistrationService {
 			worker.getPayrollDocumentStatus(),
 			worker.getRegisteredAt(),
 			worker.getOnboardedAt()
+		);
+	}
+
+	private WorkerRegistrationController.WorkTypeResponse toWorkTypeResponse(WorkTypeSetting workType) {
+		return new WorkerRegistrationController.WorkTypeResponse(
+			workType.getLabel(),
+			workType.isEnabled(),
+			workType.isPayrollDocumentsRequired(),
+			workType.getSortOrder(),
+			workType.getUpdatedAt()
 		);
 	}
 }
