@@ -13,7 +13,7 @@ import {
 } from "../features/auth/session";
 import { navigateTo } from "../features/navigation";
 import { formatPhone } from "../features/phone";
-import type { WorkerRegistrationAccount, WorkType, WorkTypeSetting } from "../types";
+import type { PayrollDocumentStatus, WorkerRegistrationAccount, WorkType, WorkTypeSetting } from "../types";
 
 const navItems = [
   ["dashboard", "▦", "대시보드"],
@@ -291,7 +291,10 @@ function WorkersView({
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
   const [workTypeModalOpen, setWorkTypeModalOpen] = useState(false);
   const [workTypeListOpen, setWorkTypeListOpen] = useState(false);
+  const [selectedWorker, setSelectedWorker] = useState<WorkerRegistrationAccount | null>(null);
+  const [openActionWorkerUid, setOpenActionWorkerUid] = useState("");
   const onboardedCount = workers.filter((worker) => worker.registrationStatus === "onboarded").length;
+  const payrollRequiredWorkerCount = workers.filter((worker) => isPayrollDocumentsRequiredWorker(worker, workTypes)).length;
   const nextSortOrder = Math.max(0, ...workTypes.map((option) => option.sortOrder)) + 10;
 
   function resetRegistrationForm() {
@@ -333,6 +336,8 @@ function WorkersView({
     try {
       await deleteRegisteredWorker(phone);
       setFormMessage("근로자 등록 정보가 삭제되었습니다.");
+      setOpenActionWorkerUid("");
+      setSelectedWorker(null);
       await onRefresh();
     } catch (error) {
       setActionMessage(error instanceof Error ? error.message : "근로자 삭제에 실패했습니다.");
@@ -350,8 +355,8 @@ function WorkersView({
             <button className="dark-button" type="button" onClick={() => setRegisterModalOpen(true)}>＋ 근로자 등록</button>
           </div>
         </header>
-        <div className="page-content narrow-page worker-management">
-          <section className="app-card search-card worker-search-card">
+        <div className="page-content narrow-page admin-tab-page worker-management">
+          <section className="app-card search-card">
             <input type="search" placeholder="이름 또는 연락처 검색" />
             <select><option>담당 구역 전체</option><option>Stage Alpha</option><option>Stage Bravo</option><option>Main Entry</option></select>
             <button type="button">≡</button>
@@ -367,21 +372,52 @@ function WorkersView({
                 <th>연락처</th>
                 <th>담당 구역</th>
                 <th>온보딩</th>
+                <th>서류</th>
                 <th>관리</th>
               </tr>
             </thead>
             <tbody>
               {workers.length > 0 ? workers.map((worker) => (
                 <tr key={worker.uid}>
-                  <td><span className="avatar">{worker.name.slice(0, 1)}</span><strong>{worker.name}</strong></td>
+                  <td>
+                    <button className="worker-name-button" type="button" onClick={() => setSelectedWorker(worker)}>
+                      <span className="avatar">{worker.name.slice(0, 1)}</span>
+                      <strong>{worker.name}</strong>
+                    </button>
+                  </td>
                   <td>{worker.phone}</td>
                   <td><em>{worker.team}</em></td>
                   <td>{worker.registrationStatus === "onboarded" ? <em className="green-text">완료</em> : <em className="orange-text">대기</em>}</td>
-                  <td><button className="table-action-danger" type="button" onClick={() => removeWorker(worker.phone)}>삭제</button></td>
+                  <td>
+                    {isPayrollDocumentsRequiredWorker(worker, workTypes) ? (
+                      <em className={getPayrollStatusTone(worker.payrollDocumentStatus)}>{getPayrollStatusLabel(worker.payrollDocumentStatus)}</em>
+                    ) : (
+                      <em className="gray">대상 아님</em>
+                    )}
+                  </td>
+                  <td className="worker-action-cell">
+                    <button
+                      className="table-action-menu"
+                      type="button"
+                      aria-expanded={openActionWorkerUid === worker.uid}
+                      onClick={() => setOpenActionWorkerUid((uid) => uid === worker.uid ? "" : worker.uid)}
+                    >
+                      관리
+                    </button>
+                    {openActionWorkerUid === worker.uid ? (
+                      <div className="worker-actions-menu">
+                        <button type="button" onClick={() => { setSelectedWorker(worker); setOpenActionWorkerUid(""); }}>상세 보기</button>
+                        {isPayrollDocumentsRequiredWorker(worker, workTypes) ? (
+                          <button type="button" onClick={() => { setSelectedWorker(worker); setOpenActionWorkerUid(""); }}>서류 관리</button>
+                        ) : null}
+                        <button className="danger" type="button" onClick={() => removeWorker(worker.phone)}>삭제</button>
+                      </div>
+                    ) : null}
+                  </td>
                 </tr>
               )) : (
                 <tr>
-                  <td colSpan={5}><p className="empty-table-state">등록된 근로자가 없습니다.</p></td>
+                  <td colSpan={6}><p className="empty-table-state">등록된 근로자가 없습니다.</p></td>
                 </tr>
               )}
             </tbody>
@@ -397,11 +433,19 @@ function WorkersView({
             <div>
               <small>등록 인원</small>
               <strong>{workers.length} 명</strong>
-              <small>온보딩 완료 {onboardedCount} 명</small>
+              <small>온보딩 완료 {onboardedCount} 명 · 서류 대상 {payrollRequiredWorkerCount} 명</small>
             </div>
           </article>
         </div>
       </section>
+
+      {selectedWorker ? (
+        <WorkerDetailModal
+          worker={selectedWorker}
+          payrollDocumentsRequired={isPayrollDocumentsRequiredWorker(selectedWorker, workTypes)}
+          onClose={() => setSelectedWorker(null)}
+        />
+      ) : null}
 
       {registerModalOpen ? (
         <div className="modal-backdrop">
@@ -467,6 +511,130 @@ function WorkersView({
       ) : null}
     </>
   );
+}
+
+function WorkerDetailModal({
+  worker,
+  payrollDocumentsRequired,
+  onClose,
+}: {
+  worker: WorkerRegistrationAccount;
+  payrollDocumentsRequired: boolean;
+  onClose: () => void;
+}) {
+  const registrationStatusLabel = worker.registrationStatus === "onboarded" ? "온보딩 완료" : "온보딩 대기";
+  const payrollStatusLabel = getPayrollStatusLabel(worker.payrollDocumentStatus);
+  const canRequestSecureOpen = payrollDocumentsRequired && worker.payrollDocumentStatus !== "missing";
+
+  return (
+    <div className="modal-backdrop">
+      <section className="account-modal worker-detail-modal" role="dialog" aria-modal="true" aria-labelledby="worker-detail-title">
+        <header>
+          <h2 id="worker-detail-title">근로자 상세 정보</h2>
+          <button type="button" aria-label="닫기" onClick={onClose}>×</button>
+        </header>
+        <div className="modal-body worker-detail-body">
+          <div className="worker-detail-profile">
+            <span className="avatar">{worker.name.slice(0, 1)}</span>
+            <div>
+              <strong>{worker.name}</strong>
+              <small>{worker.workType}</small>
+            </div>
+          </div>
+          <dl className="worker-detail-list">
+            <div><dt>연락처</dt><dd>{worker.phone}</dd></div>
+            <div><dt>담당 구역</dt><dd>{worker.team}</dd></div>
+            <div><dt>담당 관리자</dt><dd>{worker.supervisor}</dd></div>
+            <div><dt>온보딩 상태</dt><dd>{registrationStatusLabel}</dd></div>
+            <div><dt>급여 서류 상태</dt><dd>{payrollDocumentsRequired ? payrollStatusLabel : "대상 아님"}</dd></div>
+            <div><dt>등록일</dt><dd>{formatWorkerDate(worker.registeredAt)}</dd></div>
+            <div><dt>온보딩 완료일</dt><dd>{worker.onboardedAt ? formatWorkerDate(worker.onboardedAt) : "아직 완료되지 않음"}</dd></div>
+          </dl>
+          <section className="secure-documents-panel" aria-labelledby="secure-documents-title">
+            <div className="secure-documents-head">
+              <div>
+                <h3 id="secure-documents-title">민감 서류 관리</h3>
+                <p>Firebase Storage 원본 경로와 장기 다운로드 토큰은 관리자 화면에 표시하지 않습니다.</p>
+              </div>
+              <span className={payrollDocumentsRequired ? "status-pill info" : "status-pill"}>{payrollDocumentsRequired ? "서류 대상" : "대상 아님"}</span>
+            </div>
+            {payrollDocumentsRequired ? (
+              <>
+                <div className="secure-document-list">
+                  {["신분증 사본", "통장 사본"].map((label) => (
+                    <article key={label}>
+                      <div>
+                        <strong>{label}</strong>
+                        <small>{canRequestSecureOpen ? "백엔드 권한 확인 후 임시 열람 URL 발급" : "근로자 제출 완료 후 열람 요청 가능"}</small>
+                      </div>
+                      <button className="light-button" type="button" disabled={!canRequestSecureOpen}>
+                        보안 열람 요청
+                      </button>
+                    </article>
+                  ))}
+                </div>
+                <p className="secure-document-note">
+                  운영 구현 시 <code>POST /api/admin/payroll-documents/{"{workerId}"}/files/{"{fileId}"}/open</code>이 관리자 권한과 감사 로그를 확인한 뒤 제한 시간 URL 또는 프록시 응답을 반환해야 합니다.
+                </p>
+              </>
+            ) : (
+              <p className="secure-document-note">이 근로자의 고용 유형은 급여/세무 서류 제출 대상으로 설정되어 있지 않습니다.</p>
+            )}
+          </section>
+        </div>
+        <footer>
+          <button className="dark-button" type="button" onClick={onClose}>확인</button>
+        </footer>
+      </section>
+    </div>
+  );
+}
+
+function isPayrollDocumentsRequiredWorker(worker: WorkerRegistrationAccount, workTypes: WorkTypeSetting[]) {
+  return workTypes.some((workType) => (
+    workType.label === worker.workType &&
+    workType.enabled &&
+    workType.payrollDocumentsRequired
+  ));
+}
+
+function getPayrollStatusLabel(status: PayrollDocumentStatus) {
+  const labels: Record<PayrollDocumentStatus, string> = {
+    missing: "미제출",
+    submitted: "제출 완료",
+    reviewing: "검토 중",
+    approved: "승인",
+    rejected: "반려",
+  };
+
+  return labels[status] ?? status;
+}
+
+function getPayrollStatusTone(status: PayrollDocumentStatus) {
+  const tones: Record<PayrollDocumentStatus, string> = {
+    missing: "orange-text",
+    submitted: "blue",
+    reviewing: "blue",
+    approved: "green-text",
+    rejected: "red-text",
+  };
+
+  return tones[status] ?? "gray";
+}
+
+function formatWorkerDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
 }
 
 function WorkTypeManager({
@@ -635,7 +803,7 @@ function SimpleTable({ title, heading, rows }: { title: string; heading: string;
   return (
     <section className="admin-view is-active">
       <header className="page-header page-header--actions"><h1>{title}</h1><div><button className="light-button" type="button">⇩ 엑셀 다운로드</button><button className="dark-button" type="button">＋ 추가</button></div></header>
-      <div className="page-content narrow-page">
+      <div className="page-content narrow-page admin-tab-page">
         <div className="actions-row"><h2>{heading}</h2></div>
         <section className="app-card search-card"><input type="search" placeholder="검색" /><select><option>전체</option></select><button type="button">≡</button></section>
         <section className="app-card data-table-card">

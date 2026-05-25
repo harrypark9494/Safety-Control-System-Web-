@@ -400,6 +400,12 @@ Errors:
 파일은 브라우저에서 직접 DB나 외부 저장소에 쓰지 않고, 백엔드 권한 검사를 거친
 저장 경로만 사용합니다.
 
+Firebase Storage 사용 시 파일 원본은 Storage에 저장하되, 원본 경로와 다운로드
+토큰은 클라이언트 원장에 저장하지 않습니다. 백엔드는 제출자 권한을 확인한 뒤
+업로드 가능한 제한 시간 URL 또는 중계 업로드를 제공하고, 저장된 파일의 metadata만
+DB에 남깁니다. 주민등록번호, 계좌번호, 신분증/통장 이미지는 응답 JSON에 원문으로
+포함하지 않습니다.
+
 ### List Admin Payroll Documents
 
 `GET /api/admin/payroll-documents`
@@ -412,6 +418,40 @@ Errors:
 - `payrollDocumentsRequired=true`인 고용 유형 근로자 목록 확인
 - 제출 상태, 제출 시각, 검토 상태 확인
 - 관리자 서류 열람 액션의 대상 식별
+
+응답 예시:
+
+```json
+[
+  {
+    "workerId": "5b7f5d7d-2c0f-4d4d-8b44-3dbb1cbd39f1",
+    "workerName": "홍길동",
+    "workType": "직접 고용",
+    "payrollDocumentStatus": "submitted",
+    "submittedAt": "2026-05-22T08:20:00Z",
+    "files": [
+      {
+        "fileId": "id-card",
+        "label": "신분증 사본",
+        "contentType": "application/pdf",
+        "encrypted": true,
+        "openable": true
+      },
+      {
+        "fileId": "bankbook",
+        "label": "통장 사본",
+        "contentType": "image/png",
+        "encrypted": true,
+        "openable": true
+      }
+    ]
+  }
+]
+```
+
+`files`에는 관리자 화면 표시와 열람 요청에 필요한 최소 metadata만 포함합니다.
+Firebase Storage object path, signed URL, download token, 암호화 키 식별자는 이
+목록 응답에 포함하지 않습니다.
 
 ### Open Admin Payroll Document
 
@@ -426,7 +466,10 @@ Errors:
 
 - 관리자 권한 검사를 통과한 요청만 허용
 - 원본 Storage 경로, 장기 토큰, 서비스 계정 정보는 응답에 포함하지 않음
-- Firebase Storage 저장 암호화와 Storage Rules를 기본 전제로 사용
+- Firebase Storage 저장 암호화, Storage Rules, 필요한 경우 애플리케이션 레벨
+  envelope encryption을 함께 사용
+- 응답 URL은 짧은 만료 시간을 가지며, 가능하면 파일 내용을 백엔드 프록시로
+  중계해 Storage 경로 노출을 줄임
 - 운영 단계에서는 열람자, 열람 시각, 대상 파일에 대한 감사 로그를 남김
 
 ### Dashboard Data
