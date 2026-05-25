@@ -5,8 +5,10 @@ import {
   clearSession,
   createRegisteredWorker,
   deleteRegisteredWorker,
+  deleteWorkType,
   getRegisteredWorkers,
   getWorkTypes,
+  renameWorkType,
   saveWorkType,
 } from "../features/auth/session";
 import { navigateTo } from "../features/navigation";
@@ -281,34 +283,42 @@ function WorkersView({
 }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const enabledWorkTypes = workTypes.filter((option) => option.enabled);
-  const selectableWorkTypes = enabledWorkTypes.length > 0 ? enabledWorkTypes : fallbackWorkTypes;
-  const [workType, setWorkType] = useState<WorkType>(selectableWorkTypes[0].label);
+  const [workType, setWorkType] = useState<WorkType>("");
   const [team, setTeam] = useState("");
   const [supervisor, setSupervisor] = useState("");
   const [formMessage, setFormMessage] = useState("");
   const [actionMessage, setActionMessage] = useState("");
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
+  const [workTypeModalOpen, setWorkTypeModalOpen] = useState(false);
+  const [workTypeListOpen, setWorkTypeListOpen] = useState(false);
   const onboardedCount = workers.filter((worker) => worker.registrationStatus === "onboarded").length;
+  const nextSortOrder = Math.max(0, ...workTypes.map((option) => option.sortOrder)) + 10;
 
   function resetRegistrationForm() {
     setName("");
     setPhone("");
-    setWorkType(selectableWorkTypes[0].label);
+    setWorkType("");
     setTeam("");
     setSupervisor("");
+    setWorkTypeListOpen(false);
   }
-
-  useEffect(() => {
-    if (!selectableWorkTypes.some((option) => option.label === workType)) {
-      setWorkType(selectableWorkTypes[0].label);
-    }
-  }, [selectableWorkTypes, workType]);
 
   async function registerWorker(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const normalizedWorkType = workType.trim();
+
     try {
-      await createRegisteredWorker(name, phone, workType, team, supervisor);
+      if (!workTypes.some((option) => option.label === normalizedWorkType)) {
+        await saveWorkType({
+          label: normalizedWorkType,
+          enabled: true,
+          payrollDocumentsRequired: false,
+          sortOrder: nextSortOrder,
+        });
+        await onRefreshWorkTypes();
+      }
+
+      await createRegisteredWorker(name, phone, normalizedWorkType, team, supervisor);
       resetRegistrationForm();
       setFormMessage("근로자 등록 정보가 저장되었습니다.");
       setActionMessage("");
@@ -336,6 +346,7 @@ function WorkersView({
           <h1>근로자 관리</h1>
           <div>
             <button className="light-button" type="button">⇩ 엑셀 다운로드</button>
+            <button className="light-button" type="button" onClick={() => setWorkTypeModalOpen(true)}>고용 유형 관리</button>
             <button className="dark-button" type="button" onClick={() => setRegisterModalOpen(true)}>＋ 근로자 등록</button>
           </div>
         </header>
@@ -389,8 +400,6 @@ function WorkersView({
               <small>온보딩 완료 {onboardedCount} 명</small>
             </div>
           </article>
-
-          <WorkTypeManager workTypes={workTypes} onRefresh={onRefreshWorkTypes} />
         </div>
       </section>
 
@@ -405,10 +414,30 @@ function WorkersView({
               <div className="modal-body">
                 <label>이름<input value={name} onChange={(event) => setName(event.target.value)} autoComplete="off" required /></label>
                 <label>연락처<input value={phone} onChange={(event) => setPhone(formatPhone(event.target.value))} placeholder="010-1234-5678" autoComplete="off" maxLength={13} required /></label>
-                <label>고용 유형<select value={workType} onChange={(event) => setWorkType(event.target.value)}>{selectableWorkTypes.map((option) => <option key={option.label}>{option.label}</option>)}</select></label>
+                <div className="work-type-picker">
+                  <label>고용 유형<input value={workType} onChange={(event) => setWorkType(event.target.value)} placeholder="예: 단기 아르바이트" autoComplete="off" maxLength={40} required /></label>
+                  <button className="light-button" type="button" aria-expanded={workTypeListOpen} onClick={() => setWorkTypeListOpen((open) => !open)}>유형 목록</button>
+                  {workTypeListOpen ? (
+                    <div className="work-type-picker-panel">
+                      {workTypes.map((option) => (
+                        <button
+                          className={option.label === workType ? "is-selected" : ""}
+                          key={option.label}
+                          type="button"
+                          onClick={() => {
+                            setWorkType(option.label);
+                            setWorkTypeListOpen(false);
+                          }}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
                 <label>담당 구역<input value={team} onChange={(event) => setTeam(event.target.value)} placeholder="예: Stage Alpha" autoComplete="off" required /></label>
                 <label>담당 관리자<input value={supervisor} onChange={(event) => setSupervisor(event.target.value)} placeholder="예: 관리자 A" autoComplete="off" required /></label>
-                <p>등록된 이름, 연락처, 고용 유형은 근로자 회원가입 시 대조 기준으로 사용됩니다.</p>
+                <p>새 고용 유형을 입력하면 로그인 선택지에도 함께 추가됩니다.</p>
                 {actionMessage ? <strong className="modal-message" role="status">{actionMessage}</strong> : null}
               </div>
               <footer>
@@ -419,20 +448,43 @@ function WorkersView({
           </section>
         </div>
       ) : null}
+
+      {workTypeModalOpen ? (
+        <div className="modal-backdrop">
+          <section className="account-modal work-type-modal" role="dialog" aria-modal="true" aria-labelledby="work-type-modal-title">
+            <header>
+              <h2 id="work-type-modal-title">고용 유형 관리</h2>
+              <button type="button" aria-label="닫기" onClick={() => setWorkTypeModalOpen(false)}>×</button>
+            </header>
+            <WorkTypeManager
+              workers={workers}
+              workTypes={workTypes}
+              onRefresh={onRefreshWorkTypes}
+              onRefreshWorkers={onRefresh}
+            />
+          </section>
+        </div>
+      ) : null}
     </>
   );
 }
 
 function WorkTypeManager({
+  workers,
   workTypes,
   onRefresh,
+  onRefreshWorkers,
 }: {
+  workers: WorkerRegistrationAccount[];
   workTypes: WorkTypeSetting[];
   onRefresh: () => Promise<void>;
+  onRefreshWorkers: () => Promise<void>;
 }) {
   const [label, setLabel] = useState("");
   const [payrollDocumentsRequired, setPayrollDocumentsRequired] = useState(false);
   const [message, setMessage] = useState("");
+  const [editingLabel, setEditingLabel] = useState("");
+  const [nextLabel, setNextLabel] = useState("");
   const nextSortOrder = Math.max(0, ...workTypes.map((workType) => workType.sortOrder)) + 10;
 
   async function updateWorkType(workType: WorkTypeSetting, updates: Partial<WorkTypeSetting>) {
@@ -469,35 +521,84 @@ function WorkTypeManager({
     }
   }
 
+  async function submitRename(workType: WorkTypeSetting) {
+    try {
+      const normalized = nextLabel.trim();
+      await renameWorkType(workType.label, normalized);
+      setEditingLabel("");
+      setNextLabel("");
+      setMessage("고용 유형 이름이 수정되었습니다.");
+      await onRefresh();
+      await onRefreshWorkers();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "고용 유형 이름 수정에 실패했습니다.");
+    }
+  }
+
+  async function removeWorkType(workType: WorkTypeSetting) {
+    try {
+      await deleteWorkType(workType.label);
+      setMessage("고용 유형이 삭제되었습니다.");
+      await onRefresh();
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "고용 유형 삭제에 실패했습니다.");
+    }
+  }
+
   return (
-    <section className="app-card work-type-card">
+    <section className="work-type-card">
       <div className="section-toolbar">
         <h2>고용 유형 관리</h2>
         <span className="count-pill">총 {workTypes.length}개</span>
       </div>
       {message ? <p className="form-message work-type-message" role="status">{message}</p> : null}
       <div className="work-type-list">
-        {workTypes.map((workType) => (
-          <div className="work-type-row" key={workType.label}>
-            <strong>{workType.label}</strong>
-            <label>
-              <input
-                type="checkbox"
-                checked={workType.enabled}
-                onChange={(event) => updateWorkType(workType, { enabled: event.target.checked })}
-              />
-              로그인 선택지 표시
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={workType.payrollDocumentsRequired}
-                onChange={(event) => updateWorkType(workType, { payrollDocumentsRequired: event.target.checked })}
-              />
-              서류 제출 필요
-            </label>
-          </div>
-        ))}
+        {workTypes.map((workType) => {
+          const workerCount = workers.filter((worker) => worker.workType === workType.label).length;
+          const isEditing = editingLabel === workType.label;
+
+          return (
+            <div className="work-type-row" key={workType.label}>
+              <div className="work-type-name-cell">
+                {isEditing ? (
+                  <input value={nextLabel} onChange={(event) => setNextLabel(event.target.value)} maxLength={40} autoComplete="off" />
+                ) : (
+                  <strong>{workType.label}</strong>
+                )}
+                <small>등록 근로자 {workerCount}명</small>
+              </div>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={workType.enabled}
+                  onChange={(event) => updateWorkType(workType, { enabled: event.target.checked })}
+                />
+                로그인 선택지 표시
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={workType.payrollDocumentsRequired}
+                  onChange={(event) => updateWorkType(workType, { payrollDocumentsRequired: event.target.checked })}
+                />
+                서류 제출 필요
+              </label>
+              <div className="work-type-actions">
+                {isEditing ? (
+                  <>
+                    <button className="light-button" type="button" onClick={() => submitRename(workType)}>저장</button>
+                    <button className="light-button" type="button" onClick={() => { setEditingLabel(""); setNextLabel(""); }}>취소</button>
+                  </>
+                ) : (
+                  <>
+                    <button className="light-button" type="button" onClick={() => { setEditingLabel(workType.label); setNextLabel(workType.label); }}>수정</button>
+                    <button className="table-action-danger" type="button" disabled={workerCount > 0} onClick={() => removeWorkType(workType)}>삭제</button>
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
       <form className="work-type-add-form" onSubmit={addWorkType}>
         <input

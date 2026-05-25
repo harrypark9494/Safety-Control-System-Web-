@@ -105,6 +105,10 @@ public class WorkerRegistration {
 		this.onboardedAt = Instant.now();
 	}
 
+	public void changeWorkType(String workType) {
+		this.workType = workType;
+	}
+
 	public String getUid() {
 		return uid;
 	}

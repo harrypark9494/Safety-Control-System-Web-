@@ -40,8 +40,13 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const contentType = response.headers.get("content-type") ?? "";
 
   if (!response.ok) {
+    if (contentType.includes("application/json")) {
+      const error = await response.json().catch(() => null) as { message?: string } | null;
+      throw new Error(error?.message || "요청 처리에 실패했습니다.");
+    }
+
     const text = await response.text();
-    throw new Error(text || "요청 처리에 실패했습니다.");
+    throw new Error(text || `요청 처리에 실패했습니다. (${response.status})`);
   }
 
   if (!contentType.includes("application/json")) {
@@ -115,6 +120,30 @@ export async function saveWorkType(setting: Pick<WorkTypeSetting, "label" | "ena
     method: "POST",
     body: JSON.stringify(setting),
   });
+}
+
+export async function renameWorkType(currentLabel: string, nextLabel: string): Promise<WorkTypeSetting> {
+  return requestJson<WorkTypeSetting>("/api/admin/work-types/rename", {
+    method: "POST",
+    body: JSON.stringify({ currentLabel, nextLabel }),
+  });
+}
+
+export async function deleteWorkType(label: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/admin/work-types/${encodeURIComponent(label)}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json")) {
+      const error = await response.json().catch(() => null) as { message?: string } | null;
+      throw new Error(error?.message || "고용 유형 삭제에 실패했습니다.");
+    }
+
+    const text = await response.text();
+    throw new Error(text || "고용 유형 삭제에 실패했습니다.");
+  }
 }
 
 export async function getRegisteredWorkers(): Promise<WorkerRegistrationAccount[]> {

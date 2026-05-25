@@ -1,6 +1,7 @@
 package com.madeone.safetycontrol;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -163,5 +164,45 @@ class SafetyControlBackendApplicationTests {
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.workType").value("단기 아르바이트"))
 			.andExpect(jsonPath("$.payrollDocumentsRequired").value(true));
+	}
+
+	@Test
+	void renamesWorkTypeAndPreventsDeletingUsedWorkType() throws Exception {
+		mockMvc.perform(post("/api/admin/worker-registrations")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+					  "name": "테스트 근로자",
+					  "phone": "01012345678",
+					  "workType": "외부 고용",
+					  "team": "Stage Alpha",
+					  "supervisor": "관리자 A"
+					}
+					"""))
+			.andExpect(status().isOk());
+
+		mockMvc.perform(post("/api/admin/work-types/rename")
+				.contentType(MediaType.APPLICATION_JSON)
+				.content("""
+					{
+					  "currentLabel": "외부 고용",
+					  "nextLabel": "협력사 고용"
+					}
+					"""))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$.label").value("협력사 고용"));
+
+		mockMvc.perform(get("/api/admin/worker-registrations"))
+			.andExpect(status().isOk())
+			.andExpect(jsonPath("$[0].workType").value("협력사 고용"));
+
+		mockMvc.perform(delete("/api/admin/work-types/{label}", "협력사 고용"))
+			.andExpect(status().isConflict());
+
+		mockMvc.perform(delete("/api/admin/worker-registrations/{phone}", "01012345678"))
+			.andExpect(status().isOk());
+
+		mockMvc.perform(delete("/api/admin/work-types/{label}", "협력사 고용"))
+			.andExpect(status().isOk());
 	}
 }

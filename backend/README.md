@@ -69,13 +69,54 @@ them behind the final admin auth policy.
 
 Administrator entry uses Google login by default. The frontend should obtain a
 Firebase Auth Google ID token and send it to `POST /api/auth/admin-login`.
-The backend must validate the token signature, require a verified email, check
-the Google Workspace domain, and then grant actual admin privileges only for a
-full-email allowlist such as `admin_users(email, name, role, is_active)`.
+The backend validates the token signature through Firebase Admin SDK, requires a
+verified email, then allows the login only when the email matches
+`ADMIN_ALLOWED_EMAILS` or the domain matches `ADMIN_ALLOWED_DOMAIN`.
 
 The Google hosted-domain value is only a login hint on the frontend. It must
 not be treated as the authorization boundary unless the backend has verified
 the token claims and the active admin allowlist.
+
+Local admin login requires Firebase configuration on both sides.
+
+Frontend local environment:
+
+```text
+VITE_FIREBASE_API_KEY
+VITE_FIREBASE_AUTH_DOMAIN
+VITE_FIREBASE_PROJECT_ID
+VITE_FIREBASE_STORAGE_BUCKET
+VITE_FIREBASE_APP_ID
+VITE_ADMIN_GOOGLE_DOMAIN
+```
+
+Backend local environment:
+
+```text
+FIREBASE_ADMIN_ENABLED=true
+FIREBASE_PROJECT_ID
+GOOGLE_APPLICATION_CREDENTIALS
+ADMIN_ALLOWED_EMAILS
+ADMIN_ALLOWED_DOMAIN
+```
+
+`GOOGLE_APPLICATION_CREDENTIALS` should point to a local Firebase service
+account JSON file. Keep that file outside git-tracked paths or covered by
+`.gitignore`.
+
+Example local PowerShell setup:
+
+```powershell
+$env:FIREBASE_ADMIN_ENABLED="true"
+$env:FIREBASE_PROJECT_ID="your-firebase-project-id"
+$env:GOOGLE_APPLICATION_CREDENTIALS="E:\secure\firebase-adminsdk.json"
+$env:ADMIN_ALLOWED_EMAILS="admin@example.com"
+.\gradlew.bat bootRun
+```
+
+`POST /api/auth/admin-login` currently returns the frontend admin session shape.
+Moving `/api/admin/**` behind a Bearer token or server session is the next
+authorization hardening step before production exposure.
 
 The default profile uses an in-memory H2 database so the application can start
 before the real database is provisioned. Production database settings are read
@@ -87,4 +128,8 @@ Required production variables:
 SPRING_DATASOURCE_URL
 SPRING_DATASOURCE_USERNAME
 SPRING_DATASOURCE_PASSWORD
+FIREBASE_ADMIN_ENABLED
+FIREBASE_PROJECT_ID
+GOOGLE_APPLICATION_CREDENTIALS
+ADMIN_ALLOWED_EMAILS or ADMIN_ALLOWED_DOMAIN
 ```

@@ -23,3 +23,13 @@ management:
     health:
       probes:
         enabled: true
+
+firebase:
+  admin:
+    enabled: ${FIREBASE_ADMIN_ENABLED:false}
+    project-id: ${FIREBASE_PROJECT_ID:}
+
+admin:
+  auth:
+    allowed-emails: ${ADMIN_ALLOWED_EMAILS:}
+    allowed-domain: ${ADMIN_ALLOWED_DOMAIN:}

@@ -62,6 +62,16 @@ class WorkerRegistrationController {
 		return registrations.saveWorkType(request);
 	}
 
+	@PostMapping("/api/admin/work-types/rename")
+	WorkTypeResponse renameWorkType(@Valid @RequestBody WorkTypeRenameRequest request) {
+		return registrations.renameWorkType(request);
+	}
+
+	@DeleteMapping("/api/admin/work-types/{label}")
+	void deleteWorkType(@PathVariable String label) {
+		registrations.deleteWorkType(label);
+	}
+
 	@PostMapping("/api/admin/worker-registrations")
 	RegistrationResponse createRegistration(@Valid @RequestBody AdminRegistrationRequest request) {
 		return registrations.createRegistration(request);
@@ -132,6 +142,12 @@ class WorkerRegistrationController {
 		boolean enabled,
 		boolean payrollDocumentsRequired,
 		int sortOrder
+	) {
+	}
+
+	record WorkTypeRenameRequest(
+		@NotBlank String currentLabel,
+		@NotBlank String nextLabel
 	) {
 	}
 
@@ -267,6 +283,49 @@ class WorkerRegistrationService {
 
 		workType.update(request.enabled(), request.payrollDocumentsRequired(), request.sortOrder());
 		return toWorkTypeResponse(workTypes.save(workType));
+	}
+
+	@Transactional
+	WorkerRegistrationController.WorkTypeResponse renameWorkType(
+		WorkerRegistrationController.WorkTypeRenameRequest request
+	) {
+		String currentLabel = normalizeWorkTypeLabel(request.currentLabel());
+		String nextLabel = normalizeWorkTypeLabel(request.nextLabel());
+
+		WorkTypeSetting current = workTypes.findById(currentLabel)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "고용 유형을 찾을 수 없습니다."));
+
+		if (currentLabel.equals(nextLabel)) {
+			return toWorkTypeResponse(current);
+		}
+
+		if (workTypes.existsById(nextLabel)) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 등록된 고용 유형 이름입니다.");
+		}
+
+		WorkTypeSetting renamed = workTypes.save(new WorkTypeSetting(
+			nextLabel,
+			current.isEnabled(),
+			current.isPayrollDocumentsRequired(),
+			current.getSortOrder()
+		));
+
+		registrations.findByWorkType(currentLabel).forEach(worker -> worker.changeWorkType(nextLabel));
+		workTypes.delete(current);
+		return toWorkTypeResponse(renamed);
+	}
+
+	@Transactional
+	void deleteWorkType(String label) {
+		String normalized = normalizeWorkTypeLabel(label);
+		WorkTypeSetting workType = workTypes.findById(normalized)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "고용 유형을 찾을 수 없습니다."));
+
+		if (registrations.countByWorkType(normalized) > 0) {
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "이 고용 유형을 사용하는 근로자가 있어 삭제할 수 없습니다.");
+		}
+
+		workTypes.delete(workType);
 	}
 
 	private WorkerRegistration find(String phone) {

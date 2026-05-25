@@ -10,4 +10,8 @@ public interface WorkerRegistrationRepository extends JpaRepository<WorkerRegist
 	Optional<WorkerRegistration> findByPhone(String phone);
 
 	List<WorkerRegistration> findAllByOrderByRegisteredAtDesc();
+
+	List<WorkerRegistration> findByWorkType(String workType);
+
+	long countByWorkType(String workType);
 }

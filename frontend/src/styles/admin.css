@@ -1142,7 +1142,8 @@ td {
 }
 
 .work-type-card {
-  margin-top: 26px;
+  max-height: min(74vh, 680px);
+  overflow-y: auto;
 }
 
 .work-type-card .section-toolbar {
@@ -1164,11 +1165,30 @@ td {
 .work-type-row,
 .work-type-add-form {
   display: grid;
-  grid-template-columns: minmax(140px, 1fr) minmax(160px, auto) minmax(150px, auto);
+  grid-template-columns: minmax(150px, 1fr) minmax(150px, auto) minmax(140px, auto) minmax(150px, auto);
   align-items: center;
   gap: 16px;
   padding: 18px 20px;
   border-bottom: 1px solid var(--line);
+}
+
+.work-type-name-cell {
+  display: grid;
+  gap: 6px;
+}
+
+.work-type-name-cell small {
+  color: #596273;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.work-type-name-cell input {
+  min-height: 38px;
+  border: 1px solid var(--line-strong);
+  padding: 0 12px;
+  background: var(--field);
+  font-weight: 900;
 }
 
 .work-type-row label,
@@ -1191,6 +1211,24 @@ td {
 .work-type-add-form {
   grid-template-columns: minmax(160px, 1fr) minmax(150px, auto) 92px;
   border-bottom: 0;
+}
+
+.work-type-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.work-type-actions .light-button,
+.work-type-actions .table-action-danger {
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.table-action-danger:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .work-type-add-form input[type="text"],
@@ -1266,13 +1304,24 @@ td {
 
 .admin-add-card {
   display: grid;
-  margin-bottom: 26px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 18px;
+  padding: 16px 20px;
+}
+
+.admin-add-card .card-head {
+  min-height: 0;
+  padding: 0;
+  border-bottom: 0;
+  background: transparent;
 }
 
 .admin-add-card .dark-button {
-  justify-self: center;
+  justify-self: end;
   min-width: 250px;
-  margin: 34px 0;
+  margin: 0;
 }
 
 .admin-table .count-pill {
@@ -1410,6 +1459,73 @@ td {
 
 .account-modal.worker-modal {
   width: min(520px, calc(100vw - 32px));
+}
+
+.account-modal.work-type-modal {
+  width: min(820px, calc(100vw - 32px));
+}
+
+.worker-modal .modal-body {
+  max-height: min(70vh, 560px);
+  overflow-y: auto;
+  gap: 12px;
+  padding: 16px 18px;
+}
+
+.worker-modal .modal-body p {
+  padding: 10px 12px;
+  line-height: 1.42;
+}
+
+.worker-modal footer {
+  padding: 14px 18px;
+}
+
+.work-type-picker {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 108px;
+  gap: 8px;
+}
+
+.work-type-picker label {
+  grid-column: 1;
+}
+
+.work-type-picker-panel {
+  grid-column: 1 / -1;
+}
+
+.work-type-picker .light-button {
+  align-self: end;
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+.work-type-picker-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 132px;
+  overflow-y: auto;
+  border: 1px solid var(--line-strong);
+  padding: 10px;
+  background: #fbf9fa;
+}
+
+.work-type-picker-panel button {
+  min-height: 34px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0 12px;
+  color: #343b49;
+  background: #fff;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.work-type-picker-panel button.is-selected {
+  color: #fff;
+  background: #17263a;
 }
 
 .account-modal header {
@@ -1651,5 +1767,24 @@ td {
   .storm-map {
     margin-right: 16px;
     margin-left: 16px;
+  }
+
+  .admin-add-card {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-add-card .dark-button {
+    justify-self: stretch;
+    min-width: 0;
+  }
+
+  .work-type-row,
+  .work-type-add-form {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .work-type-add-form .dark-button {
+    width: 100%;
   }
 }
