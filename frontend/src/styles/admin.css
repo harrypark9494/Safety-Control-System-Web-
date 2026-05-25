@@ -937,7 +937,7 @@ td {
 
 .filter-card,
 .search-card {
-  padding: 18px;
+  padding: 12px 18px;
 }
 
 .filter-card {
@@ -1063,6 +1063,7 @@ td {
 .search-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(150px, 190px) 44px;
+  align-items: center;
   gap: 16px;
   margin-bottom: 26px;
 }
@@ -1165,7 +1166,7 @@ td {
 .work-type-row,
 .work-type-add-form {
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(150px, auto) minmax(140px, auto) minmax(150px, auto);
+  grid-template-columns: minmax(150px, 1fr) minmax(140px, auto) minmax(150px, auto);
   align-items: center;
   gap: 16px;
   padding: 18px 20px;
@@ -1346,7 +1347,7 @@ td {
 
 .worker-management {
   display: grid;
-  gap: 24px;
+  gap: 18px;
 }
 
 .form-message {
@@ -1404,8 +1405,20 @@ td {
 }
 
 .worker-count-card {
-  width: min(330px, 100%);
+  width: min(300px, 100%);
   margin-top: 0;
+  padding: 14px 16px;
+  gap: 12px;
+}
+
+.worker-count-card span {
+  width: 42px;
+  height: 42px;
+  font-size: 1.15rem;
+}
+
+.worker-count-card strong {
+  font-size: 1rem;
 }
 
 .table-action-danger {

@@ -62,10 +62,10 @@ admin
 }
 ```
 
-`workType`은 관리자 고용 유형 설정에 등록된 `label` 문자열입니다. 로그인 화면에는
-`enabled=true`인 항목만 표시하고, 서류 제출 이동 여부는
-`payrollDocumentsRequired` 설정으로 계산합니다. 설정에 없는 `workType`은
-`400 Bad Request`로 거부합니다.
+`workType`은 관리자 고용 유형 설정에 등록된 `label` 문자열입니다. 외부 근로자가
+직접 최초 등록을 진행하므로, 로그인 화면의 고용 유형 선택 박스에는 등록된 모든
+고용 유형을 표시합니다. 서류 제출 이동 여부는 `payrollDocumentsRequired`
+설정으로 계산합니다. 설정에 없는 `workType`은 `400 Bad Request`로 거부합니다.
 
 ### WorkerRegistrationStatus
 
@@ -134,11 +134,11 @@ rejected
 
 ## Implemented APIs
 
-### List Enabled Work Types
+### List Worker Selectable Work Types
 
 `GET /api/work-types`
 
-로그인/최초 등록 화면에서 선택할 수 있는 활성 고용 유형 목록입니다.
+로그인/최초 등록 화면에서 선택할 수 있는 전체 고용 유형 목록입니다.
 
 Response `200 OK`: `WorkTypeSetting[]`
 
@@ -195,7 +195,7 @@ Errors:
 `DELETE /api/admin/work-types/{label}`
 
 고용 유형을 삭제합니다. 해당 고용 유형을 사용하는 근로자가 있으면 삭제하지
-않습니다. 선택 박스에서만 숨기려면 삭제 대신 `enabled=false`로 저장합니다.
+않습니다.
 
 Response `200 OK`: empty
 
@@ -399,6 +399,35 @@ Errors:
 
 파일은 브라우저에서 직접 DB나 외부 저장소에 쓰지 않고, 백엔드 권한 검사를 거친
 저장 경로만 사용합니다.
+
+### List Admin Payroll Documents
+
+`GET /api/admin/payroll-documents`
+
+관리자 근로자 관리 화면에서 서류 제출 필수 대상자와 제출 상태를 확인하기 위한
+목록입니다. 응답에는 원본 파일 경로나 장기 다운로드 토큰을 포함하지 않습니다.
+
+예정 역할:
+
+- `payrollDocumentsRequired=true`인 고용 유형 근로자 목록 확인
+- 제출 상태, 제출 시각, 검토 상태 확인
+- 관리자 서류 열람 액션의 대상 식별
+
+### Open Admin Payroll Document
+
+`POST /api/admin/payroll-documents/{workerId}/files/{fileId}/open`
+
+관리자가 특정 근로자의 제출 서류를 열람하기 위한 임시 접근 정보를 발급합니다.
+파일 원본은 Firebase Storage의 `payroll/{workerId}/...` 경로에 두고, 백엔드가
+관리자 권한과 감사 로그 정책을 확인한 뒤 제한 시간 URL 또는 프록시 응답을
+반환합니다.
+
+보안 기준:
+
+- 관리자 권한 검사를 통과한 요청만 허용
+- 원본 Storage 경로, 장기 토큰, 서비스 계정 정보는 응답에 포함하지 않음
+- Firebase Storage 저장 암호화와 Storage Rules를 기본 전제로 사용
+- 운영 단계에서는 열람자, 열람 시각, 대상 파일에 대한 감사 로그를 남김
 
 ### Dashboard Data
 

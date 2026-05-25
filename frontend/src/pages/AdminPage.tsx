@@ -491,7 +491,7 @@ function WorkTypeManager({
     try {
       await saveWorkType({
         label: workType.label,
-        enabled: updates.enabled ?? workType.enabled,
+        enabled: true,
         payrollDocumentsRequired: updates.payrollDocumentsRequired ?? workType.payrollDocumentsRequired,
         sortOrder: updates.sortOrder ?? workType.sortOrder,
       });
@@ -567,14 +567,6 @@ function WorkTypeManager({
                 )}
                 <small>등록 근로자 {workerCount}명</small>
               </div>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={workType.enabled}
-                  onChange={(event) => updateWorkType(workType, { enabled: event.target.checked })}
-                />
-                로그인 선택지 표시
-              </label>
               <label>
                 <input
                   type="checkbox"

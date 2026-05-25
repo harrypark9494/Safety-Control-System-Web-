@@ -48,8 +48,8 @@ class WorkerRegistrationController {
 	}
 
 	@GetMapping("/api/work-types")
-	List<WorkTypeResponse> listEnabledWorkTypes() {
-		return registrations.listEnabledWorkTypes();
+	List<WorkTypeResponse> listWorkerSelectableWorkTypes() {
+		return registrations.listWorkTypes();
 	}
 
 	@GetMapping("/api/admin/work-types")
@@ -261,12 +261,6 @@ class WorkerRegistrationService {
 			isPayrollDocumentRequired(worker.getWorkType()) && "missing".equals(worker.getPayrollDocumentStatus()),
 			worker.getPayrollDocumentStatus()
 		);
-	}
-
-	List<WorkerRegistrationController.WorkTypeResponse> listEnabledWorkTypes() {
-		return workTypes.findByEnabledTrueOrderBySortOrderAscLabelAsc().stream()
-			.map(this::toWorkTypeResponse)
-			.toList();
 	}
 
 	List<WorkerRegistrationController.WorkTypeResponse> listWorkTypes() {

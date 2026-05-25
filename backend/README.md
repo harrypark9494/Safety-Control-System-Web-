@@ -88,7 +88,12 @@ VITE_FIREBASE_PROJECT_ID
 VITE_FIREBASE_STORAGE_BUCKET
 VITE_FIREBASE_APP_ID
 VITE_ADMIN_GOOGLE_DOMAIN
+VITE_ENABLE_LOCAL_ADMIN_BYPASS
 ```
+
+Set `VITE_ENABLE_LOCAL_ADMIN_BYPASS=true` only for local Vite dev-server
+testing when Firebase/Google Workspace login is not available. The bypass is
+ignored outside Vite development mode.
 
 Backend local environment:
 

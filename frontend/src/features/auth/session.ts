@@ -7,6 +7,7 @@ import { formatPhone } from "../phone";
 const SESSION_KEY = "safetyControlSession";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const ADMIN_GOOGLE_DOMAIN = import.meta.env.VITE_ADMIN_GOOGLE_DOMAIN ?? "";
+const ENABLE_LOCAL_ADMIN_BYPASS = import.meta.env.VITE_ENABLE_LOCAL_ADMIN_BYPASS === "true";
 
 type WorkerRegistrationResponse = {
   uid: string;
@@ -193,6 +194,18 @@ export async function signInWorker(
 }
 
 export async function signInAdmin(): Promise<AppSession> {
+  if (ENABLE_LOCAL_ADMIN_BYPASS && import.meta.env.DEV) {
+    const session: AppSession = {
+      uid: "local-admin",
+      role: "admin",
+      name: "로컬 관리자",
+      email: "local-admin@example.test",
+    };
+
+    saveSession(session);
+    return session;
+  }
+
   const firebaseApp = createFirebaseApp();
 
   if (!firebaseApp) {
