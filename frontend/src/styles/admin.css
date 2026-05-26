@@ -738,12 +738,20 @@ td {
 .threshold-card input,
 .station-side input,
 .account-modal input,
-.account-modal select {
+.account-modal select,
+.account-modal textarea {
   min-height: 44px;
   border: 1px solid var(--line-strong);
   padding: 0 14px;
   color: var(--ink);
   background: #fbf9fa;
+}
+
+.account-modal textarea {
+  min-height: 180px;
+  resize: vertical;
+  padding: 12px 14px;
+  line-height: 1.55;
 }
 
 .search-inline button,
@@ -1355,6 +1363,11 @@ td {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
+.rules-management .rule-summary {
+  gap: 14px;
+  margin: 0;
+}
+
 .rule-summary article {
   display: grid;
   grid-template-columns: 28px 1fr;
@@ -1407,6 +1420,45 @@ td {
 .state.draft {
   color: #d85c00;
   background: #fff0e5;
+}
+
+.state.urgent {
+  color: #b00020;
+  background: #ffe3e3;
+}
+
+.rules-table .rule-title-button {
+  display: grid;
+  width: min(520px, 100%);
+  gap: 5px;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+}
+
+.rules-table .rule-title-button strong,
+.rules-table .rule-title-button small {
+  display: block;
+}
+
+.rules-table .rule-title-button small {
+  overflow: hidden;
+  color: #5a6372;
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rules-table .rule-title-button:hover strong,
+.rules-table .rule-title-button:focus-visible strong {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.table-inline-button {
+  min-height: 34px;
+  padding: 0 12px;
 }
 
 .admin-add-card {
@@ -1640,6 +1692,15 @@ td {
 
 .account-modal.worker-detail-modal {
   width: min(560px, calc(100vw - 32px));
+}
+
+.account-modal.rule-modal {
+  width: min(680px, calc(100vw - 32px));
+}
+
+.rule-modal-body {
+  max-height: min(72vh, 680px);
+  overflow-y: auto;
 }
 
 .worker-modal .modal-body {
