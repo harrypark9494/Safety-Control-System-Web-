@@ -39,6 +39,33 @@ button {
   border: 0;
 }
 
+.material-icon {
+  display: inline-flex;
+  width: 1em;
+  height: 1em;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  font-family: "Material Symbols Rounded";
+  font-size: 1.35em;
+  font-weight: normal;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-variation-settings:
+    "FILL" var(--icon-fill, 0),
+    "wght" var(--icon-weight, 500),
+    "GRAD" var(--icon-grade, 0),
+    "opsz" var(--icon-size, 24);
+  -webkit-font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "liga";
+}
+
 button:focus-visible,
 input:focus-visible,
 select:focus-visible {

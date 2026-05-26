@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { ReactElement } from "react";
+import { MaterialIcon } from "../components/MaterialIcon";
 import { clearSession, getSession, requiresPayrollDocuments } from "../features/auth/session";
 import { getSecureEntryPath, navigateTo } from "../features/navigation";
 
@@ -128,6 +128,8 @@ h1, h2, h3, p, ul, dl, dd { margin: 0; }
   width: 24px;
   height: 24px;
   flex: 0 0 auto;
+  font-size: 24px;
+  overflow: hidden;
   stroke: currentColor;
   stroke-width: 2.3;
   stroke-linecap: round;
@@ -747,9 +749,9 @@ function ProfileTab({ worker, logout }: { worker: ReturnType<typeof getSession>;
       <section className="app-card profile-list-card">
         <h2>행사 정보</h2>
         <div className="profile-link-list">
-          <button type="button"><Icon name="map" />행사 맵 (Map)<span>›</span></button>
-          <button type="button"><Icon name="calendar" />타임테이블 (Timetable)<span>›</span></button>
-          <button type="button"><Icon name="id" />관객 FAQ<span>›</span></button>
+          <button type="button"><Icon name="map" />행사 맵 (Map)<MaterialIcon name="chevron_right" /></button>
+          <button type="button"><Icon name="calendar" />타임테이블 (Timetable)<MaterialIcon name="chevron_right" /></button>
+          <button type="button"><Icon name="id" />관객 FAQ<MaterialIcon name="chevron_right" /></button>
         </div>
       </section>
 
@@ -761,7 +763,7 @@ function ProfileTab({ worker, logout }: { worker: ReturnType<typeof getSession>;
         </div>
       </section>
 
-      <button className="settings-link" type="button"><Icon name="bell" />알림 설정<span>›</span></button>
+      <button className="settings-link" type="button"><Icon name="bell" />알림 설정<MaterialIcon name="chevron_right" /></button>
       <button className="logout-button" type="button" onClick={logout}>로그아웃</button>
     </section>
   );
@@ -843,29 +845,25 @@ function NotificationModal({ close }: { close: () => void }) {
 }
 
 function Icon({ name }: { name: IconName }) {
-  const paths: Record<IconName, ReactElement> = {
-    alert: <><path d="M12 3 2.5 20h19L12 3Z" /><path d="M12 8v5" /><path d="M12 17h.01" /></>,
-    bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path d="M10 21h4" /></>,
-    calendar: <><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M8 2v4M16 2v4M3 10h18" /></>,
-    check: <path d="m5 12 4 4L19 6" />,
-    grid: <><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" /></>,
-    history: <><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 3v6h6" /><path d="M12 7v5l3 2" /></>,
-    id: <><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M8 11h4M8 15h8M16 9h1" /></>,
-    map: <><path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3V6Z" /><path d="M9 3v15M15 6v15" /></>,
-    phone: <><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2Z" /></>,
-    rain: <><path d="M20 16.2A4.5 4.5 0 0 0 17 8h-1.3A7 7 0 1 0 5 15.9" /><path d="M8 19v1M12 19v1M16 19v1" /></>,
-    shield: <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />,
-    thermo: <><path d="M14 14.8V5a2 2 0 1 0-4 0v9.8a4 4 0 1 0 4 0Z" /><path d="M10 9h4" /></>,
-    user: <><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>,
-    users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8" /></>,
-    wallet: <><rect x="3" y="6" width="18" height="14" rx="2" /><path d="M16 12h5M7 6V4h10v2" /></>,
-    wind: <><path d="M3 8h12a3 3 0 1 0-3-3" /><path d="M3 12h16" /><path d="M3 16h12a3 3 0 1 1-3 3" /></>,
-    x: <><path d="M18 6 6 18" /><path d="m6 6 12 12" /></>,
+  const icons: Record<IconName, string> = {
+    alert: "warning",
+    bell: "notifications",
+    calendar: "calendar_month",
+    check: "check",
+    grid: "qr_code_scanner",
+    history: "history",
+    id: "badge",
+    map: "map",
+    phone: "call",
+    rain: "rainy",
+    shield: "health_and_safety",
+    thermo: "device_thermostat",
+    user: "person",
+    users: "groups",
+    wallet: "account_balance_wallet",
+    wind: "air",
+    x: "close",
   };
 
-  return (
-    <svg className="svg-icon" viewBox="0 0 24 24" aria-hidden="true">
-      {paths[name]}
-    </svg>
-  );
+  return <MaterialIcon name={icons[name]} className="svg-icon" />;
 }
