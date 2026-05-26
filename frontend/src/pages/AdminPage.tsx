@@ -1,4 +1,4 @@
-import { Fragment, FormEvent, MouseEvent, useEffect, useRef, useState } from "react";
+import { Fragment, FormEvent, MouseEvent, useEffect, useRef, useState, type CSSProperties } from "react";
 import { MaterialIcon } from "../components/MaterialIcon";
 import "../styles/admin.css";
 import { fallbackWorkTypes } from "../data/workTypes";
@@ -7,14 +7,18 @@ import {
   createRegisteredWorker,
   deleteRegisteredWorker,
   deleteWorkType,
+  getAdminWeatherOverview,
+  getAdminQrUsageSummary,
   getRegisteredWorkers,
   getWorkTypes,
   renameWorkType,
   saveWorkType,
+  updateAdminWeatherStation,
+  updateAdminWeatherThresholds,
 } from "../features/auth/session";
 import { navigateTo } from "../features/navigation";
 import { formatPhone } from "../features/phone";
-import type { PayrollDocumentStatus, WorkerRegistrationAccount, WorkType, WorkTypeSetting } from "../types";
+import type { AdminWeatherOverview, MealType, PayrollDocumentStatus, QrUsageSummary, WeatherThresholds, WorkerRegistrationAccount, WorkType, WorkTypeSetting } from "../types";
 
 const navItems = [
   ["dashboard", "dashboard", "대시보드"],
@@ -33,11 +37,6 @@ type SafetyRuleStatus = "active" | "draft" | "urgent";
 type ScheduleStatus = "confirmed" | "ready" | "risk";
 type IsoDateString = `${number}-${number}-${number}`;
 type MonthKey = `${number}-${number}`;
-type DateInputParts = {
-  year: string;
-  month: string;
-  day: string;
-};
 
 type ScheduleItem = {
   id: string;
@@ -177,6 +176,16 @@ const scheduleItems: ScheduleItem[] = [
 
 function Bar({ value, color = "navy" }: { value: string; color?: "navy" | "green" | "orange" | "red" | "slate" }) {
   return <i className={`bar bar-${color}`} style={{ "--value": value } as React.CSSProperties & Record<"--value", string>} />;
+}
+
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(new Date(value));
 }
 
 export function AdminPage() {
@@ -366,29 +375,146 @@ function DashboardView() {
 }
 
 function WeatherView() {
+  const [weather, setWeather] = useState<AdminWeatherOverview | null>(null);
+  const [message, setMessage] = useState("기상 데이터를 불러오는 중입니다.");
+  const [thresholds, setThresholds] = useState<WeatherThresholds>({
+    windSpeed: 10,
+    precipitation: 15,
+    temperature: 33,
+    humidity: 90,
+  });
+  const [stationName, setStationName] = useState("킨텍스 제2전시장");
+  const [latitude, setLatitude] = useState("37.6698");
+  const [longitude, setLongitude] = useState("126.7451");
+
+  useEffect(() => {
+    refreshWeather();
+  }, []);
+
+  async function refreshWeather() {
+    try {
+      const nextWeather = await getAdminWeatherOverview();
+      applyWeatherState(nextWeather);
+      setMessage("기상청 어댑터 데이터가 동기화되었습니다.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "기상 데이터를 불러오지 못했습니다.");
+    }
+  }
+
+  function applyWeatherState(nextWeather: AdminWeatherOverview) {
+    setWeather(nextWeather);
+    setThresholds(nextWeather.thresholds);
+    setStationName(nextWeather.site.name);
+    setLatitude(String(nextWeather.site.latitude));
+    setLongitude(String(nextWeather.site.longitude));
+  }
+
+  async function saveStation() {
+    const nextLatitude = Number(latitude);
+    const nextLongitude = Number(longitude);
+
+    if (!Number.isFinite(nextLatitude) || !Number.isFinite(nextLongitude)) {
+      setMessage("위도와 경도는 숫자로 입력해 주세요.");
+      return;
+    }
+
+    try {
+      applyWeatherState(await updateAdminWeatherStation({
+        name: stationName,
+        latitude: nextLatitude,
+        longitude: nextLongitude,
+      }));
+      setMessage("관측 지점 설정을 저장했습니다.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "관측 지점 저장에 실패했습니다.");
+    }
+  }
+
+  async function saveThresholds() {
+    try {
+      applyWeatherState(await updateAdminWeatherThresholds(thresholds));
+      setMessage("자동 경보 임계값을 저장했습니다.");
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "임계값 저장에 실패했습니다.");
+    }
+  }
+
+  const updatedAt = weather ? formatDateTime(weather.source.updatedAt) : "연동 대기";
+  const forecastRows = weather?.forecast24h ?? [];
+  const logs = weather?.alertLogs ?? [];
+
   return (
     <section className="admin-view is-active">
-      <header className="page-header page-header--stack"><h1>기상 정보 관리</h1><p>킨텍스 제2전시장 일대</p></header>
+      <header className="page-header page-header--stack">
+        <h1>기상 정보 관리</h1>
+        <p>{weather ? `${weather.site.name} 일대 · ${weather.source.name}` : "기상청 API 어댑터 연동 대기"}</p>
+      </header>
       <div className="page-content weather-layout">
-        <div className="title-row"><h2>실시간 기상 현황</h2><span>마지막 업데이트: 14:32:05</span></div>
+        <div className="title-row">
+          <h2>실시간 기상 현황</h2>
+          <span>마지막 업데이트: {updatedAt}</span>
+        </div>
+        <p className="weather-sync-message" role="status" aria-live="polite">{message}</p>
         <div className="weather-current">
-          {["풍속 (WIND SPEED)|check_circle|NORMAL|4.2 m/s|42%|green", "강수량 (PRECIPITATION)|warning|CAUTION|12.0 mm|60%|orange", "온도 (TEMPERATURE)|warning|ALERT|31.5 °C|85%|red", "습도 (HUMIDITY)|check_circle|NORMAL|68 %|68%|green"].map((row) => {
-            const [label, icon, state, value, bar, color] = row.split("|");
-            return <article key={label}><small>{label}</small><em className={`badge ${color}`}><MaterialIcon name={icon} filled />{state}</em><strong>{value}</strong><Bar value={bar} color={color as "green" | "orange" | "red"} /></article>;
-          })}
+          {(weather?.current.metrics ?? []).map((metric) => (
+            <article key={metric.key}>
+              <small>{metric.label}</small>
+              <em className={`badge ${metric.tone}`}><MaterialIcon name={metric.tone === "green" ? "check_circle" : "warning"} filled />{metric.status}</em>
+              <strong>{metric.value} {metric.unit}</strong>
+              <span>{metric.sourceLabel} · {metric.thresholdLabel}</span>
+              <Bar value={`${metric.percent}%`} color={metric.tone} />
+            </article>
+          ))}
         </div>
         <section className="app-card forecast-card">
           <div className="section-toolbar"><h2>향후 24시간 기상 예보</h2><div><button className="is-active" type="button">Table</button><button type="button">Chart</button></div></div>
+          {weather ? <p className="weather-source-note">{weather.current.summary}</p> : null}
           <table><thead><tr><th>시간</th><th>상태</th><th>강수확률</th><th>온도</th><th>풍속</th></tr></thead><tbody>
-            {["15:00|sunny|맑음|10%|32°C|3.8m/s", "16:00|partly_cloudy_day|구름조금|15%|31°C|4.1m/s", "17:00|cloud|흐림|40%|29°C|5.5m/s", "18:00|rainy|소나기|85%|26°C|7.2m/s", "19:00|rainy|약한비|60%|25°C|5.0m/s"].map((row) => {
-              const [time, icon, status, rain, temp, wind] = row.split("|");
-              return <tr className={time === "18:00" ? "danger-row" : ""} key={time}><td>{time}</td><td><span className="weather-state"><MaterialIcon name={icon} />{status}</span></td><td>{rain}</td><td>{temp}</td><td>{wind}</td></tr>;
-            })}
+            {forecastRows.map((row) => (
+              <tr className={row.riskLevel === "alert" || row.riskLevel === "danger" ? "danger-row" : ""} key={row.time}>
+                <td>{row.time}</td>
+                <td><span className="weather-state"><MaterialIcon name={row.icon} />{row.condition}</span></td>
+                <td>{row.rainProbability}%</td>
+                <td>{row.temperature}°C</td>
+                <td>{row.windSpeed}m/s</td>
+              </tr>
+            ))}
           </tbody></table>
         </section>
-        <aside className="app-card weather-log-card"><div className="section-toolbar"><h2>기상 알림 로그</h2><button type="button">ALL LOGS</button></div><article className="log danger"><strong>폭염 경보 <span>14:15</span></strong><p>현재 온도 35°C 도달. 현장 작업자 휴식 강제 실시 알림 발송 완료.</p></article><article className="log blue"><strong>강풍 주의 <span>11:02</span></strong><p>풍속 10m/s 이상 감지. 무대 상단 구조물 고정 상태 점검 요청.</p></article></aside>
-        <section className="app-card station-card"><div className="section-toolbar"><h2>기상 관측 지점 관리</h2><div className="search-inline"><input type="search" placeholder="관측 지점 검색..." /><button type="button">위치 업데이트</button></div></div><div className="station-grid"><div className="storm-map"><span>킨텍스 제2전시장 (현 위치)</span><em>SOURCE: KOREA METEOROLOGICAL ADMINISTRATION (KMA)</em></div><div className="station-side"><small>현재 좌표 설정</small><label>위도 (Latitude)<input defaultValue="37.6698" /></label><label>경도 (Longitude)<input defaultValue="126.7451" /></label><button className="outline-button" type="button">좌표 수동 입력 저장</button></div></div></section>
-        <aside className="app-card threshold-card"><h2>자동 경보 임계값 설정</h2><label>풍속 경보 (M/S)<span><input defaultValue="10" />m/s</span></label><label>강수량 경보 (MM/H)<span><input defaultValue="15" />mm</span></label><label>폭염 경보 (°C)<span><input defaultValue="33" />°C</span></label><button type="button">설정 저장</button></aside>
+        <aside className="app-card weather-log-card">
+          <div className="section-toolbar"><h2>기상 알림 로그</h2><button type="button" onClick={refreshWeather}>새로고침</button></div>
+          {logs.map((log) => (
+            <article className={`log ${log.level === "alert" || log.level === "danger" ? "danger" : "blue"}`} key={log.id}>
+              <strong>{log.title} <span>{log.time}</span></strong>
+              <p>{log.message}</p>
+            </article>
+          ))}
+        </aside>
+        <section className="app-card station-card">
+          <div className="section-toolbar">
+            <h2>기상 관측 지점 관리</h2>
+            <div className="search-inline"><input type="search" value={stationName} onChange={(event) => setStationName(event.target.value)} placeholder="관측 지점 검색..." /><button type="button" onClick={saveStation}>위치 업데이트</button></div>
+          </div>
+          <div className="station-grid">
+            <div className="storm-map">
+              <span>{weather?.site.name ?? "킨텍스 제2전시장"} (현 위치)</span>
+              <em>SOURCE: KOREA METEOROLOGICAL ADMINISTRATION (KMA) · NX {weather?.site.nx ?? "-"} / NY {weather?.site.ny ?? "-"}</em>
+            </div>
+            <div className="station-side">
+              <small>현재 좌표 설정</small>
+              <label>위도 (Latitude)<input value={latitude} onChange={(event) => setLatitude(event.target.value)} /></label>
+              <label>경도 (Longitude)<input value={longitude} onChange={(event) => setLongitude(event.target.value)} /></label>
+              <button className="outline-button" type="button" onClick={saveStation}>좌표 수동 입력 저장</button>
+            </div>
+          </div>
+        </section>
+        <aside className="app-card threshold-card">
+          <h2>자동 경보 임계값 설정</h2>
+          <label>풍속 경보 (M/S)<span><input type="number" value={thresholds.windSpeed} onChange={(event) => setThresholds({ ...thresholds, windSpeed: Number(event.target.value) })} />m/s</span></label>
+          <label>강수량 경보 (MM/H)<span><input type="number" value={thresholds.precipitation} onChange={(event) => setThresholds({ ...thresholds, precipitation: Number(event.target.value) })} />mm</span></label>
+          <label>폭염 경보 (°C)<span><input type="number" value={thresholds.temperature} onChange={(event) => setThresholds({ ...thresholds, temperature: Number(event.target.value) })} />°C</span></label>
+          <button type="button" onClick={saveThresholds}>설정 저장</button>
+        </aside>
       </div>
     </section>
   );
@@ -397,13 +523,11 @@ function WeatherView() {
 function ScheduleView() {
   const [selectedDate, setSelectedDate] = useState<IsoDateString>(defaultScheduleDate);
   const [visibleMonth, setVisibleMonth] = useState<MonthKey>(getMonthKey(defaultScheduleDate));
-  const [dateInput, setDateInput] = useState<DateInputParts>(() => getDateInputParts(defaultScheduleDate));
-  const [pickerOpen, setPickerOpen] = useState(false);
   const activeDateRef = useRef<HTMLButtonElement | null>(null);
   const teams = ["구조물", "조명", "무대", "영상", "음향", "특수효과"];
   const hours = Array.from({ length: 14 }, (_, index) => `${String(index + 7).padStart(2, "0")}:00`);
   const monthDays = getMonthDays(visibleMonth);
-  const pickerDays = getCalendarDays(visibleMonth);
+  const scheduleMonthOptions = Array.from(new Set([...scheduleItems.map((item) => getMonthKey(item.date)), visibleMonth])).sort();
   const selectedSchedules = scheduleItems
     .filter((item) => item.date === selectedDate)
     .sort((first, second) => first.startTime.localeCompare(second.startTime));
@@ -412,19 +536,11 @@ function ScheduleView() {
   const selectDate = (date: IsoDateString) => {
     setSelectedDate(date);
     setVisibleMonth(getMonthKey(date));
-    setDateInput(getDateInputParts(date));
   };
-  const moveMonth = (offset: number) => {
-    const nextMonth = addMonths(visibleMonth, offset);
-    selectDate(getFirstDateOfMonth(nextMonth));
-  };
-  const jumpToDate = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const date = createIsoDateString(dateInput);
-
-    if (date) {
-      selectDate(date);
-    }
+  const moveDate = (offset: number) => {
+    const date = new Date(`${selectedDate}T00:00:00`);
+    date.setDate(date.getDate() + offset);
+    selectDate(toIsoDateString(date));
   };
 
   useEffect(() => {
@@ -453,45 +569,16 @@ function ScheduleView() {
           </article>
         </section>
 
-        <section className="schedule-date-controls" aria-label="일정 날짜 이동">
-          <div className="schedule-month-control">
-            <button type="button" aria-label="이전 달" onClick={() => moveMonth(-1)}><MaterialIcon name="chevron_left" /></button>
-            <h2>{formatScheduleMonth(visibleMonth)}</h2>
-            <button type="button" aria-label="다음 달" onClick={() => moveMonth(1)}><MaterialIcon name="chevron_right" /></button>
-          </div>
-          <form className="date-jump-form" onSubmit={jumpToDate}>
-            <label className="date-field"><input aria-label="이동할 연도" inputMode="numeric" maxLength={4} value={dateInput.year} onChange={(event) => setDateInput((current) => ({ ...current, year: event.target.value }))} /><span>년</span></label>
-            <label className="date-field"><input aria-label="이동할 월" inputMode="numeric" maxLength={2} value={dateInput.month} onChange={(event) => setDateInput((current) => ({ ...current, month: event.target.value }))} /><span>월</span></label>
-            <label className="date-field"><input aria-label="이동할 일" inputMode="numeric" maxLength={2} value={dateInput.day} onChange={(event) => setDateInput((current) => ({ ...current, day: event.target.value }))} /><span>일</span></label>
-            <button type="submit">이동</button>
-            <button className="date-picker-toggle" type="button" aria-expanded={pickerOpen} onClick={() => setPickerOpen((current) => !current)}><MaterialIcon name="calendar_month" />날짜 선택</button>
-          </form>
-          {pickerOpen ? (
-            <div className="date-picker-popover" role="dialog" aria-label="날짜 선택 패널">
-              <div className="date-picker-head">
-                <button type="button" aria-label="이전 달" onClick={() => setVisibleMonth((current) => addMonths(current, -1))}><MaterialIcon name="chevron_left" /></button>
-                <strong>{formatScheduleMonth(visibleMonth)}</strong>
-                <button type="button" aria-label="다음 달" onClick={() => setVisibleMonth((current) => addMonths(current, 1))}><MaterialIcon name="chevron_right" /></button>
-              </div>
-              <div className="date-picker-weekdays" aria-hidden="true">{["월", "화", "수", "목", "금", "토", "일"].map((day) => <span key={day}>{day}</span>)}</div>
-              <div className="date-picker-grid">
-                {pickerDays.map((day) => (
-                  <button
-                    className={`${day.isCurrentMonth ? "" : "is-muted"} ${selectedDate === day.date ? "is-active" : ""}`}
-                    type="button"
-                    key={day.date}
-                    onClick={() => {
-                      selectDate(day.date);
-                      setPickerOpen(false);
-                    }}
-                  >
-                    <span>{getDayOfMonth(day.date)}</span>
-                    <small>{scheduleItems.filter((item) => item.date === day.date).length}</small>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : null}
+        <section className="app-card search-card schedule-date-search" aria-label="일정 날짜 이동">
+          <input type="date" value={selectedDate} onChange={(event) => selectDate(event.target.value as IsoDateString)} />
+          <select value={visibleMonth} onChange={(event) => selectDate(getFirstDateOfMonth(event.target.value as MonthKey))}>
+            {scheduleMonthOptions.map((month) => (
+              <option value={month} key={month}>{formatScheduleMonth(month)}</option>
+            ))}
+          </select>
+          <button type="button" aria-label="이전 날짜" onClick={() => moveDate(-1)}><MaterialIcon name="chevron_left" /></button>
+          <button type="button" aria-label="다음 날짜" onClick={() => moveDate(1)}><MaterialIcon name="chevron_right" /></button>
+          <button type="button" aria-label="기본 날짜로 이동" onClick={() => selectDate(defaultScheduleDate)}><MaterialIcon name="refresh" /></button>
         </section>
 
         <div className="date-strip" aria-label="선택 월 날짜 목록">
@@ -569,12 +656,6 @@ function getFirstDateOfMonth(value: MonthKey): IsoDateString {
   return `${value}-01` as IsoDateString;
 }
 
-function addMonths(value: MonthKey, offset: number): MonthKey {
-  const [year, month] = value.split("-").map(Number);
-  const date = new Date(year, month - 1 + offset, 1);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}` as MonthKey;
-}
-
 function toIsoDateString(value: Date): IsoDateString {
   return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}` as IsoDateString;
 }
@@ -586,50 +667,92 @@ function getMonthDays(value: MonthKey) {
   return Array.from({ length: lastDate }, (_, index) => `${value}-${String(index + 1).padStart(2, "0")}` as IsoDateString);
 }
 
-function getCalendarDays(value: MonthKey) {
-  const [year, month] = value.split("-").map(Number);
-  const firstDay = new Date(year, month - 1, 1);
-  const mondayStartOffset = (firstDay.getDay() + 6) % 7;
-  const startDate = new Date(year, month - 1, 1 - mondayStartOffset);
-
-  return Array.from({ length: 42 }, (_, index) => {
-    const date = new Date(startDate);
-    date.setDate(startDate.getDate() + index);
-    const isoDate = toIsoDateString(date);
-
-    return {
-      date: isoDate,
-      isCurrentMonth: getMonthKey(isoDate) === value,
-    };
-  });
-}
-
-function getDateInputParts(value: IsoDateString): DateInputParts {
-  const [year, month, day] = value.split("-");
-
-  return { year, month, day };
-}
-
-function createIsoDateString(value: DateInputParts): IsoDateString | null {
-  const year = Number(value.year);
-  const month = Number(value.month);
-  const day = Number(value.day);
-
-  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
-    return null;
-  }
-
-  const date = new Date(year, month - 1, day);
-
-  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
-    return null;
-  }
-
-  return toIsoDateString(date);
-}
-
 function QrView() {
-  return <SimpleTable title="식권/생수 QR 사용 현황" heading="실시간 지급 현황" rows={["13:00 - 14:00|420 건|580 개|피크타임", "12:00 - 13:00|310 건|450 개|정상", "11:00 - 12:00|85 건|320 개|정상"]} />;
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [mealType, setMealType] = useState<MealType | "all">("all");
+  const [summary, setSummary] = useState<QrUsageSummary | null>(null);
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    getAdminQrUsageSummary({ date, mealType })
+      .then((nextSummary) => {
+        setSummary(nextSummary);
+        setMessage("");
+      })
+      .catch((error: unknown) => {
+        setMessage(error instanceof Error ? error.message : "QR 사용 현황을 불러오지 못했습니다.");
+      });
+  }, [date, mealType]);
+
+  const meal = summary?.totals.meal ?? { issued: 0, used: 0, remaining: 0, usageRate: 0 };
+  const water = summary?.totals.water ?? { issued: 0, used: 0, remaining: 0, usageRate: 0 };
+  const hourlyUsage = summary?.hourlyUsage ?? [];
+
+  return (
+    <section className="admin-view is-active">
+      <header className="page-header page-header--actions">
+        <h1>식권/생수 QR 사용 현황</h1>
+        <div>
+          <button className="light-button" type="button"><MaterialIcon name="download" />엑셀 다운로드</button>
+          <button className="dark-button" type="button"><MaterialIcon name="qr_code_scanner" />QR 수동 발급</button>
+        </div>
+      </header>
+      <div className="page-content narrow-page admin-tab-page">
+        <div className="actions-row">
+          <h2>실시간 지급 현황</h2>
+          <div className="meal-toggle" role="group" aria-label="식사 구분">
+            <span>식사 구분</span>
+            <button className={mealType === "all" ? "is-active" : ""} type="button" onClick={() => setMealType("all")}>전체</button>
+            <button className={mealType === "lunch" ? "is-active" : ""} type="button" onClick={() => setMealType("lunch")}>중식</button>
+            <button className={mealType === "dinner" ? "is-active" : ""} type="button" onClick={() => setMealType("dinner")}>석식</button>
+          </div>
+        </div>
+        <section className="app-card search-card">
+          <input type="date" value={date} onChange={(event) => setDate(event.target.value)} />
+          <select value={mealType} onChange={(event) => setMealType(event.target.value as MealType | "all")}>
+            <option value="all">전체 식사</option>
+            <option value="lunch">중식</option>
+            <option value="dinner">석식</option>
+          </select>
+          <button type="button" aria-label="새로고침" onClick={() => getAdminQrUsageSummary({ date, mealType }).then(setSummary).catch((error: unknown) => setMessage(error instanceof Error ? error.message : "QR 사용 현황을 불러오지 못했습니다."))}><MaterialIcon name="refresh" /></button>
+        </section>
+        {message ? <p className="admin-message" role="status">{message}</p> : null}
+        <div className="qr-stats">
+          <article className="app-card stat-card">
+            <span>식권</span>
+            <p>전체 근로자 식권 사용 / 지급 현황</p>
+            <strong>{meal.used} <small>/ {meal.issued} ({meal.usageRate}%)</small></strong>
+            <i className="bar bar-navy" style={{ "--value": `${meal.usageRate}%` } as CSSProperties}></i>
+          </article>
+          <article className="app-card stat-card">
+            <span>생수</span>
+            <p>생수 사용 / 지급 현황</p>
+            <strong>{water.used} <small>/ {water.issued} ({water.usageRate}%)</small></strong>
+            <i className="bar bar-slate" style={{ "--value": `${water.usageRate}%` } as CSSProperties}></i>
+          </article>
+        </div>
+        <section className="app-card data-table-card">
+          <table>
+            <thead><tr><th>시간</th><th>식권 사용수</th><th>생수 지급수</th><th>누적 대비율</th><th>상태</th></tr></thead>
+            <tbody>
+              {hourlyUsage.length > 0 ? hourlyUsage.map((row) => (
+                <tr key={row.hourRange}>
+                  <td>{row.hourRange}</td>
+                  <td>{row.mealUsed} 건</td>
+                  <td>{row.waterUsed} 개</td>
+                  <td>{meal.used + water.used} / {meal.issued + water.issued}</td>
+                  <td>{row.status}</td>
+                </tr>
+              )) : (
+                <tr><td colSpan={5}><p className="empty-table-state">해당 조건의 QR 사용 이력이 없습니다.</p></td></tr>
+              )}
+            </tbody>
+          </table>
+          <div className="table-foot"><span>표시 중: {hourlyUsage.length}개 시간대</span></div>
+        </section>
+      </div>
+    </section>
+  );
 }
 
 function WorkersView({

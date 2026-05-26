@@ -614,6 +614,14 @@ td {
   font-weight: 850;
 }
 
+.weather-sync-message {
+  grid-column: 1 / -1;
+  margin: -6px 0 0;
+  color: #43536a;
+  font-size: 0.92rem;
+  font-weight: 850;
+}
+
 .weather-current {
   grid-column: 1 / -1;
   display: grid;
@@ -645,9 +653,17 @@ td {
 
 .weather-current strong {
   grid-column: 1 / -1;
-  margin: 0 0 24px;
+  margin: 0;
   font-size: 1.35rem;
   font-weight: 950;
+}
+
+.weather-current article > span {
+  grid-column: 1 / -1;
+  min-height: 20px;
+  color: #5a687d;
+  font-size: 0.78rem;
+  font-weight: 850;
 }
 
 .weather-current .badge {
@@ -662,6 +678,13 @@ td {
 .forecast-card,
 .station-card {
   padding: 20px;
+}
+
+.weather-source-note {
+  margin: -8px 0 16px;
+  color: #4c5a70;
+  font-size: 0.9rem;
+  font-weight: 800;
 }
 
 .section-toolbar {
@@ -1402,6 +1425,11 @@ td {
   align-items: center;
   gap: 10px;
   margin-bottom: 26px;
+}
+
+.schedule-date-search {
+  grid-template-columns: minmax(190px, 1fr) minmax(150px, 180px) 44px 44px 44px;
+  margin-bottom: 0;
 }
 
 .search-card select {
