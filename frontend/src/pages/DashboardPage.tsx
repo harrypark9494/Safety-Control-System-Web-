@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { MaterialIcon } from "../components/MaterialIcon";
-import { clearSession, getSession, requiresPayrollDocuments } from "../features/auth/session";
+import { clearSession, getSession, getWorkerQrEntitlements, requiresPayrollDocuments } from "../features/auth/session";
 import { getSecureEntryPath, navigateTo } from "../features/navigation";
+import type { QrEntitlement } from "../types";
 
 type Tab = "dashboard" | "schedule" | "safety" | "profile";
 type IconName =
@@ -476,8 +477,11 @@ const safetyPassed = true;
 
 export function DashboardPage() {
   const session = getSession();
+  const worker = session?.role === "worker" ? session : null;
   const [tab, setTab] = useState<Tab>("dashboard");
   const [qrOpen, setQrOpen] = useState(false);
+  const [qrEntitlements, setQrEntitlements] = useState<QrEntitlement[]>([]);
+  const [qrMessage, setQrMessage] = useState("");
   const [noticeOpen, setNoticeOpen] = useState(false);
   const shouldRedirectToPayroll = requiresPayrollDocuments(session);
 
@@ -487,9 +491,22 @@ export function DashboardPage() {
     }
   }, [shouldRedirectToPayroll]);
 
-  if (shouldRedirectToPayroll) return null;
+  useEffect(() => {
+    if (!worker) {
+      return;
+    }
 
-  const worker = session?.role === "worker" ? session : null;
+    getWorkerQrEntitlements(worker.uid)
+      .then((entitlements) => {
+        setQrEntitlements(entitlements);
+        setQrMessage("");
+      })
+      .catch((error: unknown) => {
+        setQrMessage(error instanceof Error ? error.message : "QR 지급 정보를 불러오지 못했습니다.");
+      });
+  }, [worker?.uid]);
+
+  if (shouldRedirectToPayroll) return null;
 
   function logout() {
     clearSession();
@@ -508,7 +525,7 @@ export function DashboardPage() {
         </header>
 
         <div className="tab-panels">
-          {tab === "dashboard" ? <DashboardTab setTab={setTab} openQr={() => setQrOpen(true)} /> : null}
+          {tab === "dashboard" ? <DashboardTab setTab={setTab} openQr={() => setQrOpen(true)} qrEntitlements={qrEntitlements} qrMessage={qrMessage} /> : null}
           {tab === "schedule" ? <ScheduleTab /> : null}
           {tab === "safety" ? <SafetyTab /> : null}
           {tab === "profile" ? <ProfileTab worker={worker} logout={logout} /> : null}
@@ -517,13 +534,26 @@ export function DashboardPage() {
         <BottomTabs tab={tab} setTab={setTab} />
       </main>
 
-      {qrOpen ? <QrModal close={() => setQrOpen(false)} /> : null}
+      {qrOpen ? <QrModal entitlements={qrEntitlements} close={() => setQrOpen(false)} /> : null}
       {noticeOpen ? <NotificationModal close={() => setNoticeOpen(false)} /> : null}
     </>
   );
 }
 
-function DashboardTab({ setTab, openQr }: { setTab: (tab: Tab) => void; openQr: () => void }) {
+function DashboardTab({
+  setTab,
+  openQr,
+  qrEntitlements,
+  qrMessage,
+}: {
+  setTab: (tab: Tab) => void;
+  openQr: () => void;
+  qrEntitlements: QrEntitlement[];
+  qrMessage: string;
+}) {
+  const meal = findQrEntitlement(qrEntitlements, "meal");
+  const water = findQrEntitlement(qrEntitlements, "water");
+
   return (
     <section className="tab-panel">
       <section className="app-card date-card" aria-label="오늘 행사 정보">
@@ -556,7 +586,11 @@ function DashboardTab({ setTab, openQr }: { setTab: (tab: Tab) => void; openQr: 
           <span className="qr-icon-box" aria-hidden="true"><Icon name="grid" /></span>
           <span>
             <strong>통합 QR 시스템</strong>
-            <small>식권 남은 횟수: <b>2회</b>&nbsp;&nbsp;생수 남은 횟수: <b>3회</b></small>
+            <small>
+              {qrMessage || (
+                <>식권 남은 횟수: <b>{meal.remainingCount}회</b>&nbsp;&nbsp;생수 남은 횟수: <b>{water.remainingCount}회</b></>
+              )}
+            </small>
           </span>
         </button>
       </section>
@@ -789,26 +823,43 @@ function BottomTabs({ tab, setTab }: { tab: Tab; setTab: (tab: Tab) => void }) {
   );
 }
 
-function QrModal({ close }: { close: () => void }) {
+function QrModal({ entitlements, close }: { entitlements: QrEntitlement[]; close: () => void }) {
+  const [activeType, setActiveType] = useState<"meal" | "water">("meal");
+  const entitlement = findQrEntitlement(entitlements, activeType);
+
   return (
     <div className="modal-backdrop">
       <section className="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qr-modal-title">
         <button className="modal-close" type="button" aria-label="닫기" onClick={close}><Icon name="x" /></button>
-        <p>2026년 7월 23일(목)</p>
+        <p>{entitlement.issuedDate}</p>
         <h2 id="qr-modal-title">통합 QR (식권/생수)</h2>
         <div className="qr-tabs" role="tablist" aria-label="QR 유형">
-          <button className="qr-tab is-active" type="button">식권 QR</button>
-          <button className="qr-tab" type="button">생수 QR</button>
+          <button className={`qr-tab ${activeType === "meal" ? "is-active" : ""}`} type="button" onClick={() => setActiveType("meal")}>식권 QR</button>
+          <button className={`qr-tab ${activeType === "water" ? "is-active" : ""}`} type="button" onClick={() => setActiveType("water")}>생수 QR</button>
         </div>
-        <div className="qr-frame" aria-label="QR 코드">
+        <div className="qr-frame" aria-label={`${entitlement.label} QR 코드`} title={entitlement.qrToken}>
           <div className="qr-fake">{Array.from({ length: 169 }, (_, index) => <span key={index} />)}</div>
         </div>
-        <strong className="qr-count">식권 남은 횟수: 2회</strong>
-        <p className="qr-help">운영 데스크에서 위 QR 코드를 스캔하세요</p>
+        <strong className="qr-count">{entitlement.label} 남은 횟수: {entitlement.remainingCount}회</strong>
+        <p className="qr-help">{entitlement.help}</p>
         <button className="modal-action" type="button" onClick={close}>닫기</button>
       </section>
     </div>
   );
+}
+
+function findQrEntitlement(entitlements: QrEntitlement[], qrType: "meal" | "water"): QrEntitlement {
+  return entitlements.find((entitlement) => entitlement.qrType === qrType) ?? {
+    qrType,
+    label: qrType === "meal" ? "식권" : "생수",
+    issuedDate: new Date().toISOString().slice(0, 10),
+    totalCount: qrType === "meal" ? 2 : 3,
+    usedCount: 0,
+    remainingCount: qrType === "meal" ? 2 : 3,
+    status: "active",
+    qrToken: "",
+    help: qrType === "meal" ? "운영 데스크에서 위 QR 코드를 스캔하세요" : "워터 스테이션에서 위 QR 코드를 스캔하세요",
+  };
 }
 
 function NotificationModal({ close }: { close: () => void }) {

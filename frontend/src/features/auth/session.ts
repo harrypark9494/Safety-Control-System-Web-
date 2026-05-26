@@ -1,4 +1,15 @@
-import type { AppSession, WorkerRegistrationAccount, WorkerSession, WorkType, WorkTypeSetting } from "../../types";
+import type {
+  AppSession,
+  AdminWeatherOverview,
+  MealType,
+  QrEntitlement,
+  QrUsageSummary,
+  WeatherThresholds,
+  WorkerRegistrationAccount,
+  WorkerSession,
+  WorkType,
+  WorkTypeSetting,
+} from "../../types";
 import { GoogleAuthProvider, getAuth, signInWithPopup } from "firebase/auth";
 import { createFirebaseApp } from "../firebase/firebaseApp";
 import { clearSecureEntryPath } from "../navigation";
@@ -176,6 +187,43 @@ export async function deleteRegisteredWorker(phone: string): Promise<void> {
     const text = await response.text();
     throw new Error(text || "근로자 삭제에 실패했습니다.");
   }
+}
+
+export async function getWorkerQrEntitlements(workerId: string): Promise<QrEntitlement[]> {
+  return requestJson<QrEntitlement[]>(`/api/worker/qr-entitlements/today?workerId=${encodeURIComponent(workerId)}`);
+}
+
+export async function getAdminQrUsageSummary(options: { date?: string; mealType?: MealType | "all" } = {}): Promise<QrUsageSummary> {
+  const params = new URLSearchParams();
+
+  if (options.date) {
+    params.set("date", options.date);
+  }
+
+  if (options.mealType) {
+    params.set("mealType", options.mealType);
+  }
+
+  const query = params.toString();
+  return requestJson<QrUsageSummary>(`/api/admin/qr-usage/summary${query ? `?${query}` : ""}`);
+}
+
+export async function getAdminWeatherOverview(): Promise<AdminWeatherOverview> {
+  return requestJson<AdminWeatherOverview>("/api/admin/weather");
+}
+
+export async function updateAdminWeatherStation(station: { name?: string; latitude: number; longitude: number }): Promise<AdminWeatherOverview> {
+  return requestJson<AdminWeatherOverview>("/api/admin/weather/station", {
+    method: "POST",
+    body: JSON.stringify(station),
+  });
+}
+
+export async function updateAdminWeatherThresholds(thresholds: WeatherThresholds): Promise<AdminWeatherOverview> {
+  return requestJson<AdminWeatherOverview>("/api/admin/weather/thresholds", {
+    method: "POST",
+    body: JSON.stringify(thresholds),
+  });
 }
 
 export async function signInWorker(

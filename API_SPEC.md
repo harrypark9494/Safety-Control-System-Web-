@@ -122,6 +122,117 @@ rejected
 }
 ```
 
+### QrEntitlement
+
+```json
+{
+  "qrType": "meal",
+  "label": "식권",
+  "issuedDate": "2026-05-26",
+  "totalCount": 2,
+  "usedCount": 1,
+  "remainingCount": 1,
+  "status": "active",
+  "qrToken": "opaque-token",
+  "help": "운영 데스크에서 위 QR 코드를 스캔하세요"
+}
+```
+
+### QrUsageSummary
+
+```json
+{
+  "date": "2026-05-26",
+  "mealType": "all",
+  "totals": {
+    "meal": { "issued": 2, "used": 1, "remaining": 1, "usageRate": 50 },
+    "water": { "issued": 3, "used": 1, "remaining": 2, "usageRate": 33.3 }
+  },
+  "hourlyUsage": [
+    {
+      "hourRange": "12:00 - 13:00",
+      "mealUsed": 1,
+      "waterUsed": 1,
+      "status": "정상"
+    }
+  ]
+}
+```
+
+### AdminWeatherOverview
+
+```json
+{
+  "source": {
+    "provider": "KMA",
+    "name": "기상청 단기예보 어댑터",
+    "mode": "adapter-placeholder",
+    "baseDateTime": "2026-07-19T05:00:00Z",
+    "updatedAt": "2026-07-19T05:30:00Z",
+    "advisoryMergePolicy": "특보는 예보값에 섞지 않고 별도 채널로 받은 뒤 위험 등급 상향 조건으로만 사용"
+  },
+  "site": {
+    "name": "킨텍스 제2전시장",
+    "latitude": 37.6698,
+    "longitude": 126.7451,
+    "nx": 57,
+    "ny": 128,
+    "source": "KMA",
+    "updatedAt": "2026-07-19T05:30:00Z"
+  },
+  "thresholds": {
+    "windSpeed": 10,
+    "precipitation": 15,
+    "temperature": 33,
+    "humidity": 90
+  },
+  "correctionProfile": {
+    "temperatureOffset": 1.2,
+    "windSpeedOffset": 0.4,
+    "humidityOffset": 3,
+    "precipitationOffset": 0
+  },
+  "current": {
+    "condition": "구름많음",
+    "riskLevel": "caution",
+    "summary": "현재 구름많음, 강수 12mm/h 및 체감 위험을 모니터링 중입니다.",
+    "metrics": [
+      {
+        "key": "windSpeed",
+        "label": "풍속 (WIND SPEED)",
+        "sourceLabel": "KMA + 현장 보정",
+        "value": 4.6,
+        "unit": "m/s",
+        "thresholdLabel": "경보: 10m/s",
+        "percent": 46,
+        "status": "NORMAL",
+        "tone": "green"
+      }
+    ]
+  },
+  "forecast24h": [
+    {
+      "time": "18:00",
+      "icon": "rainy",
+      "condition": "소나기",
+      "rainProbability": 85,
+      "temperature": 26,
+      "windSpeed": 7.2,
+      "riskLevel": "caution"
+    }
+  ],
+  "alertLogs": [
+    {
+      "id": "heat-caution",
+      "level": "caution",
+      "title": "폭염 주의",
+      "time": "14:15",
+      "message": "보정 온도 31.5°C 감지. 그늘 휴식과 수분 보급 안내를 확인하세요."
+    }
+  ]
+}
+```
+
 ### AdminSession
 
 ```json
@@ -379,6 +490,94 @@ Response `200 OK`: empty body
 Errors:
 
 - `404 Not Found`: 등록 정보 없음
+
+### List Worker QR Entitlements
+
+`GET /api/worker/qr-entitlements/today?workerId={workerUid}`
+
+근로자 대시보드의 식권/생수 QR 지급권과 남은 횟수를 반환합니다. 현재 구현은
+오늘 기준 식권 2회, 생수 3회 지급권을 생성하고 사용 이력을 반영합니다. DB
+영속화 단계에서는 `qr_entitlements` 테이블에서 조회합니다.
+
+Response `200 OK`: `QrEntitlement[]`
+
+### List Admin QR Usage Summary
+
+`GET /api/admin/qr-usage/summary?date=2026-05-26&mealType=all`
+
+관리자 식권/생수 QR 사용 현황 화면의 지급량, 사용량, 잔여량, 시간대별 사용
+집계를 반환합니다. `mealType`은 `all`, `lunch`, `dinner`를 지원합니다.
+
+Response `200 OK`: `QrUsageSummary`
+
+### Record QR Scan
+
+`POST /api/qr/scan`
+
+QR 스캔 시 지급권 잔여 수량을 확인한 뒤 사용 이력을 기록합니다. 현재는 운영
+스캐너/관리자 권한 검사가 붙기 전의 도메인 API이며, 운영 단계에서는 스캔 장비
+또는 관리자 권한 검사를 통과한 요청만 허용해야 합니다.
+
+Request:
+
+```json
+{
+  "workerId": "5b7f5d7d-2c0f-4d4d-8b44-3dbb1cbd39f1",
+  "qrType": "meal",
+  "scanLocation": "운영 데스크",
+  "mealType": "lunch"
+}
+```
+
+Response `200 OK`: `{ "event": QrUsageEvent, "entitlement": QrEntitlement }`
+
+### Get Admin Weather Overview
+
+`GET /api/admin/weather`
+
+관리자 기상 정보 관리 탭에서 현재 기상, 24시간 예보, 알림 로그, 관측 지점,
+자동 경보 임계값을 함께 조회합니다. 현재 구현은 실제 기상청 호출 전 단계의
+백엔드 어댑터 placeholder이며, 프론트엔드는 이 API만 호출합니다.
+
+Response `200 OK`: `AdminWeatherOverview`
+
+### Update Admin Weather Station
+
+`POST /api/admin/weather/station`
+
+기상청 격자 위치 산출에 사용할 관측 지점 좌표를 저장합니다. 운영 단계에서는
+KMA 격자 변환 공식을 정확히 적용하고 DB에 저장합니다.
+
+Request:
+
+```json
+{
+  "name": "킨텍스 제2전시장",
+  "latitude": 37.6698,
+  "longitude": 126.7451
+}
+```
+
+Response `200 OK`: `AdminWeatherOverview`
+
+### Update Admin Weather Thresholds
+
+`POST /api/admin/weather/thresholds`
+
+자동 경보 판단에 사용할 임계값을 저장합니다.
+
+Request:
+
+```json
+{
+  "windSpeed": 10,
+  "precipitation": 15,
+  "temperature": 33,
+  "humidity": 90
+}
+```
+
+Response `200 OK`: `AdminWeatherOverview`
 
 ## Planned APIs
 
