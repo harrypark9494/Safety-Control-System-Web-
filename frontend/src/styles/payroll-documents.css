@@ -45,13 +45,13 @@ p {
   margin: 0;
 }
 
-.app-shell {
+.documents-shell {
   width: 100%;
   min-height: 100vh;
   background: #f6f8fa;
 }
 
-.app-header {
+.documents-header {
   display: grid;
   min-height: 78px;
   place-items: center;
@@ -59,13 +59,13 @@ p {
   background: #fff;
 }
 
-.app-header h1 {
+.documents-header h1 {
   font-size: 1.26rem;
   font-weight: 950;
   letter-spacing: 0;
 }
 
-.app-panel {
+.documents-panel {
   display: grid;
   gap: 18px;
   margin: 24px auto 40px;
@@ -76,7 +76,7 @@ p {
   box-shadow: 0 1px 4px rgba(16, 24, 39, 0.08);
 }
 
-.app-panel--wide {
+.documents-panel--wide {
   width: min(100% - 48px, 760px);
 }
 
@@ -597,7 +597,7 @@ select:focus {
     background: #f6f8fa;
   }
 
-  .app-shell {
+  .documents-shell {
     width: 100%;
     margin: 0 auto;
     border: 0;
@@ -606,13 +606,13 @@ select:focus {
     box-shadow: none;
   }
 
-  .app-header {
+  .documents-header {
     min-height: 74px;
     border-radius: 0;
     background: #fffafa;
   }
 
-  .app-panel {
+  .documents-panel {
     width: auto;
     margin: 0;
     padding: 18px;
@@ -648,17 +648,18 @@ select:focus {
   }
 
   .bank-grid {
-    grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr);
-    gap: 7px;
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
 
   .bank-grid input {
-    padding: 0 10px;
+    padding: 0 14px;
   }
 
   .bank-toggle {
-    padding: 0 7px;
-    font-size: 0.78rem;
+    width: 100%;
+    padding: 0 12px;
+    font-size: 0.88rem;
   }
 
   .bank-options {
@@ -688,5 +689,9 @@ select:focus {
 
   .resident-number-row {
     grid-template-columns: minmax(0, 1fr) 14px minmax(0, 1.08fr);
+  }
+
+  .step-actions.split {
+    grid-template-columns: 1fr;
   }
 }

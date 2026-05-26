@@ -84,12 +84,12 @@ export function LoginPage() {
 
   return (
     <>
-      <main className="app-shell">
-        <header className="app-header" aria-labelledby="login-title">
+      <main className="login-shell">
+        <header className="login-header" aria-labelledby="login-title">
           <h1>워터밤 안전 관제 시스템</h1>
         </header>
 
-        <section className="app-panel app-panel--narrow" aria-label="로그인 양식">
+        <section className="login-panel login-panel--narrow" aria-label="로그인 양식">
           <div className="page-heading">
             <div>
               <p className="eyebrow">Safety Control</p>

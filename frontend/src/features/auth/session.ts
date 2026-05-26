@@ -41,6 +41,18 @@ type AdminLoginResponse = AppSession & {
   role: "admin";
 };
 
+async function readApiError(response: Response, fallbackMessage: string): Promise<Error> {
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    const error = await response.json().catch(() => null) as { message?: string } | null;
+    return new Error(error?.message || fallbackMessage);
+  }
+
+  const text = await response.text();
+  return new Error(text || fallbackMessage);
+}
+
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
@@ -52,13 +64,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const contentType = response.headers.get("content-type") ?? "";
 
   if (!response.ok) {
-    if (contentType.includes("application/json")) {
-      const error = await response.json().catch(() => null) as { message?: string } | null;
-      throw new Error(error?.message || "요청 처리에 실패했습니다.");
-    }
-
-    const text = await response.text();
-    throw new Error(text || `요청 처리에 실패했습니다. (${response.status})`);
+    throw await readApiError(response, `요청 처리에 실패했습니다. (${response.status})`);
   }
 
   if (!contentType.includes("application/json")) {
@@ -66,6 +72,14 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   }
 
   return response.json() as Promise<T>;
+}
+
+async function requestNoContent(path: string, init?: RequestInit): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}${path}`, init);
+
+  if (!response.ok) {
+    throw await readApiError(response, "요청 처리에 실패했습니다.");
+  }
 }
 
 function toRegistrationAccount(worker: WorkerRegistrationResponse): WorkerRegistrationAccount {
@@ -142,20 +156,9 @@ export async function renameWorkType(currentLabel: string, nextLabel: string): P
 }
 
 export async function deleteWorkType(label: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/admin/work-types/${encodeURIComponent(label)}`, {
+  await requestNoContent(`/api/admin/work-types/${encodeURIComponent(label)}`, {
     method: "DELETE",
   });
-
-  if (!response.ok) {
-    const contentType = response.headers.get("content-type") ?? "";
-    if (contentType.includes("application/json")) {
-      const error = await response.json().catch(() => null) as { message?: string } | null;
-      throw new Error(error?.message || "고용 유형 삭제에 실패했습니다.");
-    }
-
-    const text = await response.text();
-    throw new Error(text || "고용 유형 삭제에 실패했습니다.");
-  }
 }
 
 export async function getRegisteredWorkers(): Promise<WorkerRegistrationAccount[]> {
@@ -179,14 +182,9 @@ export async function createRegisteredWorker(
 }
 
 export async function deleteRegisteredWorker(phone: string): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}/api/admin/worker-registrations/${encodeURIComponent(formatPhone(phone))}`, {
+  await requestNoContent(`/api/admin/worker-registrations/${encodeURIComponent(formatPhone(phone))}`, {
     method: "DELETE",
   });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || "근로자 삭제에 실패했습니다.");
-  }
 }
 
 export async function getWorkerQrEntitlements(workerId: string): Promise<QrEntitlement[]> {

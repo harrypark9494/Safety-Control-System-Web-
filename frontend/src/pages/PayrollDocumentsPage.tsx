@@ -58,12 +58,12 @@ export function PayrollDocumentsPage() {
 
   return (
     <>
-      <main className="app-shell">
-        <header className="app-header" aria-labelledby="documents-title">
+      <main className="documents-shell">
+        <header className="documents-header" aria-labelledby="documents-title">
           <h1>워터밤 안전 관제 시스템</h1>
         </header>
 
-        <section className="app-panel app-panel--wide" aria-label="급여 정보 등록 입력 양식">
+        <section className="documents-panel documents-panel--wide" aria-label="급여 정보 등록 입력 양식">
           <div className="page-heading">
             <div>
               <p className="eyebrow">Payroll Onboarding</p>

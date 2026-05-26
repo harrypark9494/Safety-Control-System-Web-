@@ -1432,6 +1432,10 @@ td {
   margin-bottom: 0;
 }
 
+.rules-management .search-card {
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 180px) 44px;
+}
+
 .search-card select {
   appearance: none;
   padding-right: 34px;

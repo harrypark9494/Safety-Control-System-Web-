@@ -44,13 +44,13 @@ p {
   margin: 0;
 }
 
-.app-shell {
+.login-shell {
   width: 100%;
   min-height: 100vh;
   background: #f6f8fa;
 }
 
-.app-header {
+.login-header {
   display: grid;
   min-height: 78px;
   place-items: center;
@@ -58,13 +58,13 @@ p {
   background: #fff;
 }
 
-.app-header h1 {
+.login-header h1 {
   font-size: 1.26rem;
   font-weight: 950;
   letter-spacing: 0;
 }
 
-.app-panel {
+.login-panel {
   display: grid;
   gap: 18px;
   margin: 24px auto 40px;
@@ -75,7 +75,7 @@ p {
   box-shadow: 0 1px 4px rgba(16, 24, 39, 0.08);
 }
 
-.app-panel--narrow {
+.login-panel--narrow {
   width: min(100% - 48px, 620px);
 }
 
@@ -280,7 +280,7 @@ select:focus {
     background: #f6f8fa;
   }
 
-  .app-shell {
+  .login-shell {
     width: 100%;
     margin: 0 auto;
     border: 0;
@@ -289,13 +289,13 @@ select:focus {
     box-shadow: none;
   }
 
-  .app-header {
+  .login-header {
     min-height: 74px;
     border-radius: 0;
     background: #fffafa;
   }
 
-  .app-panel {
+  .login-panel {
     width: auto;
     margin: 0;
     padding: 18px;
