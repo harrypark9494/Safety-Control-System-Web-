@@ -30,6 +30,20 @@ type View = (typeof navItems)[number][0];
 type WorkerSortKey = "name" | "phone" | "team" | "workType" | "registrationStatus" | "payrollDocumentStatus";
 type SortDirection = "asc" | "desc";
 type SafetyRuleStatus = "active" | "draft" | "urgent";
+type ScheduleStatus = "confirmed" | "ready" | "risk";
+
+type ScheduleItem = {
+  id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  title: string;
+  team: string;
+  location: string;
+  owner: string;
+  status: ScheduleStatus;
+  dependency?: string;
+};
 
 type SafetyRule = {
   id: string;
@@ -64,6 +78,104 @@ const initialSafetyRules: SafetyRule[] = [
     status: "draft",
     content: "메인 스테이지 앞 펜스 붕괴 또는 압착 위험 발생 시 가장 가까운 비상 통로를 개방하고 관객 흐름을 분산합니다.",
     updatedAt: "2024-05-22",
+  },
+];
+
+const scheduleDays = [
+  "2026-07-15",
+  "2026-07-16",
+  "2026-07-17",
+  "2026-07-18",
+  "2026-07-19",
+  "2026-07-20",
+  "2026-07-21",
+  "2026-07-22",
+  "2026-07-23",
+  "2026-07-24",
+];
+
+const scheduleItems: ScheduleItem[] = [
+  {
+    id: "stage-foundation",
+    date: "2026-07-19",
+    startTime: "07:30",
+    endTime: "09:30",
+    title: "메인 스테이지 하부 고정",
+    team: "구조물",
+    location: "메인 스테이지",
+    owner: "설치 A팀",
+    status: "confirmed",
+  },
+  {
+    id: "stage-panel",
+    date: "2026-07-19",
+    startTime: "09:30",
+    endTime: "11:30",
+    title: "무대 패널 결합",
+    team: "무대",
+    location: "메인 스테이지",
+    owner: "무대 B팀",
+    status: "confirmed",
+    dependency: "메인 스테이지 하부 고정",
+  },
+  {
+    id: "lighting-rigging",
+    date: "2026-07-19",
+    startTime: "11:30",
+    endTime: "13:00",
+    title: "조명 트러스 러깅",
+    team: "조명",
+    location: "메인 스테이지 상단",
+    owner: "조명 C팀",
+    status: "ready",
+    dependency: "무대 패널 결합",
+  },
+  {
+    id: "speaker-rigging",
+    date: "2026-07-19",
+    startTime: "13:30",
+    endTime: "15:00",
+    title: "스피커 러깅 시작",
+    team: "음향",
+    location: "좌우 PA 타워",
+    owner: "음향 A팀",
+    status: "ready",
+    dependency: "조명 트러스 러깅",
+  },
+  {
+    id: "laser-module",
+    date: "2026-07-19",
+    startTime: "15:30",
+    endTime: "16:30",
+    title: "레이저 모듈 안전 점검",
+    team: "특수효과",
+    location: "효과 제어 부스",
+    owner: "특수효과팀",
+    status: "risk",
+    dependency: "스피커 러깅 시작",
+  },
+  {
+    id: "gate-fence",
+    date: "2026-07-20",
+    startTime: "08:00",
+    endTime: "10:00",
+    title: "입장 게이트 펜스 설치",
+    team: "구조물",
+    location: "A 게이트",
+    owner: "안전 시설팀",
+    status: "confirmed",
+  },
+  {
+    id: "video-wall",
+    date: "2026-07-20",
+    startTime: "10:00",
+    endTime: "12:00",
+    title: "영상월 전원 테스트",
+    team: "영상",
+    location: "서브 스테이지",
+    owner: "영상 B팀",
+    status: "ready",
+    dependency: "입장 게이트 펜스 설치",
   },
 ];
 
@@ -287,21 +399,148 @@ function WeatherView() {
 }
 
 function ScheduleView() {
-  const hours = Array.from({ length: 23 }, (_, index) => `${String(index + 1).padStart(2, "0")}:00`);
+  const [selectedDate, setSelectedDate] = useState("2026-07-19");
+  const selectedSchedules = scheduleItems
+    .filter((item) => item.date === selectedDate)
+    .sort((first, second) => first.startTime.localeCompare(second.startTime));
+  const firstSchedule = selectedSchedules[0];
+  const lastSchedule = selectedSchedules[selectedSchedules.length - 1];
+  const calendarWeeks = Array.from({ length: 5 }, (_, weekIndex) => scheduleDays.slice(weekIndex * 2, weekIndex * 2 + 2)).flat();
+  const timelineHours = Array.from({ length: 14 }, (_, index) => `${String(index + 7).padStart(2, "0")}:00`);
+
   return (
     <section className="admin-view is-active">
       <header className="page-header page-header--actions"><h1>스케줄 관리</h1><div><button className="light-button" type="button"><MaterialIcon name="download" />엑셀 내보내기</button><button className="dark-button" type="button"><MaterialIcon name="add" />일정 추가</button></div></header>
-      <div className="schedule-board">
-        <div className="date-strip"><button type="button" aria-label="이전 날짜"><MaterialIcon name="chevron_left" /></button>{["07.15 (화)", "07.16 (수)", "07.17 (목)", "07.18 (금)", "07.19 (토)", "07.20 (일)", "07.21 (월)", "07.22 (화)", "07.23 (수)", "07.24 (목)"].map((day) => <span className={day.includes("19") ? "is-active" : ""} key={day}>{day}</span>)}<button type="button" aria-label="다음 날짜"><MaterialIcon name="chevron_right" /></button></div>
-        <div className="schedule-grid" aria-label="스케줄 표">
-          {["시간", "구조물", "조명", "무대", "영상", "음향", "특수효과"].map((head) => <div className="grid-head" key={head}>{head}</div>)}
-          {hours.map((hour) => (
-            <><div key={`${hour}-time`}>{hour}</div>{["구조물", "조명", "무대", "영상", "음향", "특수효과"].map((team) => <div key={`${hour}-${team}`}>{hour === "08:00" && team === "구조물" ? <span className="job green">무대 패널 결합</span> : hour === "10:00" && team === "음향" ? <span className="job orange">스피커 러깅 시작</span> : hour === "13:00" && team === "특수효과" ? <span className="job red">레이저 모듈</span> : null}</div>)}</>
-          ))}
+      <div className="page-content schedule-board">
+        <section className="schedule-overview" aria-label="스케줄 요약">
+          <article className="app-card schedule-summary-card">
+            <small>선택 날짜</small>
+            <strong>{formatScheduleDate(selectedDate)}</strong>
+            <span>{firstSchedule && lastSchedule ? `${firstSchedule.startTime} - ${lastSchedule.endTime}` : "등록된 일정 없음"}</span>
+          </article>
+          <article className="app-card schedule-summary-card">
+            <small>등록 일정</small>
+            <strong>{selectedSchedules.length} <b>건</b></strong>
+            <span>{Array.from(new Set(selectedSchedules.map((item) => item.team))).join(", ") || "배정 전"}</span>
+          </article>
+          <article className="app-card schedule-summary-card">
+            <small>주의 필요</small>
+            <strong>{selectedSchedules.filter((item) => item.status === "risk").length} <b>건</b></strong>
+            <span>일정 간 선행 조건 확인</span>
+          </article>
+        </section>
+
+        <div className="schedule-layout">
+          <aside className="app-card schedule-calendar" aria-label="날짜 선택">
+            <div className="section-toolbar">
+              <h2>2026년 7월</h2>
+              <div><button type="button" aria-label="이전 달"><MaterialIcon name="chevron_left" /></button><button type="button" aria-label="다음 달"><MaterialIcon name="chevron_right" /></button></div>
+            </div>
+            <div className="calendar-weekdays" aria-hidden="true">{["월", "화", "수", "목", "금", "토", "일"].map((day) => <span key={day}>{day}</span>)}</div>
+            <div className="calendar-grid">
+              {["", "", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "", ""].map((day, index) => {
+                const date = day ? `2026-07-${day}` : "";
+                const daySchedules = scheduleItems.filter((item) => item.date === date);
+                return day ? (
+                  <button className={selectedDate === date ? "is-active" : ""} type="button" key={date} onClick={() => setSelectedDate(date)}>
+                    <span>{day}</span>
+                    <small>{daySchedules.length}건</small>
+                  </button>
+                ) : (
+                  <span className="calendar-empty" key={`empty-${index}`} />
+                );
+              })}
+            </div>
+            <div className="schedule-date-list">
+              {calendarWeeks.map((date) => (
+                <button className={selectedDate === date ? "is-active" : ""} type="button" key={date} onClick={() => setSelectedDate(date)}>
+                  <span>{formatScheduleDateShort(date)}</span>
+                  <b>{scheduleItems.filter((item) => item.date === date).length}건</b>
+                </button>
+              ))}
+            </div>
+          </aside>
+
+          <section className="app-card schedule-day-panel">
+            <div className="section-toolbar">
+              <h2>{formatScheduleDate(selectedDate)} 일정</h2>
+              <span className="count-pill">시간순 연결</span>
+            </div>
+            <div className="schedule-timeline" aria-label="시간별 일정">
+              <div className="timeline-hours">
+                {timelineHours.map((hour) => <span key={hour}>{hour}</span>)}
+              </div>
+              <div className="schedule-chain">
+                {selectedSchedules.length > 0 ? selectedSchedules.map((item, index) => (
+                  <article className={`schedule-event schedule-event--${item.status}`} key={item.id}>
+                    <div className="schedule-event-time">
+                      <strong>{item.startTime}</strong>
+                      <span>{item.endTime}</span>
+                    </div>
+                    <div className="schedule-event-body">
+                      <div>
+                        <small>{item.team} · {item.location}</small>
+                        <h3>{item.title}</h3>
+                        <p>{item.dependency ? `${item.dependency} 이후 진행` : "이 날짜의 첫 일정"}</p>
+                      </div>
+                      <em>{getScheduleStatusLabel(item.status)}</em>
+                    </div>
+                    <footer><span>담당: {item.owner}</span><b>{index + 1} / {selectedSchedules.length}</b></footer>
+                  </article>
+                )) : (
+                  <p className="empty-state">선택한 날짜에 등록된 일정이 없습니다.</p>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section className="app-card schedule-detail-panel">
+            <div className="section-toolbar">
+              <h2>일정 상세</h2>
+              <button type="button">선택일 편집</button>
+            </div>
+            <div className="schedule-detail-list">
+              {selectedSchedules.map((item) => (
+                <article key={item.id}>
+                  <strong>{item.startTime} - {item.endTime}</strong>
+                  <span>{item.title}</span>
+                  <small>{item.team} / {item.owner}</small>
+                </article>
+              ))}
+            </div>
+          </section>
         </div>
       </div>
     </section>
   );
+}
+
+function formatScheduleDate(value: string) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  }).format(new Date(`${value}T00:00:00`));
+}
+
+function formatScheduleDateShort(value: string) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+  }).format(new Date(`${value}T00:00:00`));
+}
+
+function getScheduleStatusLabel(status: ScheduleStatus) {
+  if (status === "risk") {
+    return "주의";
+  }
+
+  if (status === "ready") {
+    return "대기";
+  }
+
+  return "확정";
 }
 
 function QrView() {

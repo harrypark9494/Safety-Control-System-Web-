@@ -2,7 +2,7 @@
 
 이 문서는 Safety Control System Web 작업 방향을 정리합니다. 현재 목표는
 GitHub Pages에서 확인하던 정적 UI 데모를 Vite + React + TypeScript
-프론트엔드 앱으로 전환하고, 근로자 등록/온보딩 흐름부터 Spring Boot 백엔드와
+프론트엔드 앱으로 전환하고, 근로자 등록/온보딩 흐름부터 백엔드 API와
 연결해 풀스택 개발을 진행하는 것입니다. mock은 테스트나 보존 데모에 필요한
 부분으로만 분리합니다.
 
@@ -11,11 +11,11 @@ GitHub Pages에서 확인하던 정적 UI 데모를 Vite + React + TypeScript
 - 실제 동작하는 프론트엔드 앱은 Vite + React + TypeScript 기준으로 작성하며,
   소스는 `frontend/src/` 아래에 둡니다.
 - 프론트엔드 스택은 Vite + React + TypeScript를 기준으로 합니다.
-- 실제 운영 백엔드는 Java + Spring Boot를 기본 후보로 둡니다.
-- Spring Boot 백엔드는 로그인, 권한, 사용자 연동, DB 접근, 민감 데이터 보호를
+- 백엔드는 `backend/`의 NestJS 구현을 기준으로 검증합니다.
+- 백엔드는 로그인, 권한, 사용자 연동, DB 접근, 민감 데이터 보호를
   담당하며, 프론트엔드가 DB나 민감 외부 API에 직접 접근하지 않게 합니다.
 - Firebase 관련 파일은 현재 repo에 남아 있는 전환/배포 검토 산출물입니다. 실제
-  운영 백엔드가 Spring Boot로 확정되면 Firebase Auth, Firestore, Storage 사용
+  운영 백엔드가 확정되면 Firebase Auth, Firestore, Storage 사용
   여부는 별도 결정하고, 브라우저에서 직접 DB성 데이터를 쓰는 구조는 피합니다.
 - Firebase Hosting을 계속 사용할 경우에도 배포 대상은 Vite 빌드 결과인
   `frontend/dist/`입니다.
@@ -76,7 +76,7 @@ Refs #연계이슈
 | --- | --- | --- |
 | `frontend/src/` | 실제 Firebase Hosting에 올라갈 Vite + React + TypeScript 앱 소스 | 신규 기능과 실사용 전환 작업은 여기에서 진행 |
 | `frontend/dist/` | `frontend`에서 `npm run build`로 생성되는 Vite 빌드 결과 | 직접 수정하지 않음, Firebase Hosting 배포 대상 |
-| `backend/` | Spring Boot 백엔드 작업 영역 | API, 인증, 권한, DB 접근, 민감 데이터 보호 담당 |
+| `backend/` | NestJS 백엔드 작업 영역 | 같은 `/api` 계약을 Node/NestJS로 재구축 |
 | `demos/` | 기존 HTML/CSS/JS 정적 UI 데모 보존 영역 | UI 비교, 레이아웃 참고, 임시 mock 검증용 |
 | `frontend/index.html` | Vite 앱 진입점 | 데모 허브가 아니라 React 앱 mount 파일 |
 | root config files | Firebase, 문서, 공통 규칙 설정 | 배포/규칙/프로젝트 방향 관리 |
@@ -89,7 +89,7 @@ Refs #연계이슈
 ## Fullstack Login-First Roadmap
 
 앞으로의 개발은 로그인 시스템을 우선순위 1번으로 두고, 프론트 운영 경로는
-Spring Boot `/api`를 호출합니다. mock은 정적 데모와 테스트 전용 fixture로만
+백엔드 `/api`를 호출합니다. mock은 정적 데모와 테스트 전용 fixture로만
 남깁니다.
 
 API 요청/응답 필드명과 상태값은 루트의 `API_SPEC.md`를 기준으로 맞춥니다.
@@ -99,9 +99,9 @@ API 요청/응답 필드명과 상태값은 루트의 `API_SPEC.md`를 기준으
 권장 단계:
 
 1. 로그인 UI와 사용자 흐름을 확정합니다.
-2. 프론트엔드 auth adapter가 Spring Boot API를 호출하게 유지합니다.
+2. 프론트엔드 auth adapter가 `/api` 계약을 호출하게 유지합니다.
 3. 관리자 근로자 등록 원장과 근로자 온보딩 상태를 DB 기반으로 관리합니다.
-4. Spring Security 관리자 인증을 붙입니다.
+4. 선택한 백엔드 런타임에서 관리자 인증과 관리자 API 보호를 붙입니다.
 5. 급여 서류 제출 API와 파일 저장소 권한 검사를 연결합니다.
 6. 대시보드 운영 데이터를 API로 단계적으로 교체합니다.
 
@@ -144,7 +144,7 @@ auth service
 → 로그인 요청과 인증 상태 조율 담당
 
 api auth adapter
-→ Spring Boot API 호출 담당
+→ `/api` 백엔드 호출 담당
 
 test auth fixture
 → 테스트 환경에서만 가짜 로그인 또는 응답 fixture 담당
@@ -155,8 +155,10 @@ test auth fixture
 
 ## Backend Direction
 
-실제 운영, 관리자 시스템, 사용자 연동, DB 보호가 필요한 조건에서는 Java +
-Spring Boot를 기본 백엔드 방향으로 둡니다.
+실제 운영, 관리자 시스템, 사용자 연동, DB 보호가 필요한 조건에서는 브라우저가
+직접 DB나 민감 외부 API에 접근하지 않는 별도 백엔드 서버를 둡니다. 현재 구현은
+`backend/`의 NestJS 서버이며, `API_SPEC.md` 계약을 먼저 맞춘 뒤 DB, 인증,
+파일 권한을 단계적으로 이식합니다.
 
 권장 백엔드 책임:
 
@@ -171,10 +173,10 @@ Spring Boot를 기본 백엔드 방향으로 둡니다.
 
 ```text
 Frontend: Vite + React + TypeScript
-Backend: Java + Spring Boot
-Auth: Spring Security + JWT 또는 서버 세션
+Backend: NestJS API 서버
+Auth: Firebase ID token 검증 + JWT 또는 서버 세션
 Database: MySQL 또는 PostgreSQL
-Deploy: 정적 프론트 배포 + Spring Boot API 서버 + private DB
+Deploy: 정적 프론트 배포 + 백엔드 API 서버 + private DB
 ```
 
 DB 누수를 막기 위한 기본 원칙:
@@ -228,7 +230,7 @@ Safety-Control-System-Web-/
 
 위 구조는 앞으로 유지할 기준입니다. `frontend/src/`는 Firebase Hosting에 올라갈
 React 앱 소스입니다. `frontend/dist/`는 빌드 결과이며 배포 대상입니다.
-`backend/`는 Spring Boot 백엔드 작업 영역입니다. `demos/`는 기존 GitHub Pages
+`backend/`는 NestJS 백엔드 작업 영역입니다. `demos/`는 기존 GitHub Pages
 mock 데모를 보존하는 비교용 폴더입니다. `frontend/index.html`은 React 앱
 진입점이므로 데모 허브 역할을 하지 않습니다.
 
@@ -377,7 +379,8 @@ mock 데모를 보존하는 비교용 폴더입니다. `frontend/index.html`은 
 - 좌측 고정 사이드바: 대시보드, 기상 정보 관리, 스케줄 관리, 식권/생수 QR 사용 현황, 근로자 관리, 안전 수칙 관리, 어드민 관리
 - 대시보드: 긴급 방송 송출 버튼, 기상 데이터, 체크리스트 점검, 현장 오버레이 목업, 공정률 카드
 - 기상 정보 관리: 실시간 기상 현황, 24시간 예보, 기상 알림 로그, 관측 지점 관리, 자동 경보 임계값 설정
-- 스케줄 관리: 날짜 선택, 엑셀 내보내기, 일정 추가 버튼, 시간/파트별 스케줄 그리드
+- 스케줄 관리: 월간 날짜 선택, 선택일 요약, 시간순으로 이어지는 일정 타임라인,
+  일정별 담당 팀/장소/선행 조건 확인, 엑셀 내보내기와 일정 추가 진입 버튼
 - 식권/생수 QR 사용 현황: 요일/식사 구분 필터, 사용 현황 카드, 시간대별 통계 테이블
 - 근로자 관리: 검색/구역 필터, 근로자 목록, 페이지네이션, 등록 인원 카드, 고용 유형 관리,
   서류 제출 필수 대상자의 제출 서류 열람
