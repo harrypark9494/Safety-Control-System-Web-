@@ -1,4 +1,4 @@
-import { FormEvent, MouseEvent, useEffect, useState } from "react";
+import { Fragment, FormEvent, MouseEvent, useEffect, useState } from "react";
 import { MaterialIcon } from "../components/MaterialIcon";
 import "../styles/admin.css";
 import { fallbackWorkTypes } from "../data/workTypes";
@@ -400,13 +400,13 @@ function WeatherView() {
 
 function ScheduleView() {
   const [selectedDate, setSelectedDate] = useState("2026-07-19");
+  const teams = ["구조물", "조명", "무대", "영상", "음향", "특수효과"];
+  const hours = Array.from({ length: 14 }, (_, index) => `${String(index + 7).padStart(2, "0")}:00`);
   const selectedSchedules = scheduleItems
     .filter((item) => item.date === selectedDate)
     .sort((first, second) => first.startTime.localeCompare(second.startTime));
   const firstSchedule = selectedSchedules[0];
   const lastSchedule = selectedSchedules[selectedSchedules.length - 1];
-  const calendarWeeks = Array.from({ length: 5 }, (_, weekIndex) => scheduleDays.slice(weekIndex * 2, weekIndex * 2 + 2)).flat();
-  const timelineHours = Array.from({ length: 14 }, (_, index) => `${String(index + 7).padStart(2, "0")}:00`);
 
   return (
     <section className="admin-view is-active">
@@ -430,85 +430,42 @@ function ScheduleView() {
           </article>
         </section>
 
-        <div className="schedule-layout">
-          <aside className="app-card schedule-calendar" aria-label="날짜 선택">
-            <div className="section-toolbar">
-              <h2>2026년 7월</h2>
-              <div><button type="button" aria-label="이전 달"><MaterialIcon name="chevron_left" /></button><button type="button" aria-label="다음 달"><MaterialIcon name="chevron_right" /></button></div>
-            </div>
-            <div className="calendar-weekdays" aria-hidden="true">{["월", "화", "수", "목", "금", "토", "일"].map((day) => <span key={day}>{day}</span>)}</div>
-            <div className="calendar-grid">
-              {["", "", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "", ""].map((day, index) => {
-                const date = day ? `2026-07-${day}` : "";
-                const daySchedules = scheduleItems.filter((item) => item.date === date);
-                return day ? (
-                  <button className={selectedDate === date ? "is-active" : ""} type="button" key={date} onClick={() => setSelectedDate(date)}>
-                    <span>{day}</span>
-                    <small>{daySchedules.length}건</small>
-                  </button>
-                ) : (
-                  <span className="calendar-empty" key={`empty-${index}`} />
-                );
-              })}
-            </div>
-            <div className="schedule-date-list">
-              {calendarWeeks.map((date) => (
-                <button className={selectedDate === date ? "is-active" : ""} type="button" key={date} onClick={() => setSelectedDate(date)}>
-                  <span>{formatScheduleDateShort(date)}</span>
-                  <b>{scheduleItems.filter((item) => item.date === date).length}건</b>
-                </button>
-              ))}
-            </div>
-          </aside>
+        <div className="date-strip" aria-label="날짜 선택">
+          <button type="button" aria-label="이전 날짜"><MaterialIcon name="chevron_left" /></button>
+          {scheduleDays.map((date) => (
+            <button className={selectedDate === date ? "is-active" : ""} type="button" key={date} onClick={() => setSelectedDate(date)}>
+              <span>{formatScheduleDateShort(date)}</span>
+              <small>{scheduleItems.filter((item) => item.date === date).length}건</small>
+            </button>
+          ))}
+          <button type="button" aria-label="다음 날짜"><MaterialIcon name="chevron_right" /></button>
+        </div>
 
-          <section className="app-card schedule-day-panel">
-            <div className="section-toolbar">
-              <h2>{formatScheduleDate(selectedDate)} 일정</h2>
-              <span className="count-pill">시간순 연결</span>
-            </div>
-            <div className="schedule-timeline" aria-label="시간별 일정">
-              <div className="timeline-hours">
-                {timelineHours.map((hour) => <span key={hour}>{hour}</span>)}
-              </div>
-              <div className="schedule-chain">
-                {selectedSchedules.length > 0 ? selectedSchedules.map((item, index) => (
-                  <article className={`schedule-event schedule-event--${item.status}`} key={item.id}>
-                    <div className="schedule-event-time">
-                      <strong>{item.startTime}</strong>
-                      <span>{item.endTime}</span>
+        <div className="schedule-table-wrap">
+          <div className="schedule-grid" aria-label={`${formatScheduleDate(selectedDate)} 스케줄 표`}>
+            <div className="grid-head">시간</div>
+            {teams.map((team) => <div className="grid-head" key={team}>{team}</div>)}
+            {hours.map((hour) => (
+              <Fragment key={hour}>
+                <div className="time-cell">{hour}</div>
+                {teams.map((team) => {
+                  const item = selectedSchedules.find((schedule) => schedule.team === team && schedule.startTime.startsWith(hour.slice(0, 2)));
+                  return (
+                    <div className="schedule-cell" key={`${hour}-${team}`}>
+                      {item ? (
+                        <article className={`job job--${item.status}`}>
+                          <strong>{item.title}</strong>
+                          <span>{item.startTime} - {item.endTime}</span>
+                          <small>{item.location} · {item.owner}</small>
+                          {item.dependency ? <em>{item.dependency} 이후</em> : null}
+                        </article>
+                      ) : null}
                     </div>
-                    <div className="schedule-event-body">
-                      <div>
-                        <small>{item.team} · {item.location}</small>
-                        <h3>{item.title}</h3>
-                        <p>{item.dependency ? `${item.dependency} 이후 진행` : "이 날짜의 첫 일정"}</p>
-                      </div>
-                      <em>{getScheduleStatusLabel(item.status)}</em>
-                    </div>
-                    <footer><span>담당: {item.owner}</span><b>{index + 1} / {selectedSchedules.length}</b></footer>
-                  </article>
-                )) : (
-                  <p className="empty-state">선택한 날짜에 등록된 일정이 없습니다.</p>
-                )}
-              </div>
-            </div>
-          </section>
-
-          <section className="app-card schedule-detail-panel">
-            <div className="section-toolbar">
-              <h2>일정 상세</h2>
-              <button type="button">선택일 편집</button>
-            </div>
-            <div className="schedule-detail-list">
-              {selectedSchedules.map((item) => (
-                <article key={item.id}>
-                  <strong>{item.startTime} - {item.endTime}</strong>
-                  <span>{item.title}</span>
-                  <small>{item.team} / {item.owner}</small>
-                </article>
-              ))}
-            </div>
-          </section>
+                  );
+                })}
+              </Fragment>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -529,18 +486,6 @@ function formatScheduleDateShort(value: string) {
     day: "2-digit",
     weekday: "short",
   }).format(new Date(`${value}T00:00:00`));
-}
-
-function getScheduleStatusLabel(status: ScheduleStatus) {
-  if (status === "risk") {
-    return "주의";
-  }
-
-  if (status === "ready") {
-    return "대기";
-  }
-
-  return "확정";
 }
 
 function QrView() {
