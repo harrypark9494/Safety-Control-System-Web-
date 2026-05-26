@@ -1,4 +1,4 @@
-import { Fragment, FormEvent, MouseEvent, useEffect, useState } from "react";
+import { Fragment, FormEvent, MouseEvent, useEffect, useRef, useState } from "react";
 import { MaterialIcon } from "../components/MaterialIcon";
 import "../styles/admin.css";
 import { fallbackWorkTypes } from "../data/workTypes";
@@ -31,10 +31,17 @@ type WorkerSortKey = "name" | "phone" | "team" | "workType" | "registrationStatu
 type SortDirection = "asc" | "desc";
 type SafetyRuleStatus = "active" | "draft" | "urgent";
 type ScheduleStatus = "confirmed" | "ready" | "risk";
+type IsoDateString = `${number}-${number}-${number}`;
+type MonthKey = `${number}-${number}`;
+type DateInputParts = {
+  year: string;
+  month: string;
+  day: string;
+};
 
 type ScheduleItem = {
   id: string;
-  date: string;
+  date: IsoDateString;
   startTime: string;
   endTime: string;
   title: string;
@@ -81,18 +88,7 @@ const initialSafetyRules: SafetyRule[] = [
   },
 ];
 
-const scheduleDays = [
-  "2026-07-15",
-  "2026-07-16",
-  "2026-07-17",
-  "2026-07-18",
-  "2026-07-19",
-  "2026-07-20",
-  "2026-07-21",
-  "2026-07-22",
-  "2026-07-23",
-  "2026-07-24",
-];
+const defaultScheduleDate: IsoDateString = "2026-07-19";
 
 const scheduleItems: ScheduleItem[] = [
   {
@@ -399,14 +395,41 @@ function WeatherView() {
 }
 
 function ScheduleView() {
-  const [selectedDate, setSelectedDate] = useState("2026-07-19");
+  const [selectedDate, setSelectedDate] = useState<IsoDateString>(defaultScheduleDate);
+  const [visibleMonth, setVisibleMonth] = useState<MonthKey>(getMonthKey(defaultScheduleDate));
+  const [dateInput, setDateInput] = useState<DateInputParts>(() => getDateInputParts(defaultScheduleDate));
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const activeDateRef = useRef<HTMLButtonElement | null>(null);
   const teams = ["구조물", "조명", "무대", "영상", "음향", "특수효과"];
   const hours = Array.from({ length: 14 }, (_, index) => `${String(index + 7).padStart(2, "0")}:00`);
+  const monthDays = getMonthDays(visibleMonth);
+  const pickerDays = getCalendarDays(visibleMonth);
   const selectedSchedules = scheduleItems
     .filter((item) => item.date === selectedDate)
     .sort((first, second) => first.startTime.localeCompare(second.startTime));
   const firstSchedule = selectedSchedules[0];
   const lastSchedule = selectedSchedules[selectedSchedules.length - 1];
+  const selectDate = (date: IsoDateString) => {
+    setSelectedDate(date);
+    setVisibleMonth(getMonthKey(date));
+    setDateInput(getDateInputParts(date));
+  };
+  const moveMonth = (offset: number) => {
+    const nextMonth = addMonths(visibleMonth, offset);
+    selectDate(getFirstDateOfMonth(nextMonth));
+  };
+  const jumpToDate = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const date = createIsoDateString(dateInput);
+
+    if (date) {
+      selectDate(date);
+    }
+  };
+
+  useEffect(() => {
+    activeDateRef.current?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+  }, [selectedDate, visibleMonth]);
 
   return (
     <section className="admin-view is-active">
@@ -430,15 +453,54 @@ function ScheduleView() {
           </article>
         </section>
 
-        <div className="date-strip" aria-label="날짜 선택">
-          <button type="button" aria-label="이전 날짜"><MaterialIcon name="chevron_left" /></button>
-          {scheduleDays.map((date) => (
-            <button className={selectedDate === date ? "is-active" : ""} type="button" key={date} onClick={() => setSelectedDate(date)}>
+        <section className="schedule-date-controls" aria-label="일정 날짜 이동">
+          <div className="schedule-month-control">
+            <button type="button" aria-label="이전 달" onClick={() => moveMonth(-1)}><MaterialIcon name="chevron_left" /></button>
+            <h2>{formatScheduleMonth(visibleMonth)}</h2>
+            <button type="button" aria-label="다음 달" onClick={() => moveMonth(1)}><MaterialIcon name="chevron_right" /></button>
+          </div>
+          <form className="date-jump-form" onSubmit={jumpToDate}>
+            <label className="date-field"><input aria-label="이동할 연도" inputMode="numeric" maxLength={4} value={dateInput.year} onChange={(event) => setDateInput((current) => ({ ...current, year: event.target.value }))} /><span>년</span></label>
+            <label className="date-field"><input aria-label="이동할 월" inputMode="numeric" maxLength={2} value={dateInput.month} onChange={(event) => setDateInput((current) => ({ ...current, month: event.target.value }))} /><span>월</span></label>
+            <label className="date-field"><input aria-label="이동할 일" inputMode="numeric" maxLength={2} value={dateInput.day} onChange={(event) => setDateInput((current) => ({ ...current, day: event.target.value }))} /><span>일</span></label>
+            <button type="submit">이동</button>
+            <button className="date-picker-toggle" type="button" aria-expanded={pickerOpen} onClick={() => setPickerOpen((current) => !current)}><MaterialIcon name="calendar_month" />날짜 선택</button>
+          </form>
+          {pickerOpen ? (
+            <div className="date-picker-popover" role="dialog" aria-label="날짜 선택 패널">
+              <div className="date-picker-head">
+                <button type="button" aria-label="이전 달" onClick={() => setVisibleMonth((current) => addMonths(current, -1))}><MaterialIcon name="chevron_left" /></button>
+                <strong>{formatScheduleMonth(visibleMonth)}</strong>
+                <button type="button" aria-label="다음 달" onClick={() => setVisibleMonth((current) => addMonths(current, 1))}><MaterialIcon name="chevron_right" /></button>
+              </div>
+              <div className="date-picker-weekdays" aria-hidden="true">{["월", "화", "수", "목", "금", "토", "일"].map((day) => <span key={day}>{day}</span>)}</div>
+              <div className="date-picker-grid">
+                {pickerDays.map((day) => (
+                  <button
+                    className={`${day.isCurrentMonth ? "" : "is-muted"} ${selectedDate === day.date ? "is-active" : ""}`}
+                    type="button"
+                    key={day.date}
+                    onClick={() => {
+                      selectDate(day.date);
+                      setPickerOpen(false);
+                    }}
+                  >
+                    <span>{getDayOfMonth(day.date)}</span>
+                    <small>{scheduleItems.filter((item) => item.date === day.date).length}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </section>
+
+        <div className="date-strip" aria-label="선택 월 날짜 목록">
+          {monthDays.map((date) => (
+            <button ref={selectedDate === date ? activeDateRef : null} className={selectedDate === date ? "is-active" : ""} type="button" key={date} onClick={() => selectDate(date)}>
               <span>{formatScheduleDateShort(date)}</span>
               <small>{scheduleItems.filter((item) => item.date === date).length}건</small>
             </button>
           ))}
-          <button type="button" aria-label="다음 날짜"><MaterialIcon name="chevron_right" /></button>
         </div>
 
         <div className="schedule-table-wrap">
@@ -480,12 +542,90 @@ function formatScheduleDate(value: string) {
   }).format(new Date(`${value}T00:00:00`));
 }
 
+function formatScheduleMonth(value: MonthKey) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "long",
+  }).format(new Date(`${value}-01T00:00:00`));
+}
+
 function formatScheduleDateShort(value: string) {
   return new Intl.DateTimeFormat("ko-KR", {
     month: "2-digit",
     day: "2-digit",
     weekday: "short",
   }).format(new Date(`${value}T00:00:00`));
+}
+
+function getMonthKey(value: IsoDateString): MonthKey {
+  return value.slice(0, 7) as MonthKey;
+}
+
+function getDayOfMonth(value: IsoDateString) {
+  return Number(value.slice(8, 10));
+}
+
+function getFirstDateOfMonth(value: MonthKey): IsoDateString {
+  return `${value}-01` as IsoDateString;
+}
+
+function addMonths(value: MonthKey, offset: number): MonthKey {
+  const [year, month] = value.split("-").map(Number);
+  const date = new Date(year, month - 1 + offset, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}` as MonthKey;
+}
+
+function toIsoDateString(value: Date): IsoDateString {
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}` as IsoDateString;
+}
+
+function getMonthDays(value: MonthKey) {
+  const [year, month] = value.split("-").map(Number);
+  const lastDate = new Date(year, month, 0).getDate();
+
+  return Array.from({ length: lastDate }, (_, index) => `${value}-${String(index + 1).padStart(2, "0")}` as IsoDateString);
+}
+
+function getCalendarDays(value: MonthKey) {
+  const [year, month] = value.split("-").map(Number);
+  const firstDay = new Date(year, month - 1, 1);
+  const mondayStartOffset = (firstDay.getDay() + 6) % 7;
+  const startDate = new Date(year, month - 1, 1 - mondayStartOffset);
+
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + index);
+    const isoDate = toIsoDateString(date);
+
+    return {
+      date: isoDate,
+      isCurrentMonth: getMonthKey(isoDate) === value,
+    };
+  });
+}
+
+function getDateInputParts(value: IsoDateString): DateInputParts {
+  const [year, month, day] = value.split("-");
+
+  return { year, month, day };
+}
+
+function createIsoDateString(value: DateInputParts): IsoDateString | null {
+  const year = Number(value.year);
+  const month = Number(value.month);
+  const day = Number(value.day);
+
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+    return null;
+  }
+
+  const date = new Date(year, month - 1, day);
+
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    return null;
+  }
+
+  return toIsoDateString(date);
 }
 
 function QrView() {
