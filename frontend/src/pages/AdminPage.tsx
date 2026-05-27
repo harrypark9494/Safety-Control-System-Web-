@@ -467,7 +467,13 @@ function WeatherView() {
           ))}
         </div>
         <section className="app-card forecast-card">
-          <div className="section-toolbar"><h2>향후 24시간 기상 예보</h2><div><button className="is-active" type="button">Table</button><button type="button">Chart</button></div></div>
+          <div className="section-toolbar">
+            <h2>향후 24시간 기상 예보</h2>
+            <div className="toolbar-actions">
+              <button className="is-active" type="button">Table</button>
+              <button type="button">Chart</button>
+            </div>
+          </div>
           {weather ? <p className="weather-source-note">{weather.current.summary}</p> : null}
           <table><thead><tr><th>시간</th><th>상태</th><th>강수확률</th><th>온도</th><th>풍속</th></tr></thead><tbody>
             {forecastRows.map((row) => (
@@ -482,7 +488,10 @@ function WeatherView() {
           </tbody></table>
         </section>
         <aside className="app-card weather-log-card">
-          <div className="section-toolbar"><h2>기상 알림 로그</h2><button type="button" onClick={refreshWeather}>새로고침</button></div>
+          <div className="section-toolbar">
+            <h2>기상 알림 로그</h2>
+            <button type="button" onClick={refreshWeather}>새로고침</button>
+          </div>
           {logs.map((log) => (
             <article className={`log ${log.level === "alert" || log.level === "danger" ? "danger" : "blue"}`} key={log.id}>
               <strong>{log.title} <span>{log.time}</span></strong>
@@ -491,9 +500,12 @@ function WeatherView() {
           ))}
         </aside>
         <section className="app-card station-card">
-          <div className="section-toolbar">
+          <div className="section-toolbar station-toolbar">
             <h2>기상 관측 지점 관리</h2>
-            <div className="search-inline"><input type="search" value={stationName} onChange={(event) => setStationName(event.target.value)} placeholder="관측 지점 검색..." /><button type="button" onClick={saveStation}>위치 업데이트</button></div>
+            <div className="station-search">
+              <input type="search" value={stationName} onChange={(event) => setStationName(event.target.value)} placeholder="관측 지점 검색..." />
+              <button type="button" onClick={saveStation}>위치 업데이트</button>
+            </div>
           </div>
           <div className="station-grid">
             <div className="storm-map">
@@ -510,9 +522,9 @@ function WeatherView() {
         </section>
         <aside className="app-card threshold-card">
           <h2>자동 경보 임계값 설정</h2>
-          <label>풍속 경보 (M/S)<span><input type="number" value={thresholds.windSpeed} onChange={(event) => setThresholds({ ...thresholds, windSpeed: Number(event.target.value) })} />m/s</span></label>
-          <label>강수량 경보 (MM/H)<span><input type="number" value={thresholds.precipitation} onChange={(event) => setThresholds({ ...thresholds, precipitation: Number(event.target.value) })} />mm</span></label>
-          <label>폭염 경보 (°C)<span><input type="number" value={thresholds.temperature} onChange={(event) => setThresholds({ ...thresholds, temperature: Number(event.target.value) })} />°C</span></label>
+          <label>풍속 경보 (M/S)<span className="threshold-input"><input type="number" value={thresholds.windSpeed} onChange={(event) => setThresholds({ ...thresholds, windSpeed: Number(event.target.value) })} />m/s</span></label>
+          <label>강수량 경보 (MM/H)<span className="threshold-input"><input type="number" value={thresholds.precipitation} onChange={(event) => setThresholds({ ...thresholds, precipitation: Number(event.target.value) })} />mm</span></label>
+          <label>폭염 경보 (°C)<span className="threshold-input"><input type="number" value={thresholds.temperature} onChange={(event) => setThresholds({ ...thresholds, temperature: Number(event.target.value) })} />°C</span></label>
           <button type="button" onClick={saveThresholds}>설정 저장</button>
         </aside>
       </div>
