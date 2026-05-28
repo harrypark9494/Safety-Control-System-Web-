@@ -1,0 +1,21 @@
+{
+  "name": "safety-control-system-web-root",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Root command runner for the Safety Control frontend and backend packages.",
+  "scripts": {
+    "install": "npm run install:all",
+    "install:all": "npm --prefix frontend install && npm --prefix backend install",
+    "ci:all": "npm --prefix frontend ci && npm --prefix backend ci",
+    "build": "npm run build:all",
+    "build:all": "npm --prefix frontend run build && npm --prefix backend run build",
+    "build:frontend": "npm --prefix frontend run build",
+    "build:backend": "npm --prefix backend run build",
+    "typecheck": "npm --prefix backend run typecheck",
+    "typecheck:backend": "npm --prefix backend run typecheck",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "npm --prefix backend run dev",
+    "preview:frontend": "npm --prefix frontend run preview",
+    "deploy:preview": "npm --prefix frontend run deploy:preview"
+  }
+}

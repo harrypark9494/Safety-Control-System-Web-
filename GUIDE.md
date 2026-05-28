@@ -194,6 +194,7 @@ DB 누수를 막기 위한 기본 원칙:
 Safety-Control-System-Web-/
 ├─ README.md
 ├─ GUIDE.md
+├─ package.json
 ├─ FIREBASE_SETUP.md
 ├─ firebase.json
 ├─ firestore.rules
@@ -213,11 +214,9 @@ Safety-Control-System-Web-/
 │     └─ styles/
 ├─ backend/
 │  ├─ README.md
-│  ├─ build.gradle
-│  ├─ settings.gradle
-│  ├─ gradlew
-│  ├─ gradlew.bat
-│  ├─ gradle/
+│  ├─ package.json
+│  ├─ tsconfig.json
+│  ├─ tsconfig.build.json
 │  └─ src/
 └─ demos/
    ├─ login/
