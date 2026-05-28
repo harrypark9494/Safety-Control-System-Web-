@@ -988,187 +988,6 @@ td {
   font-size: 0.88rem;
 }
 
-.schedule-date-controls {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(220px, auto) minmax(0, 1fr);
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  border: 1px solid var(--line-strong);
-  border-radius: 4px;
-  padding: 12px 14px;
-  background: #fff;
-}
-
-.schedule-month-control {
-  display: grid;
-  grid-template-columns: 34px minmax(118px, 1fr) 34px;
-  align-items: center;
-  gap: 6px;
-}
-
-.schedule-month-control h2 {
-  margin: 0;
-  color: #18253a;
-  text-align: center;
-  font-size: 1rem;
-  font-weight: 950;
-}
-
-.schedule-month-control button {
-  display: inline-grid;
-  width: 34px;
-  min-height: 34px;
-  place-items: center;
-  padding: 0;
-}
-
-.date-jump-form {
-  display: grid;
-  grid-template-columns: 96px 78px 78px auto auto;
-  align-items: center;
-  gap: 8px;
-  justify-content: end;
-}
-
-.date-field {
-  display: flex;
-  align-items: center;
-  min-height: 36px;
-  border: 1px solid var(--line-strong);
-  border-radius: 4px;
-  background: #fff;
-  color: #596273;
-  font-weight: 950;
-}
-
-.date-field input {
-  width: 100%;
-  min-width: 0;
-  height: 34px;
-  border: 0;
-  padding: 0 4px 0 10px;
-  color: #18253a;
-  background: transparent;
-  text-align: right;
-  font-weight: 900;
-}
-
-.date-field span {
-  flex: 0 0 auto;
-  padding: 0 10px 0 2px;
-  color: #596273;
-  font-size: 0.82rem;
-  font-weight: 950;
-}
-
-.date-jump-form button,
-.date-picker-toggle {
-  min-height: 34px;
-  border: 0;
-  border-radius: 4px;
-  padding: 0 14px;
-  color: #fff;
-  background: var(--navy);
-  font-weight: 950;
-}
-
-.date-picker-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: #18253a !important;
-  background: #eef1f5 !important;
-}
-
-.date-picker-popover {
-  position: absolute;
-  top: calc(100% + 8px);
-  right: 14px;
-  z-index: 8;
-  width: min(336px, calc(100vw - 40px));
-  border: 1px solid var(--line-strong);
-  border-radius: 6px;
-  padding: 12px;
-  background: #fff;
-  box-shadow: 0 18px 40px rgba(24, 37, 58, 0.18);
-}
-
-.date-picker-head {
-  display: grid;
-  grid-template-columns: 32px 1fr 32px;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-
-.date-picker-head strong {
-  color: #18253a;
-  text-align: center;
-  font-size: 0.95rem;
-  font-weight: 950;
-}
-
-.date-picker-head button {
-  display: grid;
-  min-height: 32px;
-  place-items: center;
-  border: 1px solid var(--line-strong);
-  border-radius: 4px;
-  padding: 0;
-  background: #fff;
-}
-
-.date-picker-weekdays,
-.date-picker-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 4px;
-}
-
-.date-picker-weekdays {
-  margin-bottom: 5px;
-  color: #687384;
-  text-align: center;
-  font-size: 0.72rem;
-  font-weight: 950;
-}
-
-.date-picker-grid button {
-  display: grid;
-  min-height: 38px;
-  align-content: center;
-  gap: 1px;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  padding: 3px;
-  color: #243044;
-  background: #fff;
-  font-weight: 950;
-}
-
-.date-picker-grid button small {
-  color: #7b8492;
-  font-size: 0.62rem;
-  font-weight: 900;
-}
-
-.date-picker-grid button.is-muted {
-  color: #a0a7b2;
-  background: #f7f7f8;
-}
-
-.date-picker-grid button.is-active {
-  border-color: var(--navy);
-  color: #fff;
-  background: var(--navy);
-}
-
-.date-picker-grid button.is-active small {
-  color: #d7e0ef;
-}
-
 .date-strip {
   position: sticky;
   top: 0;
@@ -1325,31 +1144,10 @@ td {
   margin-bottom: 0;
 }
 
-.filter-card,
 .search-card {
   padding: 12px 18px;
 }
 
-.filter-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(220px, 260px);
-  gap: 10px 20px;
-}
-
-.filter-card label {
-  grid-column: 1;
-  color: #4b5361;
-  font-size: 0.82rem;
-  font-weight: 900;
-}
-
-.chip-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 9px;
-}
-
-.chip-row button,
 .meal-toggle button,
 .pagination button {
   min-height: 40px;
@@ -1361,7 +1159,6 @@ td {
   font-weight: 900;
 }
 
-.chip-row .is-active,
 .meal-toggle .is-active,
 .pagination .is-active {
   color: #fff;
@@ -1721,11 +1518,6 @@ td {
   border: 1px solid var(--line-strong);
   background: var(--field);
   padding: 0 14px;
-}
-
-.rules-page .actions-row p {
-  margin-top: 12px;
-  color: #343b49;
 }
 
 .rule-summary {
@@ -2504,31 +2296,6 @@ td {
 
   .schedule-overview {
     grid-template-columns: 1fr;
-  }
-
-  .schedule-date-controls {
-    grid-template-columns: 1fr;
-    align-items: stretch;
-  }
-
-  .schedule-month-control {
-    grid-template-columns: 34px minmax(0, 1fr) 34px;
-  }
-
-  .date-jump-form {
-    grid-template-columns: minmax(0, 1fr) 72px 72px auto;
-    justify-content: stretch;
-  }
-
-  .date-picker-toggle {
-    grid-column: 1 / -1;
-    justify-content: center;
-  }
-
-  .date-picker-popover {
-    right: 12px;
-    left: 12px;
-    width: auto;
   }
 
   .storm-map {

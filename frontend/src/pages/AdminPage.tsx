@@ -37,6 +37,10 @@ type SafetyRuleStatus = "active" | "draft" | "urgent";
 type ScheduleStatus = "confirmed" | "ready" | "risk";
 type IsoDateString = `${number}-${number}-${number}`;
 type MonthKey = `${number}-${number}`;
+type StatusMeta = {
+  label: string;
+  tone: string;
+};
 
 type ScheduleItem = {
   id: string;
@@ -88,6 +92,25 @@ const initialSafetyRules: SafetyRule[] = [
 ];
 
 const defaultScheduleDate: IsoDateString = "2026-07-19";
+
+const workerRegistrationStatusMeta: Record<WorkerRegistrationAccount["registrationStatus"], StatusMeta> = {
+  registered: { label: "대기", tone: "orange-text" },
+  onboarded: { label: "완료", tone: "green-text" },
+};
+
+const payrollStatusMeta: Record<PayrollDocumentStatus, StatusMeta> = {
+  missing: { label: "미제출", tone: "orange-text" },
+  submitted: { label: "제출 완료", tone: "blue" },
+  reviewing: { label: "검토 중", tone: "blue" },
+  approved: { label: "승인", tone: "green-text" },
+  rejected: { label: "반려", tone: "red-text" },
+};
+
+const ruleStatusMeta: Record<SafetyRuleStatus, StatusMeta> = {
+  active: { label: "활성", tone: "on" },
+  urgent: { label: "긴급", tone: "urgent" },
+  draft: { label: "초안", tone: "draft" },
+};
 
 const scheduleItems: ScheduleItem[] = [
   {
@@ -175,7 +198,7 @@ const scheduleItems: ScheduleItem[] = [
 ];
 
 function Bar({ value, color = "navy" }: { value: string; color?: "navy" | "green" | "orange" | "red" | "slate" }) {
-  return <i className={`bar bar-${color}`} style={{ "--value": value } as React.CSSProperties & Record<"--value", string>} />;
+  return <i className={`bar bar-${color}`} style={{ "--value": value } as CSSProperties & Record<"--value", string>} />;
 }
 
 function formatDateTime(value: string) {
@@ -800,7 +823,7 @@ function WorkersView({
   const [actionMenuPosition, setActionMenuPosition] = useState({ top: 0, left: 0 });
   const onboardedCount = workers.filter((worker) => worker.registrationStatus === "onboarded").length;
   const payrollRequiredWorkerCount = workers.filter((worker) => isPayrollDocumentsRequiredWorker(worker, workTypes)).length;
-  const nextSortOrder = Math.max(0, ...workTypes.map((option) => option.sortOrder)) + 10;
+  const nextSortOrder = getNextWorkTypeSortOrder(workTypes);
   const workTypeQuery = workType.trim().toLowerCase();
   const filteredWorkTypes = workTypes.filter((option) => option.label.toLowerCase().includes(workTypeQuery));
   const hasExactWorkType = workTypes.some((option) => option.label === workType.trim());
@@ -986,10 +1009,16 @@ function WorkersView({
                   <td>{worker.phone}</td>
                   <td><em>{worker.team}</em></td>
                   <td><em className="blue">{worker.workType}</em></td>
-                  <td>{worker.registrationStatus === "onboarded" ? <em className="green-text">완료</em> : <em className="orange-text">대기</em>}</td>
+                  <td>
+                    <em className={getWorkerRegistrationStatusMeta(worker.registrationStatus).tone}>
+                      {getWorkerRegistrationStatusMeta(worker.registrationStatus).label}
+                    </em>
+                  </td>
                   <td>
                     {isPayrollDocumentsRequiredWorker(worker, workTypes) ? (
-                      <em className={getPayrollStatusTone(worker.payrollDocumentStatus)}>{getPayrollStatusLabel(worker.payrollDocumentStatus)}</em>
+                      <em className={getPayrollStatusMeta(worker.payrollDocumentStatus).tone}>
+                        {getPayrollStatusMeta(worker.payrollDocumentStatus).label}
+                      </em>
                     ) : (
                       <em className="gray">대상 아님</em>
                     )}
@@ -1164,8 +1193,8 @@ function WorkerDetailModal({
   payrollDocumentsRequired: boolean;
   onClose: () => void;
 }) {
-  const registrationStatusLabel = worker.registrationStatus === "onboarded" ? "온보딩 완료" : "온보딩 대기";
-  const payrollStatusLabel = getPayrollStatusLabel(worker.payrollDocumentStatus);
+  const registrationStatusLabel = `온보딩 ${getWorkerRegistrationStatusMeta(worker.registrationStatus).label}`;
+  const payrollStatusLabel = getPayrollStatusMeta(worker.payrollDocumentStatus).label;
   const canRequestSecureOpen = payrollDocumentsRequired && worker.payrollDocumentStatus !== "missing";
 
   return (
@@ -1242,38 +1271,30 @@ function isPayrollDocumentsRequiredWorker(worker: WorkerRegistrationAccount, wor
 
 function getWorkerSortValue(worker: WorkerRegistrationAccount, key: WorkerSortKey, workTypes: WorkTypeSetting[]) {
   if (key === "registrationStatus") {
-    return worker.registrationStatus === "onboarded" ? "완료" : "대기";
+    return getWorkerRegistrationStatusMeta(worker.registrationStatus).label;
   }
 
   if (key === "payrollDocumentStatus") {
-    return isPayrollDocumentsRequiredWorker(worker, workTypes) ? getPayrollStatusLabel(worker.payrollDocumentStatus) : "대상 아님";
+    return isPayrollDocumentsRequiredWorker(worker, workTypes) ? getPayrollStatusMeta(worker.payrollDocumentStatus).label : "대상 아님";
   }
 
   return worker[key] ?? "";
 }
 
-function getPayrollStatusLabel(status: PayrollDocumentStatus) {
-  const labels: Record<PayrollDocumentStatus, string> = {
-    missing: "미제출",
-    submitted: "제출 완료",
-    reviewing: "검토 중",
-    approved: "승인",
-    rejected: "반려",
-  };
-
-  return labels[status] ?? status;
+function getWorkerRegistrationStatusMeta(status: WorkerRegistrationAccount["registrationStatus"]) {
+  return workerRegistrationStatusMeta[status];
 }
 
-function getPayrollStatusTone(status: PayrollDocumentStatus) {
-  const tones: Record<PayrollDocumentStatus, string> = {
-    missing: "orange-text",
-    submitted: "blue",
-    reviewing: "blue",
-    approved: "green-text",
-    rejected: "red-text",
-  };
+function getPayrollStatusMeta(status: PayrollDocumentStatus) {
+  return payrollStatusMeta[status];
+}
 
-  return tones[status] ?? "gray";
+function getNextWorkTypeSortOrder(workTypes: WorkTypeSetting[]) {
+  return Math.max(0, ...workTypes.map((workType) => workType.sortOrder)) + 10;
+}
+
+function countWorkersByWorkType(workers: WorkerRegistrationAccount[], label: WorkType) {
+  return workers.filter((worker) => worker.workType === label).length;
 }
 
 function formatWorkerDate(value: string) {
@@ -1307,7 +1328,7 @@ function WorkTypeManager({
   const [message, setMessage] = useState("");
   const [editingLabel, setEditingLabel] = useState("");
   const [nextLabel, setNextLabel] = useState("");
-  const nextSortOrder = Math.max(0, ...workTypes.map((workType) => workType.sortOrder)) + 10;
+  const nextSortOrder = getNextWorkTypeSortOrder(workTypes);
 
   async function updateWorkType(workType: WorkTypeSetting, updates: Partial<WorkTypeSetting>) {
     try {
@@ -1376,7 +1397,7 @@ function WorkTypeManager({
       {message ? <p className="form-message work-type-message" role="status">{message}</p> : null}
       <div className="work-type-list">
         {workTypes.map((workType) => {
-          const workerCount = workers.filter((worker) => worker.workType === workType.label).length;
+          const workerCount = countWorkersByWorkType(workers, workType.label);
           const isEditing = editingLabel === workType.label;
 
           return (
@@ -1549,7 +1570,7 @@ function RulesView() {
                       </button>
                     </td>
                     <td>{rule.category}</td>
-                    <td><em className={`state ${getRuleStatusTone(rule.status)}`}>{getRuleStatusLabel(rule.status)}</em></td>
+                    <td><em className={`state ${getRuleStatusMeta(rule.status).tone}`}>{getRuleStatusMeta(rule.status).label}</em></td>
                     <td>{rule.updatedAt}</td>
                     <td><button className="light-button table-inline-button" type="button" onClick={() => openRuleEditor(rule)}><MaterialIcon name="edit_note" />내용 확인/수정</button></td>
                   </tr>
@@ -1590,28 +1611,8 @@ function RulesView() {
   );
 }
 
-function getRuleStatusLabel(status: SafetyRuleStatus) {
-  if (status === "urgent") {
-    return "긴급";
-  }
-
-  if (status === "draft") {
-    return "초안";
-  }
-
-  return "활성";
-}
-
-function getRuleStatusTone(status: SafetyRuleStatus) {
-  if (status === "urgent") {
-    return "urgent";
-  }
-
-  if (status === "draft") {
-    return "draft";
-  }
-
-  return "on";
+function getRuleStatusMeta(status: SafetyRuleStatus) {
+  return ruleStatusMeta[status];
 }
 
 function AdminsView({ onOpen }: { onOpen: () => void }) {
@@ -1621,22 +1622,6 @@ function AdminsView({ onOpen }: { onOpen: () => void }) {
       <div className="page-content narrow-page">
         <section className="app-card admin-add-card"><div className="card-head"><h2><MaterialIcon name="person_add" />어드민 계정 추가</h2></div><button className="dark-button" type="button" onClick={onOpen}><MaterialIcon name="add" />어드민 계정 추가하기</button></section>
         <section className="app-card data-table-card admin-table"><div className="section-toolbar"><h2><MaterialIcon name="list_alt" />현재 등록된 어드민 목록</h2><span className="count-pill">총 4명</span></div><table><thead><tr><th>아이디</th><th>이름</th><th>등록일</th><th>권한</th><th>관리</th></tr></thead><tbody>{["super_admin|관리자 A|2024-01-15|전체 권한", "ops_manager_01|관리자 B|2024-03-22|운영 권한", "safety_inspector_01|관리자 C|2024-05-10|안전 조회", "staff_admin_ops|관리자 D|2024-06-02|운영 권한"].map((row) => { const [id, name, date, role] = row.split("|"); return <tr key={id}><td><MaterialIcon name="account_circle" filled /> <strong>{id}</strong></td><td>{name}</td><td>{date}</td><td><em>{role}</em></td><td><span className="table-icon-actions"><MaterialIcon name="edit" /><MaterialIcon name="delete" /></span></td></tr>; })}</tbody></table></section>
-      </div>
-    </section>
-  );
-}
-
-function SimpleTable({ title, heading, rows }: { title: string; heading?: string; rows: string[] }) {
-  return (
-    <section className="admin-view is-active">
-      <header className="page-header page-header--actions"><h1>{title}</h1><div><button className="light-button" type="button"><MaterialIcon name="download" />엑셀 다운로드</button><button className="dark-button" type="button"><MaterialIcon name="add" />추가</button></div></header>
-      <div className="page-content narrow-page admin-tab-page">
-        {heading ? <div className="actions-row"><h2>{heading}</h2></div> : null}
-        <section className="app-card search-card"><input type="search" placeholder="검색" /><select><option>전체</option></select><button type="button" aria-label="필터"><MaterialIcon name="filter_list" /></button></section>
-        <section className="app-card data-table-card">
-          <table><thead><tr><th>항목</th><th>구분</th><th>상태</th><th>관리</th></tr></thead><tbody>{rows.map((row) => { const cells = row.split("|"); return <tr key={row}>{cells.map((cell) => <td key={cell}>{cell}</td>)}</tr>; })}</tbody></table>
-          <div className="table-foot"><span>표시 중: 1 - {rows.length}</span><div className="pagination"><button aria-label="이전 페이지"><MaterialIcon name="chevron_left" /></button><button className="is-active">1</button><button>2</button><button aria-label="다음 페이지"><MaterialIcon name="chevron_right" /></button></div></div>
-        </section>
       </div>
     </section>
   );
