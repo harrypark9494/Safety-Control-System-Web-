@@ -53,7 +53,7 @@ async function readApiError(response: Response, fallbackMessage: string): Promis
   return new Error(text || fallbackMessage);
 }
 
-async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+async function requestApi(path: string, init?: RequestInit): Promise<Response> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
@@ -61,11 +61,17 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
       ...init?.headers,
     },
   });
-  const contentType = response.headers.get("content-type") ?? "";
 
   if (!response.ok) {
     throw await readApiError(response, `요청 처리에 실패했습니다. (${response.status})`);
   }
+
+  return response;
+}
+
+async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const response = await requestApi(path, init);
+  const contentType = response.headers.get("content-type") ?? "";
 
   if (!contentType.includes("application/json")) {
     throw new Error("API 서버 응답이 JSON이 아닙니다. 백엔드 서버 또는 API 배포 연결을 확인해 주세요.");
@@ -75,11 +81,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 async function requestNoContent(path: string, init?: RequestInit): Promise<void> {
-  const response = await fetch(`${API_BASE_URL}${path}`, init);
-
-  if (!response.ok) {
-    throw await readApiError(response, "요청 처리에 실패했습니다.");
-  }
+  await requestApi(path, init);
 }
 
 function toRegistrationAccount(worker: WorkerRegistrationResponse): WorkerRegistrationAccount {
