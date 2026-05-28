@@ -1,6 +1,12 @@
 import { Body, Controller, Post } from '@nestjs/common';
-import { AdminLoginRequest } from './admin-auth.dto';
+import { IsNotEmpty, IsString } from 'class-validator';
 import { AdminAuthService } from './admin-auth.service';
+
+class AdminLoginRequest {
+  @IsString()
+  @IsNotEmpty()
+  idToken: string;
+}
 
 @Controller('auth')
 export class AdminAuthController {

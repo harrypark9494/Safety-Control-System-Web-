@@ -10,8 +10,8 @@ import type {
   WorkType,
   WorkTypeSetting,
 } from "../../types";
+import { getApps, initializeApp, type FirebaseApp } from "firebase/app";
 import { GoogleAuthProvider, getAuth, signInWithPopup } from "firebase/auth";
-import { createFirebaseApp } from "../firebase/firebaseApp";
 import { clearSecureEntryPath } from "../navigation";
 import { formatPhone } from "../phone";
 
@@ -19,6 +19,13 @@ const SESSION_KEY = "safetyControlSession";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const ADMIN_GOOGLE_DOMAIN = import.meta.env.VITE_ADMIN_GOOGLE_DOMAIN ?? "";
 const ENABLE_LOCAL_ADMIN_BYPASS = import.meta.env.VITE_ENABLE_LOCAL_ADMIN_BYPASS === "true";
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+};
 
 type WorkerRegistrationResponse = {
   uid: string;
@@ -97,6 +104,19 @@ function toRegistrationAccount(worker: WorkerRegistrationResponse): WorkerRegist
     registeredAt: worker.registeredAt,
     onboardedAt: worker.onboardedAt,
   };
+}
+
+function createFirebaseApp(): FirebaseApp | null {
+  if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+    return null;
+  }
+
+  const [existingApp] = getApps();
+  if (existingApp) {
+    return existingApp;
+  }
+
+  return initializeApp(firebaseConfig);
 }
 
 export function getSession(): AppSession | null {
