@@ -1,7 +1,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import { MaterialIcon } from "../components/MaterialIcon";
 import "../styles/admin.css";
-import { fallbackWorkTypes } from "../data/workTypes";
 import { clearSession, getAdminProjects, getRegisteredWorkers, getWorkTypes } from "../features/auth/session";
 import { navigateTo } from "../features/navigation";
 import type { Project, WorkerRegistrationAccount, WorkTypeSetting } from "../types";
@@ -35,7 +34,8 @@ export function AdminPage() {
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [projectMessage, setProjectMessage] = useState("");
   const [workers, setWorkers] = useState<WorkerRegistrationAccount[]>([]);
-  const [workTypes, setWorkTypes] = useState<WorkTypeSetting[]>(fallbackWorkTypes);
+  const [workTypes, setWorkTypes] = useState<WorkTypeSetting[]>([]);
+  const [workTypesReady, setWorkTypesReady] = useState(false);
   const [workerMessage, setWorkerMessage] = useState("");
 
   function submitAdmin(event: FormEvent<HTMLFormElement>) {
@@ -89,10 +89,11 @@ export function AdminPage() {
   async function refreshWorkTypes() {
     try {
       const nextWorkTypes = await getWorkTypes({ includeDisabled: true });
-      if (nextWorkTypes.length > 0) {
-        setWorkTypes(nextWorkTypes);
-      }
+      setWorkTypes(nextWorkTypes);
+      setWorkTypesReady(true);
     } catch (error) {
+      setWorkTypes([]);
+      setWorkTypesReady(false);
       setWorkerMessage(error instanceof Error ? error.message : "고용 유형 목록을 불러오지 못했습니다.");
     }
   }
@@ -148,6 +149,7 @@ export function AdminPage() {
               projectId={selectedProjectId}
               workers={workers}
               workTypes={workTypes}
+              workTypesReady={workTypesReady}
               message={workerMessage}
               onRefresh={refreshWorkers}
               onRefreshWorkTypes={refreshWorkTypes}

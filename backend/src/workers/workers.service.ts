@@ -25,12 +25,16 @@ export class WorkersService {
   createRegistration(request: AdminRegistrationRequest) {
     const projectId = this.normalizeProjectId(request.projectId);
     const phone = this.normalizePhone(request.phone);
-    const workType = this.normalizeExistingWorkType(request.workType);
+    const workType = this.normalizeExistingWorkType(request.workType, { requireEnabled: false });
     const now = new Date().toISOString();
-    const existing = this.registrations.get(this.registrationKey(projectId, phone));
+    const key = this.registrationKey(projectId, phone);
+
+    if (this.registrations.has(key)) {
+      throw new ConflictException('이미 이 프로젝트에 등록된 연락처입니다.');
+    }
 
     const registration: WorkerRegistration = {
-      uid: existing?.uid ?? randomUUID(),
+      uid: randomUUID(),
       projectId,
       name: request.name.trim(),
       phone,
@@ -45,7 +49,7 @@ export class WorkersService {
       onboardedAt: null,
     };
 
-    this.registrations.set(this.registrationKey(projectId, phone), registration);
+    this.registrations.set(key, registration);
     return this.toRegistrationResponse(registration);
   }
 
@@ -69,7 +73,7 @@ export class WorkersService {
   }
 
   login(request: WorkerLoginRequest) {
-    const worker = this.findByPhone(request.phone);
+    const worker = this.findByPhone(request.phone, request.projectId);
 
     if (worker.registrationStatus !== 'onboarded') {
       throw new ApiError(HttpStatus.FORBIDDEN, 'WORKER_ONBOARDING_REQUIRED', '회원가입 절차가 완료되지 않았습니다.');
@@ -113,13 +117,15 @@ export class WorkersService {
     this.registrations.delete(this.registrationKey(worker.projectId, worker.phone));
   }
 
-  listWorkTypes() {
-    return [...this.workTypes.values()].sort((a, b) => {
-      if (a.sortOrder !== b.sortOrder) {
-        return a.sortOrder - b.sortOrder;
-      }
-      return a.label.localeCompare(b.label);
-    });
+  listWorkTypes(options: { includeDisabled?: boolean } = {}) {
+    return [...this.workTypes.values()]
+      .filter((workType) => options.includeDisabled || workType.enabled)
+      .sort((a, b) => {
+        if (a.sortOrder !== b.sortOrder) {
+          return a.sortOrder - b.sortOrder;
+        }
+        return a.label.localeCompare(b.label);
+      });
   }
 
   saveWorkType(request: WorkTypeRequest) {
@@ -234,12 +240,17 @@ export class WorkersService {
   private findByPhone(phone: string, projectId?: string) {
     const normalized = this.normalizePhone(phone);
     const normalizedProjectId = projectId?.trim();
+    const matches = [...this.registrations.values()].filter((registration) => registration.phone === normalized);
     const worker = normalizedProjectId
       ? this.registrations.get(this.registrationKey(normalizedProjectId, normalized))
-      : [...this.registrations.values()].find((registration) => registration.phone === normalized);
+      : matches[0];
 
     if (!worker) {
       throw new NotFoundException('관리자가 등록한 근로자 정보를 찾을 수 없습니다.');
+    }
+
+    if (!normalizedProjectId && matches.length > 1) {
+      throw new ConflictException('같은 연락처의 근로자 등록 정보가 여러 프로젝트에 있습니다. 프로젝트를 지정해야 합니다.');
     }
 
     return worker;
@@ -267,11 +278,16 @@ export class WorkersService {
     throw new ApiError(HttpStatus.BAD_REQUEST, 'INVALID_PHONE', '연락처는 숫자 10자리 또는 11자리여야 합니다.');
   }
 
-  private normalizeExistingWorkType(workType: string) {
+  private normalizeExistingWorkType(workType: string, options: { requireEnabled?: boolean } = {}) {
     const normalized = this.normalizeWorkTypeLabel(workType);
+    const setting = this.workTypes.get(normalized);
 
-    if (!this.workTypes.has(normalized)) {
+    if (!setting) {
       throw new ApiError(HttpStatus.BAD_REQUEST, 'UNSUPPORTED_WORK_TYPE', '지원하지 않는 고용 유형입니다.');
+    }
+
+    if (options.requireEnabled !== false && !setting.enabled) {
+      throw new ApiError(HttpStatus.BAD_REQUEST, 'DISABLED_WORK_TYPE', '현재 선택할 수 없는 고용 유형입니다.');
     }
 
     return normalized;

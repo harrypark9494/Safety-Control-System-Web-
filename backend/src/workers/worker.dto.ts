@@ -53,6 +53,10 @@ export class OnboardingRequest {
 }
 
 export class WorkerLoginRequest {
+  @IsOptional()
+  @IsString()
+  projectId?: string;
+
   @IsString()
   @IsNotEmpty()
   name: string;

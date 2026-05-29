@@ -28,6 +28,7 @@ export function WorkersView({
   projectId,
   workers,
   workTypes,
+  workTypesReady,
   message,
   onRefresh,
   onRefreshWorkTypes,
@@ -35,6 +36,7 @@ export function WorkersView({
   projectId: string;
   workers: WorkerRegistrationAccount[];
   workTypes: WorkTypeSetting[];
+  workTypesReady: boolean;
   message: string;
   onRefresh: () => Promise<void>;
   onRefreshWorkTypes: () => Promise<void>;
@@ -60,6 +62,7 @@ export function WorkersView({
   const onboardedCount = workers.filter((worker) => worker.registrationStatus === "onboarded").length;
   const payrollRequiredWorkerCount = workers.filter((worker) => isPayrollDocumentsRequiredWorker(worker, workTypes)).length;
   const nextSortOrder = getNextWorkTypeSortOrder(workTypes);
+  const canManageWorkTypes = workTypesReady;
   const workTypeQuery = workType.trim().toLowerCase();
   const filteredWorkTypes = workTypes.filter((option) => option.label.toLowerCase().includes(workTypeQuery));
   const hasExactWorkType = workTypes.some((option) => option.label === workType.trim());
@@ -153,6 +156,11 @@ export function WorkersView({
     const normalizedWorkType = workType.trim();
 
     try {
+      if (!canManageWorkTypes) {
+        setActionMessage("고용 유형 목록을 불러온 뒤 근로자를 등록할 수 있습니다.");
+        return;
+      }
+
       if (!workTypes.some((option) => option.label === normalizedWorkType)) {
         await saveWorkType({
           label: normalizedWorkType,
@@ -195,8 +203,8 @@ export function WorkersView({
           <h1>근로자 관리</h1>
           <div>
             <button className="light-button" type="button"><MaterialIcon name="download" />엑셀 다운로드</button>
-            <button className="light-button" type="button" onClick={() => setWorkTypeModalOpen(true)}>고용 유형 관리</button>
-            <button className="dark-button" type="button" onClick={() => setRegisterModalOpen(true)}><MaterialIcon name="person_add" />근로자 등록</button>
+            <button className="light-button" type="button" disabled={!canManageWorkTypes} onClick={() => setWorkTypeModalOpen(true)}>고용 유형 관리</button>
+            <button className="dark-button" type="button" disabled={!canManageWorkTypes} onClick={() => setRegisterModalOpen(true)}><MaterialIcon name="person_add" />근로자 등록</button>
           </div>
         </header>
         <div className="page-content narrow-page admin-tab-page worker-management">
@@ -328,6 +336,7 @@ export function WorkersView({
               <div className="modal-body">
                 <label>이름<input value={name} onChange={(event) => setName(event.target.value)} autoComplete="off" required /></label>
                 <label>연락처<input value={phone} onChange={(event) => setPhone(formatPhone(event.target.value))} placeholder="010-1234-5678" autoComplete="off" maxLength={13} required /></label>
+                {!canManageWorkTypes ? <p className="modal-message" role="status">고용 유형 목록을 불러온 뒤 등록할 수 있습니다.</p> : null}
                 <div
                   className="work-type-picker"
                   onBlur={(event) => {
@@ -348,6 +357,7 @@ export function WorkersView({
                         onFocus={() => setWorkTypeListOpen(true)}
                         placeholder="예: 단기 아르바이트"
                         autoComplete="off"
+                        disabled={!canManageWorkTypes}
                         role="combobox"
                         aria-expanded={workTypeListOpen}
                         aria-controls="work-type-options"
@@ -358,6 +368,7 @@ export function WorkersView({
                         type="button"
                         aria-label="고용 유형 목록 열기"
                         aria-expanded={workTypeListOpen}
+                        disabled={!canManageWorkTypes}
                         onClick={() => setWorkTypeListOpen((open) => !open)}
                       >
                         <MaterialIcon name="arrow_drop_down" />
@@ -393,7 +404,7 @@ export function WorkersView({
               </div>
               <footer>
                 <button className="light-button" type="button" onClick={() => setRegisterModalOpen(false)}>취소</button>
-                <button className="dark-button" type="submit">등록 저장</button>
+                <button className="dark-button" type="submit" disabled={!canManageWorkTypes}>등록 저장</button>
               </footer>
             </form>
           </section>
@@ -410,6 +421,7 @@ export function WorkersView({
             <WorkTypeManager
               workers={workers}
               workTypes={workTypes}
+              canManage={canManageWorkTypes}
               onRefresh={onRefreshWorkTypes}
               onRefreshWorkers={onRefresh}
             />
@@ -551,11 +563,13 @@ function formatWorkerDate(value: string) {
 function WorkTypeManager({
   workers,
   workTypes,
+  canManage,
   onRefresh,
   onRefreshWorkers,
 }: {
   workers: WorkerRegistrationAccount[];
   workTypes: WorkTypeSetting[];
+  canManage: boolean;
   onRefresh: () => Promise<void>;
   onRefreshWorkers: () => Promise<void>;
 }) {
@@ -568,6 +582,11 @@ function WorkTypeManager({
 
   async function updateWorkType(workType: WorkTypeSetting, updates: Partial<WorkTypeSetting>) {
     try {
+      if (!canManage) {
+        setMessage("고용 유형 목록을 불러온 뒤 수정할 수 있습니다.");
+        return;
+      }
+
       await saveWorkType({
         label: workType.label,
         enabled: true,
@@ -585,6 +604,11 @@ function WorkTypeManager({
     event.preventDefault();
 
     try {
+      if (!canManage) {
+        setMessage("고용 유형 목록을 불러온 뒤 추가할 수 있습니다.");
+        return;
+      }
+
       await saveWorkType({
         label,
         enabled: true,
@@ -602,6 +626,11 @@ function WorkTypeManager({
 
   async function submitRename(workType: WorkTypeSetting) {
     try {
+      if (!canManage) {
+        setMessage("고용 유형 목록을 불러온 뒤 이름을 수정할 수 있습니다.");
+        return;
+      }
+
       const normalized = nextLabel.trim();
       await renameWorkType(workType.label, normalized);
       setEditingLabel("");
@@ -616,6 +645,11 @@ function WorkTypeManager({
 
   async function removeWorkType(workType: WorkTypeSetting) {
     try {
+      if (!canManage) {
+        setMessage("고용 유형 목록을 불러온 뒤 삭제할 수 있습니다.");
+        return;
+      }
+
       await deleteWorkType(workType.label);
       setMessage("고용 유형이 삭제되었습니다.");
       await onRefresh();
@@ -630,6 +664,7 @@ function WorkTypeManager({
         <h2>고용 유형 관리</h2>
         <span className="count-pill">총 {workTypes.length}개</span>
       </div>
+      {!canManage ? <p className="form-message work-type-message" role="status">고용 유형 목록을 불러오지 못해 관리 기능을 사용할 수 없습니다.</p> : null}
       {message ? <p className="form-message work-type-message" role="status">{message}</p> : null}
       <div className="work-type-list">
         {workTypes.map((workType) => {
@@ -650,6 +685,7 @@ function WorkTypeManager({
                 <input
                   type="checkbox"
                   checked={workType.payrollDocumentsRequired}
+                  disabled={!canManage}
                   onChange={(event) => updateWorkType(workType, { payrollDocumentsRequired: event.target.checked })}
                 />
                 서류 제출 필요
@@ -657,13 +693,13 @@ function WorkTypeManager({
               <div className="work-type-actions">
                 {isEditing ? (
                   <>
-                    <button className="light-button" type="button" onClick={() => submitRename(workType)}>저장</button>
+                    <button className="light-button" type="button" disabled={!canManage} onClick={() => submitRename(workType)}>저장</button>
                     <button className="light-button" type="button" onClick={() => { setEditingLabel(""); setNextLabel(""); }}>취소</button>
                   </>
                 ) : (
                   <>
-                    <button className="light-button" type="button" onClick={() => { setEditingLabel(workType.label); setNextLabel(workType.label); }}>수정</button>
-                    <button className="table-action-danger" type="button" disabled={workerCount > 0} onClick={() => removeWorkType(workType)}>삭제</button>
+                    <button className="light-button" type="button" disabled={!canManage} onClick={() => { setEditingLabel(workType.label); setNextLabel(workType.label); }}>수정</button>
+                    <button className="table-action-danger" type="button" disabled={!canManage || workerCount > 0} onClick={() => removeWorkType(workType)}>삭제</button>
                   </>
                 )}
               </div>
@@ -678,17 +714,19 @@ function WorkTypeManager({
           placeholder="새 고용 유형"
           autoComplete="off"
           maxLength={40}
+          disabled={!canManage}
           required
         />
         <label>
           <input
             type="checkbox"
             checked={payrollDocumentsRequired}
+            disabled={!canManage}
             onChange={(event) => setPayrollDocumentsRequired(event.target.checked)}
           />
           서류 제출 필요
         </label>
-        <button className="dark-button" type="submit">추가</button>
+        <button className="dark-button" type="submit" disabled={!canManage}>추가</button>
       </form>
     </section>
   );

@@ -139,7 +139,7 @@ npm.cmd run dev:backend
 
 ## Local Test Run
 
-로컬 테스트 동작은 최신 Git 기준의 `dev:local-test` 실행 흐름을 사용합니다.
+로컬 테스트의 공식 실행 경로는 최신 Git 기준의 `dev:local-test`입니다.
 다른 PC에서도 같은 화면을 재현할 수 있도록 공개 가능한 로컬 테스트 설정은
 루트 `.env.local`에 두고 Git에 포함합니다.
 실제 배포용 `.env`, 비밀키, 서비스 계정, 운영 토큰은 계속 `.gitignore` 정책에
@@ -159,7 +159,7 @@ npm.cmd run dev:backend
 | `.env.local` | Vite 로컬 관리자 우회, 프론트/백엔드 포트, 로컬 테스트 근로자 시드 설정 |
 | `scripts/dev-local-test.ps1` | 백엔드와 프론트엔드를 함께 실행하는 PowerShell 실행 파일 |
 
-한 번에 실행:
+공식 실행:
 
 ```powershell
 npm.cmd run dev:local-test
@@ -169,8 +169,9 @@ npm.cmd run dev:local-test
 종료할 때는 `Ctrl+C` 대신 Enter를 한 번 눌러 두 서버를 함께 정리합니다.
 서버 로그는 `tmp/dev-local-test/`에 생성되며, 이 폴더는 Git에 올리지 않습니다.
 
-별도 터미널로 실행할 때는 공유 로컬 환경 파일 값을 현재 PowerShell 세션에 올린 뒤
-백엔드를 실행하고, 다른 터미널에서 프론트엔드를 실행합니다.
+별도 터미널 실행은 백엔드 로그를 직접 보거나 프로세스 기동을 분리해서 확인해야
+하는 디버깅용 경로입니다. 이 경우에도 공유 로컬 환경 파일 값을 현재 PowerShell
+세션에 올린 뒤 백엔드를 실행하고, 다른 터미널에서 프론트엔드를 실행합니다.
 
 ```powershell
 Get-Content -Encoding UTF8 .env.local | Where-Object { $_ -and -not $_.StartsWith("#") } | ForEach-Object {
@@ -230,7 +231,8 @@ firebase deploy --project YOUR_PROJECT_ID --only hosting,firestore:rules,storage
 
 고용 유형 선택지는 NestJS `/api/work-types`에서 가져오며, 관리자 화면의
 고용 유형 관리에서 활성 여부와 급여/세무 서류 제출 필요 여부를 조절합니다.
-`frontend/src/data/workTypes.ts`는 API 연결 실패 시 사용하는 기본 fallback만 둡니다.
+API 연결에 실패하면 프론트엔드는 기본 고용 유형 fallback으로 제출하지 않고,
+고용 유형을 불러온 뒤에만 최초 등록과 관리자 고용 유형 관리를 허용합니다.
 
 서류 제출 대상 사용자는 관리자 등록 승인 후 최초 로그인 시 급여 정보 등록 화면으로
 이동합니다. 이 판단은 백엔드 로그인 응답의 `payrollDocumentsRequired`와

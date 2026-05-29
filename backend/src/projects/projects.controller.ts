@@ -29,3 +29,13 @@ export class ProjectsController {
     return this.projects.updateProjectStatus(projectId, request);
   }
 }
+
+@Controller('projects')
+export class PublicProjectsController {
+  constructor(private readonly projects: ProjectsService) {}
+
+  @Get()
+  listSelectableProjects() {
+    return this.projects.listProjects();
+  }
+}

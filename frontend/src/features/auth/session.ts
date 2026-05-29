@@ -123,6 +123,49 @@ function createFirebaseApp(): FirebaseApp | null {
   return initializeApp(firebaseConfig);
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function hasString(value: Record<string, unknown>, key: string): boolean {
+  return typeof value[key] === "string" && value[key].trim().length > 0;
+}
+
+function isPayrollDocumentStatus(value: unknown): value is WorkerSession["payrollDocumentStatus"] {
+  return ["missing", "submitted", "reviewing", "approved", "rejected"].includes(String(value));
+}
+
+function isWorkerSession(value: unknown): value is WorkerSession {
+  return (
+    isRecord(value) &&
+    value.role === "worker" &&
+    hasString(value, "uid") &&
+    hasString(value, "name") &&
+    hasString(value, "phone") &&
+    hasString(value, "workType") &&
+    hasString(value, "team") &&
+    hasString(value, "supervisor") &&
+    hasString(value, "schedule") &&
+    hasString(value, "status") &&
+    typeof value.payrollDocumentsRequired === "boolean" &&
+    isPayrollDocumentStatus(value.payrollDocumentStatus)
+  );
+}
+
+function isAdminSession(value: unknown): value is AppSession {
+  return (
+    isRecord(value) &&
+    value.role === "admin" &&
+    hasString(value, "uid") &&
+    hasString(value, "name") &&
+    hasString(value, "email")
+  );
+}
+
+function isAppSession(value: unknown): value is AppSession {
+  return isWorkerSession(value) || isAdminSession(value);
+}
+
 export function getSession(): AppSession | null {
   const raw = window.sessionStorage.getItem(SESSION_KEY);
 
@@ -131,7 +174,14 @@ export function getSession(): AppSession | null {
   }
 
   try {
-    return JSON.parse(raw) as AppSession;
+    const session: unknown = JSON.parse(raw);
+
+    if (isAppSession(session)) {
+      return session;
+    }
+
+    window.sessionStorage.removeItem(SESSION_KEY);
+    return null;
   } catch {
     window.sessionStorage.removeItem(SESSION_KEY);
     return null;
@@ -148,6 +198,7 @@ export function clearSession(): void {
 }
 
 export async function completeWorkerOnboarding(
+  projectId: string,
   name: string,
   phone: string,
   code: string,
@@ -156,7 +207,7 @@ export async function completeWorkerOnboarding(
 ): Promise<WorkerRegistrationAccount> {
   const worker = await requestJson<WorkerRegistrationResponse>("/api/worker-registrations", {
     method: "POST",
-    body: JSON.stringify({ name, phone: formatPhone(phone), code, password, workType }),
+    body: JSON.stringify({ projectId, name, phone: formatPhone(phone), code, password, workType }),
   });
 
   return toRegistrationAccount(worker);
@@ -195,6 +246,10 @@ export async function getAdminProjects(options: { includeArchived?: boolean } = 
 
   const query = params.toString();
   return requestJson<Project[]>(`/api/admin/projects${query ? `?${query}` : ""}`);
+}
+
+export async function getSelectableProjects(): Promise<Project[]> {
+  return requestJson<Project[]>("/api/projects");
 }
 
 export async function getActiveAdminProject(): Promise<Project | null> {
@@ -307,6 +362,7 @@ export async function updateAdminWeatherThresholds(thresholds: WeatherThresholds
 }
 
 export async function signInWorker(
+  projectId: string,
   phone: string,
   code: string,
   password: string,
@@ -314,7 +370,7 @@ export async function signInWorker(
 ): Promise<WorkerSession> {
   const session = await requestJson<WorkerLoginResponse>("/api/auth/worker-login", {
     method: "POST",
-    body: JSON.stringify({ name, phone: formatPhone(phone), code, password }),
+    body: JSON.stringify({ projectId, name, phone: formatPhone(phone), code, password }),
   });
 
   saveSession(session);
@@ -323,17 +379,25 @@ export async function signInWorker(
 
 export async function signInAdmin(): Promise<AppSession> {
   if (ENABLE_LOCAL_ADMIN_BYPASS && import.meta.env.DEV) {
-    const session: AppSession = {
-      uid: "local-admin",
-      role: "admin",
-      name: "로컬 관리자",
-      email: "local-admin@example.test",
-    };
-
-    saveSession(session);
-    return session;
+    return signInLocalAdminForDev();
   }
 
+  return signInAdminWithFirebase();
+}
+
+function signInLocalAdminForDev(): AppSession {
+  const session: AppSession = {
+    uid: "local-admin",
+    role: "admin",
+    name: "로컬 관리자",
+    email: "local-admin@example.test",
+  };
+
+  saveSession(session);
+  return session;
+}
+
+async function signInAdminWithFirebase(): Promise<AppSession> {
   const firebaseApp = createFirebaseApp();
 
   if (!firebaseApp) {

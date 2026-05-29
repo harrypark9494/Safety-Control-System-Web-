@@ -295,6 +295,16 @@ Response `200 OK`: `Project[]`
 
 Response `200 OK`: `Project | null`
 
+### List Worker Selectable Projects
+
+`GET /api/projects`
+
+근로자 최초 등록과 로그인 화면에서 선택할 수 있는 비아카이브 프로젝트 목록입니다.
+동일한 근로자가 여러 프로젝트에 참여할 수 있으므로, 근로자 인증 요청은 이 목록에서
+선택한 `projectId`를 함께 보냅니다.
+
+Response `200 OK`: `Project[]`
+
 ### Create Admin Project
 
 `POST /api/admin/projects`
@@ -335,7 +345,9 @@ Response `200 OK`: `Project`
 
 `GET /api/work-types`
 
-로그인/최초 등록 화면에서 선택할 수 있는 전체 고용 유형 목록입니다.
+로그인/최초 등록 화면에서 선택할 수 있는 활성 고용 유형 목록입니다.
+`enabled=false`인 고용 유형은 관리자 화면에서는 보이지만 일반 사용자 선택지에는
+포함하지 않습니다.
 
 Response `200 OK`: `WorkTypeSetting[]`
 
@@ -442,7 +454,7 @@ Response `200 OK`:
 
 Errors:
 
-- `400 Bad Request`: 필수 입력 누락 또는 비밀번호 길이 미달
+- `400 Bad Request`: 필수 입력 누락, 비밀번호 길이 미달, 지원하지 않거나 비활성화된 고용 유형
 - `403 Forbidden`: 관리자 등록 정보와 불일치
 - `404 Not Found`: 관리자 등록 정보 없음
 
@@ -453,11 +465,14 @@ Errors:
 온보딩이 완료된 근로자만 로그인할 수 있습니다. 해당 고용 유형 설정의
 `payrollDocumentsRequired=true`이고 급여 서류가 `missing`이면 프론트엔드는
 대시보드보다 급여 서류 제출 화면을 먼저 표시합니다.
+동일한 근로자는 여러 프로젝트에 참여할 수 있으므로, 로그인 요청은 프로젝트를
+함께 지정합니다.
 
 Request:
 
 ```json
 {
+  "projectId": "waterbomb-2026-summer",
   "name": "홍길동",
   "phone": "010-1234-5678",
   "code": "123456",
@@ -567,6 +582,11 @@ Request:
 ```
 
 Response `200 OK`: `WorkerRegistration`
+
+Errors:
+
+- `400 Bad Request`: 필수 입력 누락, 연락처 형식 오류, 지원하지 않는 고용 유형
+- `409 Conflict`: 같은 프로젝트에 같은 연락처가 이미 근로자 원장에 등록되어 있음
 
 ### Delete Worker Registration
 

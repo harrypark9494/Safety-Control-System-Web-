@@ -44,7 +44,7 @@ export class WorkersController {
 
   @Get('admin/work-types')
   listWorkTypes() {
-    return this.workers.listWorkTypes();
+    return this.workers.listWorkTypes({ includeDisabled: true });
   }
 
   @Post('admin/work-types')

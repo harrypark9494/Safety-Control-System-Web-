@@ -1,15 +1,15 @@
 import { FormEvent, useEffect, useState } from "react";
 import "../styles/login.css";
-import { fallbackWorkTypes } from "../data/workTypes";
 import {
   completeWorkerOnboarding,
+  getSelectableProjects,
   getWorkTypes,
   signInAdmin,
   signInWorker,
 } from "../features/auth/session";
 import { getSecureEntryPath, navigateTo } from "../features/navigation";
 import { formatPhone } from "../features/phone";
-import type { WorkType, WorkTypeSetting } from "../types";
+import type { Project, WorkType, WorkTypeSetting } from "../types";
 
 export function LoginPage() {
   const [tab, setTab] = useState<"worker" | "admin">("worker");
@@ -18,27 +18,63 @@ export function LoginPage() {
   const [registerPhone, setRegisterPhone] = useState("");
   const [registerCode, setRegisterCode] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
-  const [workTypes, setWorkTypes] = useState<WorkTypeSetting[]>(fallbackWorkTypes);
-  const [registerWorkType, setRegisterWorkType] = useState<WorkType>(fallbackWorkTypes[0].label);
+  const [workTypes, setWorkTypes] = useState<WorkTypeSetting[]>([]);
+  const [registerWorkType, setRegisterWorkType] = useState<WorkType>("");
+  const [workTypesStatus, setWorkTypesStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [projectsStatus, setProjectsStatus] = useState<"loading" | "ready" | "error">("loading");
   const [loginName, setLoginName] = useState("");
   const [loginPhone, setLoginPhone] = useState("");
   const [loginCode, setLoginCode] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [message, setMessage] = useState("");
+  const canRegisterWithWorkTypes = workTypesStatus === "ready" && workTypes.length > 0;
+  const canUseWorkerProject = projectsStatus === "ready" && projects.length > 0 && Boolean(selectedProjectId);
 
   useEffect(() => {
     let isMounted = true;
 
     getWorkTypes()
       .then((nextWorkTypes) => {
-        if (!isMounted || nextWorkTypes.length === 0) return;
+        if (!isMounted) return;
         setWorkTypes(nextWorkTypes);
-        setRegisterWorkType((current) =>
-          nextWorkTypes.some((workType) => workType.label === current) ? current : nextWorkTypes[0].label,
-        );
+        setWorkTypesStatus("ready");
+        setRegisterWorkType((current) => {
+          if (nextWorkTypes.length === 0) {
+            return "";
+          }
+
+          return nextWorkTypes.some((workType) => workType.label === current) ? current : nextWorkTypes[0].label;
+        });
       })
       .catch((error) => {
+        if (!isMounted) return;
+        setWorkTypes([]);
+        setRegisterWorkType("");
+        setWorkTypesStatus("error");
         setMessage(error instanceof Error ? error.message : "고용 유형 목록을 불러오지 못했습니다.");
+      });
+
+    getSelectableProjects()
+      .then((nextProjects) => {
+        if (!isMounted) return;
+        setProjects(nextProjects);
+        setProjectsStatus("ready");
+        setSelectedProjectId((current) => {
+          if (nextProjects.length === 0) {
+            return "";
+          }
+
+          return nextProjects.some((project) => project.id === current) ? current : nextProjects[0].id;
+        });
+      })
+      .catch((error) => {
+        if (!isMounted) return;
+        setProjects([]);
+        setSelectedProjectId("");
+        setProjectsStatus("error");
+        setMessage(error instanceof Error ? error.message : "프로젝트 목록을 불러오지 못했습니다.");
       });
 
     return () => {
@@ -55,8 +91,18 @@ export function LoginPage() {
     const name = mode === "register" ? registerName : loginName;
 
     try {
+      if (!canUseWorkerProject) {
+        setMessage("프로젝트 목록을 불러온 뒤 진행할 수 있습니다.");
+        return;
+      }
+
       if (mode === "register") {
-        await completeWorkerOnboarding(registerName, phone, code, password, registerWorkType);
+        if (!canRegisterWithWorkTypes) {
+          setMessage("고용 유형 목록을 불러온 뒤 최초 등록을 진행할 수 있습니다.");
+          return;
+        }
+
+        await completeWorkerOnboarding(selectedProjectId, registerName, phone, code, password, registerWorkType);
         setMessage("등록된 근로자 정보와 일치합니다. 이제 로그인할 수 있습니다.");
         setMode("login");
         setLoginName(registerName);
@@ -66,7 +112,7 @@ export function LoginPage() {
         return;
       }
 
-      await signInWorker(phone, code, password, name);
+      await signInWorker(selectedProjectId, phone, code, password, name);
       navigateTo(getSecureEntryPath());
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "로그인에 실패했습니다.");
@@ -140,6 +186,28 @@ export function LoginPage() {
               </div>
 
               <form className="worker-flow active" onSubmit={submitWorker}>
+                <label className="login-field">
+                  <span className="login-field-title">프로젝트</span>
+                  <select
+                    name="projectId"
+                    value={selectedProjectId}
+                    onChange={(event) => setSelectedProjectId(event.target.value)}
+                    disabled={!canUseWorkerProject}
+                    required
+                  >
+                    {!canUseWorkerProject ? (
+                      <option value="">
+                        {projectsStatus === "loading" ? "프로젝트를 불러오는 중입니다" : "선택 가능한 프로젝트가 없습니다"}
+                      </option>
+                    ) : null}
+                    {projects.map((project) => (
+                      <option key={project.id} value={project.id}>
+                        {project.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
                 {mode === "register" ? (
                   <label className="login-field">
                     <span className="login-field-title">이름</span>
@@ -218,8 +286,14 @@ export function LoginPage() {
                       name="workType"
                       value={registerWorkType}
                       onChange={(event) => setRegisterWorkType(event.target.value as WorkType)}
+                      disabled={!canRegisterWithWorkTypes}
                       required
                     >
+                      {!canRegisterWithWorkTypes ? (
+                        <option value="">
+                          {workTypesStatus === "loading" ? "고용 유형을 불러오는 중입니다" : "등록 가능한 고용 유형이 없습니다"}
+                        </option>
+                      ) : null}
                       {workTypes.map((workTypeOption) => (
                         <option key={workTypeOption.label} value={workTypeOption.label}>
                           {workTypeOption.label}
@@ -247,7 +321,7 @@ export function LoginPage() {
                   />
                 </label>
 
-                <button className="primary-button" type="submit">
+                <button className="primary-button" type="submit" disabled={!canUseWorkerProject || (mode === "register" && !canRegisterWithWorkTypes)}>
                   {mode === "register" ? "회원가입 완료" : "대시보드로 로그인"}
                 </button>
               </form>
