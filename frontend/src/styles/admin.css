@@ -961,33 +961,6 @@ td {
   overflow: auto;
 }
 
-.schedule-overview {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.schedule-summary-card {
-  display: grid;
-  gap: 8px;
-  padding: 18px 20px;
-}
-
-.schedule-summary-card small,
-.schedule-summary-card span {
-  color: #596273;
-  font-weight: 900;
-}
-
-.schedule-summary-card strong {
-  font-size: 1.45rem;
-  font-weight: 950;
-}
-
-.schedule-summary-card b {
-  font-size: 0.88rem;
-}
-
 .date-strip {
   position: sticky;
   top: 0;
@@ -2496,10 +2469,6 @@ td {
 
   .search-card button {
     min-height: 44px;
-  }
-
-  .schedule-overview {
-    grid-template-columns: 1fr;
   }
 
   .storm-map {

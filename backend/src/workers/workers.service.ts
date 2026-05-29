@@ -203,6 +203,26 @@ export class WorkersService {
       team: 'Stage Alpha',
       supervisor: '관리자 A',
     });
+
+    const localWorkerPassword = process.env.LOCAL_TEST_WORKER_PASSWORD;
+    const localWorkerCode = process.env.LOCAL_TEST_WORKER_CODE;
+
+    if (process.env.ENABLE_LOCAL_TEST_WORKER === 'true' && localWorkerPassword && localWorkerCode) {
+      const localWorker = this.createRegistration({
+        name: process.env.LOCAL_TEST_WORKER_NAME ?? '로컬 근로자',
+        phone: process.env.LOCAL_TEST_WORKER_PHONE ?? '010-9000-0001',
+        workType: process.env.LOCAL_TEST_WORKER_WORK_TYPE ?? '외부 고용',
+        team: process.env.LOCAL_TEST_WORKER_TEAM ?? 'Local Test',
+        supervisor: process.env.LOCAL_TEST_WORKER_SUPERVISOR ?? '로컬 관리자',
+      });
+
+      const worker = this.findByPhone(localWorker.phone);
+      worker.passwordHash = this.passwords.hash(localWorkerPassword);
+      worker.verificationCode = localWorkerCode;
+      worker.registrationStatus = 'onboarded';
+      worker.onboardedAt = new Date().toISOString();
+      worker.payrollDocumentStatus = 'approved';
+    }
   }
 
   private findByPhone(phone: string) {

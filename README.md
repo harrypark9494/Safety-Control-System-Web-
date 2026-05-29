@@ -123,6 +123,53 @@ npm.cmd run dev:frontend
 npm.cmd run dev:backend
 ```
 
+## Local Test Run
+
+로컬 테스트용 파일은 `.gitignore` 정책에 따라 추적하지 않는 실제 환경 파일로
+둡니다.
+
+| File | Purpose |
+| --- | --- |
+| `frontend/.env.local` | Vite 로컬 관리자 우회와 API 프록시 설정 |
+| `backend/.env.local` | 백엔드 포트와 로컬 테스트 근로자 시드 설정 |
+| `scripts/dev-local-test.ps1` | 백엔드와 프론트엔드를 함께 실행하는 PowerShell 실행 파일 |
+
+한 번에 실행:
+
+```powershell
+npm.cmd run dev:local-test
+```
+
+별도 터미널로 실행할 때는 백엔드 환경 파일 값을 현재 PowerShell 세션에 올린 뒤
+백엔드를 실행하고, 다른 터미널에서 프론트엔드를 실행합니다.
+
+```powershell
+Get-Content backend\.env.local | Where-Object { $_ -and -not $_.StartsWith("#") } | ForEach-Object {
+  $name, $value = $_.Split("=", 2)
+  Set-Item -Path "Env:$name" -Value $value
+}
+npm.cmd run dev:backend
+```
+
+```powershell
+npm.cmd run dev:frontend
+```
+
+접속 주소는 `http://localhost:3000/login/`입니다. 관리자는 `관리자` 탭에서
+`Google 계정으로 계속` 버튼을 누르면 로컬 관리자 세션으로 바로 진입합니다.
+
+근로자 대시보드 테스트 계정:
+
+| Field | Value |
+| --- | --- |
+| 이름 | `backend/.env.local`의 `LOCAL_TEST_WORKER_NAME` |
+| 연락처 | `backend/.env.local`의 `LOCAL_TEST_WORKER_PHONE` |
+| 인증 코드 | `backend/.env.local`의 `LOCAL_TEST_WORKER_CODE` |
+| 비밀번호 | `backend/.env.local`의 `LOCAL_TEST_WORKER_PASSWORD` |
+
+이 계정은 `외부 고용` / `서류 제출 승인` 상태로 시드되어 근로자 로그인 후
+급여 서류 화면이 아니라 대시보드로 바로 진입합니다.
+
 Dashboard Demo는 현재 모바일 우선 화면으로 구성되어 있으며 하단 탭은
 `대시보드`, `스케줄`, `안전`, `프로필` 네 가지입니다. QR 코드는 실제 발급값이
 아닌 정적 데모용 화면 상태입니다.

@@ -170,8 +170,6 @@ export function ScheduleView() {
   const columnLabelKeys = new Set(scheduleColumnsForGrid.map((column) => column.label.toLocaleLowerCase("ko-KR")));
   const canAddColumn = normalizedColumnLabel.length > 0 && !columnLabelKeys.has(normalizedColumnLabel.toLocaleLowerCase("ko-KR"));
   const canSaveSchedule = scheduleForm.title.trim().length > 0 && scheduleForm.startTime < scheduleForm.endTime;
-  const firstSchedule = selectedSchedules[0];
-  const lastSchedule = selectedSchedules[selectedSchedules.length - 1];
   const scheduleGridStyle = {
     "--schedule-column-count": Math.max(scheduleColumnsForGrid.length, 1),
     "--schedule-slot-count": hours.length * 2,
@@ -255,24 +253,6 @@ export function ScheduleView() {
     <section className="admin-view is-active">
       <header className="page-header page-header--actions"><h1>스케줄 관리</h1><div><button className="light-button" type="button"><MaterialIcon name="download" />엑셀 내보내기</button><button className="dark-button" type="button" onClick={openScheduleModal}><MaterialIcon name="add" />일정 추가</button></div></header>
       <div className="page-content schedule-board">
-        <section className="schedule-overview" aria-label="스케줄 요약">
-          <article className="app-card schedule-summary-card">
-            <small>선택 날짜</small>
-            <strong>{formatScheduleDate(selectedDate)}</strong>
-            <span>{firstSchedule && lastSchedule ? `${firstSchedule.startTime} - ${lastSchedule.endTime}` : "등록된 일정 없음"}</span>
-          </article>
-          <article className="app-card schedule-summary-card">
-            <small>등록 일정</small>
-            <strong>{selectedSchedules.length} <b>건</b></strong>
-            <span>{Array.from(new Set(selectedSchedules.map((item) => getScheduleColumnLabel(item.category)))).join(", ") || "배정 전"}</span>
-          </article>
-          <article className="app-card schedule-summary-card">
-            <small>주의 필요</small>
-            <strong>{selectedSchedules.filter((item) => item.status === "risk").length} <b>건</b></strong>
-            <span>일정 간 선행 조건 확인</span>
-          </article>
-        </section>
-
         <section className="app-card search-card schedule-date-search" aria-label="일정 날짜 이동">
           <input type="date" value={selectedDate} onChange={(event) => selectDate(event.target.value as IsoDateString)} />
           <select value={visibleMonth} onChange={(event) => selectDate(getFirstDateOfMonth(event.target.value as MonthKey))}>

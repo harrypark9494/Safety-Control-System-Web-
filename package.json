@@ -15,6 +15,7 @@
     "typecheck:backend": "npm --prefix backend run typecheck",
     "dev:frontend": "npm --prefix frontend run dev",
     "dev:backend": "npm --prefix backend run dev",
+    "dev:local-test": "powershell -ExecutionPolicy Bypass -File scripts/dev-local-test.ps1",
     "preview:frontend": "npm --prefix frontend run preview",
     "deploy:preview": "npm --prefix frontend run deploy:preview"
   }
