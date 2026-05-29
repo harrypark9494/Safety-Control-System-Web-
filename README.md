@@ -105,7 +105,15 @@ Safety-Control-System-Web-/
 
 GitHub Pages 또는 로컬 정적 서버로 확인할 수 있는 임시 테스트 사이트는 GitHub에 함께 올릴 수 있습니다. 단, 테스트 사이트에 포함되는 데이터는 실제 계정, 연락처, 주민등록번호, 계좌번호, 파일 원본, 토큰, 서비스 계정 키를 사용하지 않고 마스킹된 샘플 값만 사용합니다.
 
-실제 로컬 실행용 비밀값은 계속 `.env.local`, `*.local`, `*.secret`, `*.secrets`에 두고 GitHub에 올리지 않습니다. 공개 가능한 로컬 설정 예시는 `.env.example` 또는 `.env.local.example`처럼 마스킹된 example 파일로만 관리합니다.
+공개 가능한 로컬 테스트 설정은 루트 `.env.local`에 두고 GitHub에 포함합니다. 이 저장소에서는 다른 PC에서도 같은 관리자/근로자 테스트 화면을 재현하는 것이 목표이므로, 이 파일은 일반적인 개인 비밀값 파일이 아니라 공유용 로컬 테스트 fixture입니다. 실제 배포용 `.env`, 비밀키, 서비스 계정, 운영 토큰은 계속 GitHub에 올리지 않습니다.
+
+| File pattern | GitHub policy | Allowed contents |
+| --- | --- | --- |
+| `.env.local` | Commit | 로컬 관리자 우회, 개발 포트, 마스킹된 테스트 근로자 시드 |
+| `.env` | Do not commit | 배포용 환경 변수, 운영 API key, 실제 토큰 |
+| `*.secret`, `*.secrets`, service account JSON | Do not commit | 비밀키, 서비스 계정, 장기 인증 정보 |
+
+공유되는 `.env.local` 파일에는 실제 계정, 실제 연락처, 운영 Firebase 설정, Google 서비스 계정, 운영 DB 접속 정보, 원본 파일 경로를 넣지 않습니다. 이런 값이 필요해지면 `.env` 또는 Git에 올리지 않는 별도 로컬 파일에 둡니다.
 
 Firebase Hosting 배포 대상은 Vite 빌드 결과인 `frontend/dist/`입니다.
 `frontend/src/`는 실제 React/TypeScript 앱 소스이고, `backend/`는 NestJS
@@ -132,13 +140,23 @@ npm.cmd run dev:backend
 ## Local Test Run
 
 로컬 테스트 동작은 최신 Git 기준의 `dev:local-test` 실행 흐름을 사용합니다.
-실제 로컬 환경 파일은 `.gitignore` 정책에 따라 추적하지 않고, GitHub에는
-마스킹된 example 또는 공개 테스트 사이트용 샘플 데이터만 올립니다.
+다른 PC에서도 같은 화면을 재현할 수 있도록 공개 가능한 로컬 테스트 설정은
+루트 `.env.local`에 두고 Git에 포함합니다.
+실제 배포용 `.env`, 비밀키, 서비스 계정, 운영 토큰은 계속 `.gitignore` 정책에
+따라 추적하지 않습니다.
+
+실행 전 `3000`과 `8080` 포트가 비어 있어야 합니다. 이미 다른 개발 서버가
+떠 있으면 이전 서버의 메모리 상태가 응답할 수 있으므로 종료한 뒤 다시 실행합니다.
+관리자 화면의 근로자 목록에 `로컬 근로자`가 보이지 않으면 대부분 기존 `8080`
+백엔드가 계속 떠 있는 상태입니다. `npm.cmd run dev:local-test`는 포트가 이미
+사용 중이면 새 서버를 띄우지 않고 중단합니다.
+백엔드는 직접 실행해도 루트 `.env.local`을 읽어 공유 로컬 근로자를 시드합니다.
+따라서 새 서버가 정상 기동했다면 근로자 관리 API에는 `테스트 근로자`와
+온보딩 완료 상태의 `로컬 근로자`가 함께 보여야 합니다.
 
 | File | Purpose |
 | --- | --- |
-| `frontend/.env.local` | Vite 로컬 관리자 우회와 API 프록시 설정 |
-| `backend/.env.local` | 백엔드 포트와 로컬 테스트 근로자 시드 설정 |
+| `.env.local` | Vite 로컬 관리자 우회, 프론트/백엔드 포트, 로컬 테스트 근로자 시드 설정 |
 | `scripts/dev-local-test.ps1` | 백엔드와 프론트엔드를 함께 실행하는 PowerShell 실행 파일 |
 
 한 번에 실행:
@@ -147,11 +165,15 @@ npm.cmd run dev:backend
 npm.cmd run dev:local-test
 ```
 
-별도 터미널로 실행할 때는 백엔드 환경 파일 값을 현재 PowerShell 세션에 올린 뒤
+이 명령은 프론트엔드와 백엔드를 함께 백그라운드로 띄운 뒤 터미널에서 대기합니다.
+종료할 때는 `Ctrl+C` 대신 Enter를 한 번 눌러 두 서버를 함께 정리합니다.
+서버 로그는 `tmp/dev-local-test/`에 생성되며, 이 폴더는 Git에 올리지 않습니다.
+
+별도 터미널로 실행할 때는 공유 로컬 환경 파일 값을 현재 PowerShell 세션에 올린 뒤
 백엔드를 실행하고, 다른 터미널에서 프론트엔드를 실행합니다.
 
 ```powershell
-Get-Content backend\.env.local | Where-Object { $_ -and -not $_.StartsWith("#") } | ForEach-Object {
+Get-Content -Encoding UTF8 .env.local | Where-Object { $_ -and -not $_.StartsWith("#") } | ForEach-Object {
   $name, $value = $_.Split("=", 2)
   Set-Item -Path "Env:$name" -Value $value
 }
@@ -167,15 +189,17 @@ npm.cmd run dev:frontend
 
 근로자 대시보드 테스트 계정:
 
-| Field | Value |
-| --- | --- |
-| 이름 | `backend/.env.local`의 `LOCAL_TEST_WORKER_NAME` |
-| 연락처 | `backend/.env.local`의 `LOCAL_TEST_WORKER_PHONE` |
-| 인증 코드 | `backend/.env.local`의 `LOCAL_TEST_WORKER_CODE` |
-| 비밀번호 | `backend/.env.local`의 `LOCAL_TEST_WORKER_PASSWORD` |
+| Field | Env key | Shared local value |
+| --- | --- | --- |
+| 이름 | `LOCAL_TEST_WORKER_NAME` | `로컬 근로자` |
+| 연락처 | `LOCAL_TEST_WORKER_PHONE` | `010-9000-0001` |
+| 인증 코드 | `LOCAL_TEST_WORKER_CODE` | `123456` |
+| 비밀번호 | `LOCAL_TEST_WORKER_PASSWORD` | `local-test-password` |
 
 이 계정은 `외부 고용` / `서류 제출 승인` 상태로 시드되어 근로자 로그인 후
 급여 서류 화면이 아니라 대시보드로 바로 진입합니다.
+기본 등록 fixture인 `테스트 근로자`는 관리자 원장 확인용이며, 이 공유 로컬 계정이
+로그인 가능한 온보딩 완료 테스트 계정입니다.
 
 Dashboard Demo는 현재 모바일 우선 화면으로 구성되어 있으며 하단 탭은
 `대시보드`, `스케줄`, `안전`, `프로필` 네 가지입니다. QR 코드는 실제 발급값이

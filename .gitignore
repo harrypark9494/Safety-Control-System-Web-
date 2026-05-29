@@ -21,6 +21,7 @@ local-reports/
 !**/.env.local.example
 .runtimeconfig.json
 *.local
+!/.env.local
 !*.local.example
 !**/*.local.example
 *.secret

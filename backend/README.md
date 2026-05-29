@@ -11,9 +11,10 @@ npm install
 npm run dev
 ```
 
-기본 포트는 `8080`입니다. 프론트엔드 Vite dev server는 `3000`에서 열리고,
-`/api` 요청을 `http://localhost:8080`으로 전달하므로 백엔드 검증 포트는
-`8080`으로 유지합니다.
+백엔드 포트는 루트 `.env.local`의 `LOCAL_BACKEND_PORT=8080`을 기준으로 관리합니다. 프론트엔드 Vite
+dev server는 `LOCAL_FRONTEND_PORT=3000`에서 열리고, `/api` 요청을
+`http://localhost:8080`으로 전달하므로 백엔드 검증 포트도 `8080`으로
+유지합니다.
 
 ## Implemented First
 
