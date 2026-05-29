@@ -625,11 +625,12 @@ Response `200 OK`: `{ "event": QrUsageEvent, "entitlement": QrEntitlement }`
 
 ### Get Admin Weather Overview
 
-`GET /api/admin/weather`
+`GET /api/admin/weather?projectId=waterbomb-2026-summer`
 
 관리자 기상 정보 관리 탭에서 현재 기상, 24시간 예보, 알림 로그, 관측 지점,
 자동 경보 임계값을 함께 조회합니다. 현재 구현은 실제 기상청 호출 전 단계의
-백엔드 어댑터 placeholder이며, 프론트엔드는 이 API만 호출합니다.
+백엔드 어댑터 placeholder이며, 프론트엔드는 이 API만 호출합니다. `projectId`별로
+관측 지점과 자동 경보 임계값을 분리합니다.
 
 Response `200 OK`: `AdminWeatherOverview`
 
@@ -644,6 +645,7 @@ Request:
 
 ```json
 {
+  "projectId": "waterbomb-2026-summer",
   "name": "킨텍스 제2전시장",
   "latitude": 37.6698,
   "longitude": 126.7451
@@ -662,6 +664,7 @@ Request:
 
 ```json
 {
+  "projectId": "waterbomb-2026-summer",
   "windSpeed": 10,
   "precipitation": 15,
   "temperature": 33,

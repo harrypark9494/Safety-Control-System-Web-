@@ -104,6 +104,12 @@ export function AdminPage() {
           <div className="brand-block">
             <strong>워터밤 안전 관제 시스템</strong>
             <span>관리자 페이지</span>
+            <button className="current-project-button" type="button" onClick={() => setView("projects")}>
+              <span>
+                <b>{selectedProject?.name ?? "프로젝트 선택 필요"}</b>
+                <small>{selectedProject ? `${formatProjectStatus(selectedProject.status)} · ${selectedProject.location}` : "프로젝트 관리에서 선택"}</small>
+              </span>
+            </button>
           </div>
 
           <nav className="admin-nav" aria-label="주요 메뉴">
@@ -133,14 +139,13 @@ export function AdminPage() {
 
         <section className="admin-main">
           {projectMessage ? <p className="admin-message admin-message--global" role="status">{projectMessage}</p> : null}
-          {view === "dashboard" ? <DashboardView /> : null}
-          {view === "weather" ? <WeatherView /> : null}
-          {view === "schedule" ? <ScheduleView /> : null}
-          {view === "qr" ? <QrView projectId={selectedProjectId} projectName={selectedProject?.name ?? ""} /> : null}
+          {view === "dashboard" ? <DashboardView project={selectedProject} /> : null}
+          {view === "weather" ? <WeatherView projectId={selectedProjectId} /> : null}
+          {view === "schedule" ? <ScheduleView projectId={selectedProjectId} /> : null}
+          {view === "qr" ? <QrView projectId={selectedProjectId} /> : null}
           {view === "workers" ? (
             <WorkersView
               projectId={selectedProjectId}
-              projectName={selectedProject?.name ?? ""}
               workers={workers}
               workTypes={workTypes}
               message={workerMessage}
@@ -148,7 +153,7 @@ export function AdminPage() {
               onRefreshWorkTypes={refreshWorkTypes}
             />
           ) : null}
-          {view === "rules" ? <RulesView /> : null}
+          {view === "rules" ? <RulesView projectId={selectedProjectId} /> : null}
           {view === "admins" ? <AdminsView onOpen={() => setModalOpen(true)} /> : null}
           {view === "projects" ? (
             <ProjectsView
@@ -189,4 +194,12 @@ export function AdminPage() {
       ) : null}
     </>
   );
+}
+
+function formatProjectStatus(status: Project["status"]) {
+  return {
+    DRAFT: "준비 중",
+    ACTIVE: "운영 중",
+    ARCHIVED: "아카이브",
+  }[status];
 }

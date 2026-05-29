@@ -50,9 +50,40 @@ const defaultScheduleColumns: ScheduleColumn[] = [
   { label: "특수효과" },
 ];
 
-const initialScheduleItems: ScheduleItem[] = [
+function createInitialScheduleItems(projectId: string): ScheduleItem[] {
+  const prefix = projectId || "default";
+  const isDraftProject = prefix.includes("winter");
+
+  if (isDraftProject) {
+    return [
+      {
+        id: `${prefix}-planning`,
+        date: defaultScheduleDate,
+        startTime: "09:00",
+        endTime: "10:30",
+        title: "운영 계획 회의",
+        category: "구조물",
+        location: "프로젝트 준비실",
+        owner: "운영팀",
+        status: "ready",
+      },
+      {
+        id: `${prefix}-vendor`,
+        date: defaultScheduleDate,
+        startTime: "11:00",
+        endTime: "12:00",
+        title: "협력사 배정 검토",
+        category: "음향",
+        location: "준비 구역",
+        owner: "관리자",
+        status: "risk",
+      },
+    ];
+  }
+
+  return [
   {
-    id: "stage-foundation",
+    id: `${prefix}-stage-foundation`,
     date: defaultScheduleDate,
     startTime: "07:30",
     endTime: "09:30",
@@ -63,7 +94,7 @@ const initialScheduleItems: ScheduleItem[] = [
     status: "confirmed",
   },
   {
-    id: "stage-panel",
+    id: `${prefix}-stage-panel`,
     date: defaultScheduleDate,
     startTime: "09:30",
     endTime: "11:30",
@@ -75,7 +106,7 @@ const initialScheduleItems: ScheduleItem[] = [
     dependency: "메인 스테이지 하부 고정",
   },
   {
-    id: "lighting-rigging",
+    id: `${prefix}-lighting-rigging`,
     date: defaultScheduleDate,
     startTime: "11:30",
     endTime: "13:00",
@@ -87,7 +118,7 @@ const initialScheduleItems: ScheduleItem[] = [
     dependency: "무대 패널 결합",
   },
   {
-    id: "speaker-rigging",
+    id: `${prefix}-speaker-rigging`,
     date: defaultScheduleDate,
     startTime: "13:30",
     endTime: "15:00",
@@ -99,7 +130,7 @@ const initialScheduleItems: ScheduleItem[] = [
     dependency: "조명 트러스 러깅",
   },
   {
-    id: "laser-module",
+    id: `${prefix}-laser-module`,
     date: defaultScheduleDate,
     startTime: "15:30",
     endTime: "16:30",
@@ -111,7 +142,7 @@ const initialScheduleItems: ScheduleItem[] = [
     dependency: "스피커 러깅 시작",
   },
   {
-    id: "gate-fence",
+    id: `${prefix}-gate-fence`,
     date: getRelativeScheduleDate(1),
     startTime: "08:00",
     endTime: "10:00",
@@ -122,7 +153,7 @@ const initialScheduleItems: ScheduleItem[] = [
     status: "confirmed",
   },
   {
-    id: "video-wall",
+    id: `${prefix}-video-wall`,
     date: getRelativeScheduleDate(1),
     startTime: "10:00",
     endTime: "12:00",
@@ -133,13 +164,14 @@ const initialScheduleItems: ScheduleItem[] = [
     status: "ready",
     dependency: "입장 게이트 펜스 설치",
   },
-];
+  ];
+}
 
-export function ScheduleView() {
+export function ScheduleView({ projectId }: { projectId: string }) {
   const [selectedDate, setSelectedDate] = useState<IsoDateString>(defaultScheduleDate);
   const [visibleMonth, setVisibleMonth] = useState<MonthKey>(getMonthKey(defaultScheduleDate));
   const [scheduleColumns, setScheduleColumns] = useState<ScheduleColumn[]>(defaultScheduleColumns);
-  const [schedules, setSchedules] = useState<ScheduleItem[]>(initialScheduleItems);
+  const [schedules, setSchedules] = useState<ScheduleItem[]>(() => createInitialScheduleItems(projectId));
   const [newColumnLabel, setNewColumnLabel] = useState("");
   const [isScheduleModalOpen, setScheduleModalOpen] = useState(false);
   const [scheduleForm, setScheduleForm] = useState<ScheduleFormState>(() => createDefaultScheduleForm(defaultScheduleDate, defaultScheduleColumns[0].label));
@@ -248,6 +280,13 @@ export function ScheduleView() {
     setScheduleColumns((columns) => normalizeScheduleColumns(columns));
     setSchedules((items) => items.map((item) => (item.category === legacyUnassignedScheduleColumn ? { ...item, category: unassignedScheduleColumn } : item)));
   }, []);
+
+  useEffect(() => {
+    setSelectedDate(defaultScheduleDate);
+    setVisibleMonth(getMonthKey(defaultScheduleDate));
+    setScheduleColumns(defaultScheduleColumns);
+    setSchedules(createInitialScheduleItems(projectId));
+  }, [projectId]);
 
   return (
     <section className="admin-view is-active">

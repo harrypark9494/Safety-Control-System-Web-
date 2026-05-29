@@ -3,6 +3,10 @@ import { IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 export class UpdateWeatherStationRequest {
   @IsOptional()
   @IsString()
+  projectId?: string;
+
+  @IsOptional()
+  @IsString()
   name?: string;
 
   @IsNumber()
@@ -17,6 +21,10 @@ export class UpdateWeatherStationRequest {
 }
 
 export class UpdateWeatherThresholdsRequest {
+  @IsOptional()
+  @IsString()
+  projectId?: string;
+
   @IsNumber()
   @Min(1)
   @Max(60)

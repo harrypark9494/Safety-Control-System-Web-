@@ -283,18 +283,23 @@ export async function getAdminQrUsageSummary(options: { date?: string; mealType?
   return requestJson<QrUsageSummary>(`/api/admin/qr-usage/summary${query ? `?${query}` : ""}`);
 }
 
-export async function getAdminWeatherOverview(): Promise<AdminWeatherOverview> {
-  return requestJson<AdminWeatherOverview>("/api/admin/weather");
+export async function getAdminWeatherOverview(projectId?: string): Promise<AdminWeatherOverview> {
+  const params = new URLSearchParams();
+  if (projectId) {
+    params.set("projectId", projectId);
+  }
+
+  return requestJson<AdminWeatherOverview>(`/api/admin/weather${params.toString() ? `?${params}` : ""}`);
 }
 
-export async function updateAdminWeatherStation(station: { name?: string; latitude: number; longitude: number }): Promise<AdminWeatherOverview> {
+export async function updateAdminWeatherStation(station: { projectId?: string; name?: string; latitude: number; longitude: number }): Promise<AdminWeatherOverview> {
   return requestJson<AdminWeatherOverview>("/api/admin/weather/station", {
     method: "POST",
     body: JSON.stringify(station),
   });
 }
 
-export async function updateAdminWeatherThresholds(thresholds: WeatherThresholds): Promise<AdminWeatherOverview> {
+export async function updateAdminWeatherThresholds(thresholds: WeatherThresholds & { projectId?: string }): Promise<AdminWeatherOverview> {
   return requestJson<AdminWeatherOverview>("/api/admin/weather/thresholds", {
     method: "POST",
     body: JSON.stringify(thresholds),

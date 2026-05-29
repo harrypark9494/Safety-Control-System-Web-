@@ -94,7 +94,7 @@ td {
 .admin-sidebar {
   display: flex;
   flex-direction: column;
-  gap: 34px;
+  gap: 20px;
   min-height: 0;
   height: 100vh;
   padding: 24px 18px;
@@ -104,7 +104,9 @@ td {
 }
 
 .brand-block {
-  padding: 0 10px 24px;
+  display: grid;
+  gap: 8px;
+  padding: 0 10px 2px;
 }
 
 .brand-block strong,
@@ -124,10 +126,50 @@ td {
   font-weight: 800;
 }
 
+.current-project-button {
+  display: block;
+  width: 100%;
+  min-height: 50px;
+  margin-top: 4px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  padding: 10px;
+  color: #17263a;
+  background: #fff;
+  text-align: left;
+}
+
+.current-project-button span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  margin: 0;
+}
+
+.current-project-button b,
+.current-project-button small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.current-project-button b {
+  color: var(--ink);
+  font-size: 0.83rem;
+  font-weight: 950;
+}
+
+.current-project-button small {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 850;
+}
+
 .admin-nav,
 .sidebar-footer {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .sidebar-footer {
@@ -141,7 +183,7 @@ td {
   grid-template-columns: 34px 1fr;
   align-items: center;
   width: 100%;
-  min-height: 58px;
+  min-height: 50px;
   gap: 12px;
   border-radius: 4px;
   padding: 0 18px;
@@ -182,7 +224,7 @@ td {
 }
 
 .nav-item--plain {
-  min-height: 48px;
+  min-height: 44px;
 }
 
 .admin-main {

@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { MaterialIcon } from "../../components/MaterialIcon";
 
 type SafetyRuleStatus = "active" | "draft" | "urgent";
@@ -16,9 +16,34 @@ type SafetyRule = {
   updatedAt: string;
 };
 
-const initialSafetyRules: SafetyRule[] = [
+function createInitialSafetyRules(projectId: string): SafetyRule[] {
+  const prefix = projectId || "default";
+  const isDraftProject = prefix.includes("winter");
+
+  if (isDraftProject) {
+    return [
+      {
+        id: `${prefix}-winter-slip`,
+        title: "동절기 미끄럼 사고 예방",
+        category: "기상 상황",
+        status: "draft",
+        content: "동절기 프로젝트 준비 단계에서는 결빙 가능 구역과 제설 동선을 사전에 지정합니다.",
+        updatedAt: "2026-05-29",
+      },
+      {
+        id: `${prefix}-vendor-safety`,
+        title: "협력사 안전 교육 준비",
+        category: "운영 준비",
+        status: "draft",
+        content: "협력사 투입 전 안전 교육 대상, 교육 장소, 참석 확인 방식을 확정합니다.",
+        updatedAt: "2026-05-29",
+      },
+    ];
+  }
+
+  return [
   {
-    id: "heat-rest",
+    id: `${prefix}-heat-rest`,
     title: "폭염 대비 휴식 수칙",
     category: "기상 상황",
     status: "active",
@@ -26,7 +51,7 @@ const initialSafetyRules: SafetyRule[] = [
     updatedAt: "2024-05-20",
   },
   {
-    id: "electric-check",
+    id: `${prefix}-electric-check`,
     title: "전기 설비 안전 점검",
     category: "시설 인프라",
     status: "active",
@@ -34,14 +59,15 @@ const initialSafetyRules: SafetyRule[] = [
     updatedAt: "2024-05-18",
   },
   {
-    id: "crowd-response",
+    id: `${prefix}-crowd-response`,
     title: "밀집 구역 사고 대응",
     category: "응급 조치",
     status: "draft",
     content: "메인 스테이지 앞 펜스 붕괴 또는 압착 위험 발생 시 가장 가까운 비상 통로를 개방하고 관객 흐름을 분산합니다.",
     updatedAt: "2024-05-22",
   },
-];
+  ];
+}
 
 const ruleStatusMeta: Record<SafetyRuleStatus, StatusMeta> = {
   active: { label: "활성", tone: "on" },
@@ -49,8 +75,8 @@ const ruleStatusMeta: Record<SafetyRuleStatus, StatusMeta> = {
   draft: { label: "초안", tone: "draft" },
 };
 
-export function RulesView() {
-  const [rules, setRules] = useState<SafetyRule[]>(initialSafetyRules);
+export function RulesView({ projectId }: { projectId: string }) {
+  const [rules, setRules] = useState<SafetyRule[]>(() => createInitialSafetyRules(projectId));
   const [ruleSearch, setRuleSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<SafetyRuleStatus | "all">("all");
   const [editingRule, setEditingRule] = useState<SafetyRule | null>(null);
@@ -71,6 +97,13 @@ export function RulesView() {
     return matchesSearch && matchesStatus;
   });
   const activeRuleCount = rules.filter((rule) => rule.status === "active" || rule.status === "urgent").length;
+
+  useEffect(() => {
+    setRules(createInitialSafetyRules(projectId));
+    setRuleSearch("");
+    setStatusFilter("all");
+    setRuleMessage("");
+  }, [projectId]);
 
   function openRuleEditor(rule?: SafetyRule) {
     const targetRule = rule ?? {

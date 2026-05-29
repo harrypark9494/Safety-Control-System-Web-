@@ -4,7 +4,7 @@ import { getAdminWeatherOverview, updateAdminWeatherStation, updateAdminWeatherT
 import type { AdminWeatherOverview, WeatherThresholds } from "../../types";
 import { Bar, formatDateTime } from "./shared";
 
-export function WeatherView() {
+export function WeatherView({ projectId }: { projectId: string }) {
   const [weather, setWeather] = useState<AdminWeatherOverview | null>(null);
   const [message, setMessage] = useState("기상 데이터를 불러오는 중입니다.");
   const [thresholds, setThresholds] = useState<WeatherThresholds>({
@@ -19,11 +19,11 @@ export function WeatherView() {
 
   useEffect(() => {
     refreshWeather();
-  }, []);
+  }, [projectId]);
 
   async function refreshWeather() {
     try {
-      const nextWeather = await getAdminWeatherOverview();
+      const nextWeather = await getAdminWeatherOverview(projectId);
       applyWeatherState(nextWeather);
       setMessage("기상청 어댑터 데이터가 동기화되었습니다.");
     } catch (error) {
@@ -50,6 +50,7 @@ export function WeatherView() {
 
     try {
       applyWeatherState(await updateAdminWeatherStation({
+        projectId,
         name: stationName,
         latitude: nextLatitude,
         longitude: nextLongitude,
@@ -62,7 +63,7 @@ export function WeatherView() {
 
   async function saveThresholds() {
     try {
-      applyWeatherState(await updateAdminWeatherThresholds(thresholds));
+      applyWeatherState(await updateAdminWeatherThresholds({ ...thresholds, projectId }));
       setMessage("자동 경보 임계값을 저장했습니다.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "임계값 저장에 실패했습니다.");

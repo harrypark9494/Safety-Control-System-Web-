@@ -22,37 +22,22 @@ type RawWeatherSnapshot = {
   forecast24h: Array<Omit<WeatherForecastItem, 'riskLevel'>>;
 };
 
+type WeatherProjectState = {
+  station: WeatherStation;
+  thresholds: WeatherThresholds;
+  correctionProfile: WeatherCorrectionProfile;
+};
+
 @Injectable()
 export class WeatherService {
-  private station: WeatherStation = {
-    name: '킨텍스 제2전시장',
-    latitude: 37.6698,
-    longitude: 126.7451,
-    nx: 57,
-    ny: 128,
-    source: 'KMA',
-    updatedAt: new Date().toISOString(),
-  };
+  private readonly projectStates = new Map<string, WeatherProjectState>();
 
-  private thresholds: WeatherThresholds = {
-    windSpeed: 10,
-    precipitation: 15,
-    temperature: 33,
-    humidity: 90,
-  };
-
-  private correctionProfile: WeatherCorrectionProfile = {
-    temperatureOffset: 1.2,
-    windSpeedOffset: 0.4,
-    humidityOffset: 3,
-    precipitationOffset: 0,
-  };
-
-  getAdminOverview(): AdminWeatherOverview {
+  getAdminOverview(projectId?: string): AdminWeatherOverview {
+    const state = this.ensureProjectState(projectId);
     const raw = this.getRawKmaSnapshot();
-    const adjusted = this.applyCorrection(raw);
-    const metrics = this.buildMetrics(adjusted);
-    const riskLevel = this.evaluateRisk(adjusted);
+    const adjusted = this.applyCorrection(raw, state.correctionProfile);
+    const metrics = this.buildMetrics(adjusted, state.thresholds);
+    const riskLevel = this.evaluateRisk(adjusted, state.thresholds);
 
     return {
       source: {
@@ -63,9 +48,9 @@ export class WeatherService {
         updatedAt: new Date().toISOString(),
         advisoryMergePolicy: '특보는 예보값에 섞지 않고 별도 채널로 받은 뒤 위험 등급 상향 조건으로만 사용',
       },
-      site: this.station,
-      thresholds: this.thresholds,
-      correctionProfile: this.correctionProfile,
+      site: state.station,
+      thresholds: state.thresholds,
+      correctionProfile: state.correctionProfile,
       current: {
         condition: adjusted.condition,
         riskLevel,
@@ -74,34 +59,71 @@ export class WeatherService {
       },
       forecast24h: adjusted.forecast24h.map((item) => ({
         ...item,
-        riskLevel: this.evaluateForecastRisk(item),
+        riskLevel: this.evaluateForecastRisk(item, state.thresholds),
       })),
-      alertLogs: this.buildAlertLogs(adjusted),
+      alertLogs: this.buildAlertLogs(adjusted, state.thresholds),
     };
   }
 
   updateStation(request: UpdateWeatherStationRequest) {
-    this.station = {
-      ...this.station,
-      name: request.name?.trim() || this.station.name,
+    const state = this.ensureProjectState(request.projectId);
+    state.station = {
+      ...state.station,
+      name: request.name?.trim() || state.station.name,
       latitude: this.roundTo(request.latitude, 4),
       longitude: this.roundTo(request.longitude, 4),
       ...this.toKmaGrid(request.latitude, request.longitude),
       updatedAt: new Date().toISOString(),
     };
 
-    return this.getAdminOverview();
+    return this.getAdminOverview(request.projectId);
   }
 
   updateThresholds(request: UpdateWeatherThresholdsRequest) {
-    this.thresholds = {
+    const state = this.ensureProjectState(request.projectId);
+    state.thresholds = {
       windSpeed: this.roundTo(request.windSpeed, 1),
       precipitation: this.roundTo(request.precipitation, 1),
       temperature: this.roundTo(request.temperature, 1),
       humidity: this.roundTo(request.humidity, 1),
     };
 
-    return this.getAdminOverview();
+    return this.getAdminOverview(request.projectId);
+  }
+
+  private ensureProjectState(projectId?: string) {
+    const key = projectId?.trim() || 'default';
+    const existing = this.projectStates.get(key);
+
+    if (existing) {
+      return existing;
+    }
+
+    const state: WeatherProjectState = {
+      station: {
+        name: key.includes('winter') ? '운영 장소 미정' : '킨텍스 제2전시장',
+        latitude: 37.6698,
+        longitude: 126.7451,
+        nx: 57,
+        ny: 128,
+        source: 'KMA',
+        updatedAt: new Date().toISOString(),
+      },
+      thresholds: {
+        windSpeed: 10,
+        precipitation: 15,
+        temperature: key.includes('winter') ? 5 : 33,
+        humidity: 90,
+      },
+      correctionProfile: {
+        temperatureOffset: key.includes('winter') ? -1.5 : 1.2,
+        windSpeedOffset: 0.4,
+        humidityOffset: 3,
+        precipitationOffset: 0,
+      },
+    };
+    this.projectStates.set(key, state);
+    return state;
   }
 
   private getRawKmaSnapshot(): RawWeatherSnapshot {
@@ -123,22 +145,22 @@ export class WeatherService {
     };
   }
 
-  private applyCorrection(raw: RawWeatherSnapshot): RawWeatherSnapshot {
+  private applyCorrection(raw: RawWeatherSnapshot, correctionProfile: WeatherCorrectionProfile): RawWeatherSnapshot {
     return {
       ...raw,
-      temperature: this.roundTo(raw.temperature + this.correctionProfile.temperatureOffset, 1),
-      precipitation: this.roundTo(Math.max(raw.precipitation + this.correctionProfile.precipitationOffset, 0), 1),
-      windSpeed: this.roundTo(Math.max(raw.windSpeed + this.correctionProfile.windSpeedOffset, 0), 1),
-      humidity: this.roundTo(Math.min(Math.max(raw.humidity + this.correctionProfile.humidityOffset, 0), 100), 1),
+      temperature: this.roundTo(raw.temperature + correctionProfile.temperatureOffset, 1),
+      precipitation: this.roundTo(Math.max(raw.precipitation + correctionProfile.precipitationOffset, 0), 1),
+      windSpeed: this.roundTo(Math.max(raw.windSpeed + correctionProfile.windSpeedOffset, 0), 1),
+      humidity: this.roundTo(Math.min(Math.max(raw.humidity + correctionProfile.humidityOffset, 0), 100), 1),
     };
   }
 
-  private buildMetrics(weather: RawWeatherSnapshot): WeatherMetric[] {
+  private buildMetrics(weather: RawWeatherSnapshot, thresholds: WeatherThresholds): WeatherMetric[] {
     return [
-      this.metric('windSpeed', '풍속 (WIND SPEED)', weather.windSpeed, 'm/s', this.thresholds.windSpeed, false),
-      this.metric('precipitation', '강수량 (PRECIPITATION)', weather.precipitation, 'mm/h', this.thresholds.precipitation, false),
-      this.metric('temperature', '온도 (TEMPERATURE)', weather.temperature, '°C', this.thresholds.temperature, false),
-      this.metric('humidity', '습도 (HUMIDITY)', weather.humidity, '%', this.thresholds.humidity, false),
+      this.metric('windSpeed', '풍속 (WIND SPEED)', weather.windSpeed, 'm/s', thresholds.windSpeed, false),
+      this.metric('precipitation', '강수량 (PRECIPITATION)', weather.precipitation, 'mm/h', thresholds.precipitation, false),
+      this.metric('temperature', '온도 (TEMPERATURE)', weather.temperature, '°C', thresholds.temperature, false),
+      this.metric('humidity', '습도 (HUMIDITY)', weather.humidity, '%', thresholds.humidity, false),
     ];
   }
 
@@ -179,15 +201,15 @@ export class WeatherService {
     return 'green';
   }
 
-  private evaluateRisk(weather: RawWeatherSnapshot): WeatherRiskLevel {
-    if (weather.windSpeed >= this.thresholds.windSpeed || weather.temperature >= this.thresholds.temperature) {
+  private evaluateRisk(weather: RawWeatherSnapshot, thresholds: WeatherThresholds): WeatherRiskLevel {
+    if (weather.windSpeed >= thresholds.windSpeed || weather.temperature >= thresholds.temperature) {
       return 'alert';
     }
 
     if (
-      weather.precipitation >= this.thresholds.precipitation * 0.75
+      weather.precipitation >= thresholds.precipitation * 0.75
       || weather.rainProbability >= 70
-      || weather.temperature >= this.thresholds.temperature * 0.9
+      || weather.temperature >= thresholds.temperature * 0.9
     ) {
       return 'caution';
     }
@@ -195,12 +217,12 @@ export class WeatherService {
     return 'normal';
   }
 
-  private evaluateForecastRisk(item: Omit<WeatherForecastItem, 'riskLevel'>): WeatherRiskLevel {
-    if (item.windSpeed >= this.thresholds.windSpeed || item.temperature >= this.thresholds.temperature) {
+  private evaluateForecastRisk(item: Omit<WeatherForecastItem, 'riskLevel'>, thresholds: WeatherThresholds): WeatherRiskLevel {
+    if (item.windSpeed >= thresholds.windSpeed || item.temperature >= thresholds.temperature) {
       return 'alert';
     }
 
-    if (item.rainProbability >= 70 || item.windSpeed >= this.thresholds.windSpeed * 0.7) {
+    if (item.rainProbability >= 70 || item.windSpeed >= thresholds.windSpeed * 0.7) {
       return 'caution';
     }
 
@@ -219,20 +241,20 @@ export class WeatherService {
     return `현재 ${weather.condition}, 주요 기상 위험은 기준치 이내입니다.`;
   }
 
-  private buildAlertLogs(weather: RawWeatherSnapshot) {
+  private buildAlertLogs(weather: RawWeatherSnapshot, thresholds: WeatherThresholds) {
     const logs = [];
 
-    if (weather.temperature >= this.thresholds.temperature * 0.9) {
+    if (weather.temperature >= thresholds.temperature * 0.9) {
       logs.push({
         id: 'heat-caution',
-        level: weather.temperature >= this.thresholds.temperature ? 'alert' as const : 'caution' as const,
-        title: weather.temperature >= this.thresholds.temperature ? '폭염 경보' : '폭염 주의',
+        level: weather.temperature >= thresholds.temperature ? 'alert' as const : 'caution' as const,
+        title: weather.temperature >= thresholds.temperature ? '폭염 경보' : '폭염 주의',
         time: '14:15',
         message: `보정 온도 ${weather.temperature}°C 감지. 그늘 휴식과 수분 보급 안내를 확인하세요.`,
       });
     }
 
-    if (weather.windSpeed >= this.thresholds.windSpeed * 0.7) {
+    if (weather.windSpeed >= thresholds.windSpeed * 0.7) {
       logs.push({
         id: 'wind-caution',
         level: 'caution' as const,

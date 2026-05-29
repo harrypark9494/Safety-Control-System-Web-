@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { UpdateWeatherStationRequest, UpdateWeatherThresholdsRequest } from './weather.dto';
 import { WeatherService } from './weather.service';
 
@@ -7,8 +7,8 @@ export class WeatherController {
   constructor(private readonly weather: WeatherService) {}
 
   @Get()
-  getAdminOverview() {
-    return this.weather.getAdminOverview();
+  getAdminOverview(@Query('projectId') projectId?: string) {
+    return this.weather.getAdminOverview(projectId);
   }
 
   @Post('station')

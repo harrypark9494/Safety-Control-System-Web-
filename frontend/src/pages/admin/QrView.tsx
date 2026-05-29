@@ -3,7 +3,7 @@ import { MaterialIcon } from "../../components/MaterialIcon";
 import { getAdminQrUsageSummary } from "../../features/auth/session";
 import type { MealType, QrUsageSummary } from "../../types";
 
-export function QrView({ projectId, projectName }: { projectId: string; projectName: string }) {
+export function QrView({ projectId }: { projectId: string }) {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [mealType, setMealType] = useState<MealType | "all">("all");
   const [summary, setSummary] = useState<QrUsageSummary | null>(null);
@@ -28,7 +28,6 @@ export function QrView({ projectId, projectName }: { projectId: string; projectN
     <section className="admin-view is-active">
       <header className="page-header page-header--actions">
         <h1>식권/생수 QR 사용 현황</h1>
-        {projectName ? <span className="page-project-label">{projectName}</span> : null}
         <div>
           <button className="light-button" type="button"><MaterialIcon name="download" />엑셀 다운로드</button>
           <button className="dark-button" type="button"><MaterialIcon name="qr_code_scanner" />QR 수동 발급</button>
