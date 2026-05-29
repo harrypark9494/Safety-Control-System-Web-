@@ -495,17 +495,17 @@ select {
     width: min(100%, 960px);
   }
 
-  .dashboard-grid {
+  .mobile-shell .dashboard-grid {
     grid-template-columns: 0.9fr 1.1fr;
     align-items: start;
   }
 
-  .weather-card {
+  .mobile-shell .dashboard-grid > .weather-card {
     grid-column: 2;
     grid-row: 1 / span 3;
   }
 
-  .progress-card {
+  .mobile-shell .dashboard-grid > .progress-card {
     grid-column: 1 / -1;
   }
 
