@@ -15,6 +15,8 @@ type ScheduleItem = {
   category: string;
   location: string;
   owner: string;
+  assignees?: string;
+  workAreaGroup?: string;
   status: ScheduleStatus;
   dependency?: string;
 };
@@ -23,9 +25,21 @@ type ScheduleColumn = {
   label: string;
 };
 
-const defaultScheduleDate: IsoDateString = "2026-07-19";
+type ScheduleFormState = {
+  date: IsoDateString;
+  startTime: string;
+  endTime: string;
+  title: string;
+  category: string;
+  assignees: string;
+  workAreaGroup: string;
+};
+
+const defaultScheduleDate: IsoDateString = toIsoDateString(new Date());
 const unassignedScheduleColumn = "미배정";
 const legacyUnassignedScheduleColumn = "미분류";
+const allScheduleColumns = "__all_columns__";
+const allScheduleColumnsLabel = "전체 컬럼";
 
 const defaultScheduleColumns: ScheduleColumn[] = [
   { label: "구조물" },
@@ -39,7 +53,7 @@ const defaultScheduleColumns: ScheduleColumn[] = [
 const initialScheduleItems: ScheduleItem[] = [
   {
     id: "stage-foundation",
-    date: "2026-07-19",
+    date: defaultScheduleDate,
     startTime: "07:30",
     endTime: "09:30",
     title: "메인 스테이지 하부 고정",
@@ -50,7 +64,7 @@ const initialScheduleItems: ScheduleItem[] = [
   },
   {
     id: "stage-panel",
-    date: "2026-07-19",
+    date: defaultScheduleDate,
     startTime: "09:30",
     endTime: "11:30",
     title: "무대 패널 결합",
@@ -62,7 +76,7 @@ const initialScheduleItems: ScheduleItem[] = [
   },
   {
     id: "lighting-rigging",
-    date: "2026-07-19",
+    date: defaultScheduleDate,
     startTime: "11:30",
     endTime: "13:00",
     title: "조명 트러스 러깅",
@@ -74,7 +88,7 @@ const initialScheduleItems: ScheduleItem[] = [
   },
   {
     id: "speaker-rigging",
-    date: "2026-07-19",
+    date: defaultScheduleDate,
     startTime: "13:30",
     endTime: "15:00",
     title: "스피커 러깅 시작",
@@ -86,7 +100,7 @@ const initialScheduleItems: ScheduleItem[] = [
   },
   {
     id: "laser-module",
-    date: "2026-07-19",
+    date: defaultScheduleDate,
     startTime: "15:30",
     endTime: "16:30",
     title: "레이저 모듈 안전 점검",
@@ -98,7 +112,7 @@ const initialScheduleItems: ScheduleItem[] = [
   },
   {
     id: "gate-fence",
-    date: "2026-07-20",
+    date: getRelativeScheduleDate(1),
     startTime: "08:00",
     endTime: "10:00",
     title: "입장 게이트 펜스 설치",
@@ -109,7 +123,7 @@ const initialScheduleItems: ScheduleItem[] = [
   },
   {
     id: "video-wall",
-    date: "2026-07-20",
+    date: getRelativeScheduleDate(1),
     startTime: "10:00",
     endTime: "12:00",
     title: "영상월 전원 테스트",
@@ -127,6 +141,8 @@ export function ScheduleView() {
   const [scheduleColumns, setScheduleColumns] = useState<ScheduleColumn[]>(defaultScheduleColumns);
   const [schedules, setSchedules] = useState<ScheduleItem[]>(initialScheduleItems);
   const [newColumnLabel, setNewColumnLabel] = useState("");
+  const [isScheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [scheduleForm, setScheduleForm] = useState<ScheduleFormState>(() => createDefaultScheduleForm(defaultScheduleDate, defaultScheduleColumns[0].label));
   const activeDateRef = useRef<HTMLButtonElement | null>(null);
   const hours = Array.from({ length: 14 }, (_, index) => `${String(index + 7).padStart(2, "0")}:00`);
   const monthDays = getMonthDays(visibleMonth);
@@ -137,7 +153,12 @@ export function ScheduleView() {
   const selectedSchedules = schedules
     .filter((item) => item.date === selectedDate)
     .sort((first, second) => first.startTime.localeCompare(second.startTime));
-  const getScheduleColumnLabel = (category: string) => (columnLabelSet.has(category) ? category : unassignedScheduleColumn);
+  const getScheduleColumnLabel = (category: string) => {
+    if (category === allScheduleColumns) {
+      return allScheduleColumnsLabel;
+    }
+    return columnLabelSet.has(category) ? category : unassignedScheduleColumn;
+  };
   const scheduleCountByCategory = schedules.reduce<Record<string, number>>((counts, item) => {
     const columnLabel = getScheduleColumnLabel(item.category);
     counts[columnLabel] = (counts[columnLabel] ?? 0) + 1;
@@ -148,11 +169,13 @@ export function ScheduleView() {
     : [...scheduleColumns, { label: unassignedScheduleColumn }];
   const columnLabelKeys = new Set(scheduleColumnsForGrid.map((column) => column.label.toLocaleLowerCase("ko-KR")));
   const canAddColumn = normalizedColumnLabel.length > 0 && !columnLabelKeys.has(normalizedColumnLabel.toLocaleLowerCase("ko-KR"));
+  const canSaveSchedule = scheduleForm.title.trim().length > 0 && scheduleForm.startTime < scheduleForm.endTime;
   const firstSchedule = selectedSchedules[0];
   const lastSchedule = selectedSchedules[selectedSchedules.length - 1];
   const scheduleGridStyle = {
     "--schedule-column-count": Math.max(scheduleColumnsForGrid.length, 1),
-  } as CSSProperties & { "--schedule-column-count": number };
+    "--schedule-slot-count": hours.length * 2,
+  } as CSSProperties & { "--schedule-column-count": number; "--schedule-slot-count": number };
   const selectDate = (date: IsoDateString) => {
     setSelectedDate(date);
     setVisibleMonth(getMonthKey(date));
@@ -164,6 +187,37 @@ export function ScheduleView() {
 
     setScheduleColumns((columns) => [...columns, { label: normalizedColumnLabel }]);
     setNewColumnLabel("");
+  };
+  const openScheduleModal = () => {
+    setScheduleForm(createDefaultScheduleForm(selectedDate, scheduleColumnsForGrid[0]?.label ?? unassignedScheduleColumn));
+    setScheduleModalOpen(true);
+  };
+  const updateScheduleForm = <Key extends keyof ScheduleFormState>(key: Key, value: ScheduleFormState[Key]) => {
+    setScheduleForm((form) => ({ ...form, [key]: value }));
+  };
+  const addScheduleItem = () => {
+    if (!canSaveSchedule) {
+      return;
+    }
+
+    setSchedules((items) => [
+      ...items,
+      {
+        id: `schedule-${Date.now()}`,
+        date: scheduleForm.date,
+        startTime: scheduleForm.startTime,
+        endTime: scheduleForm.endTime,
+        title: scheduleForm.title.trim(),
+        category: scheduleForm.category,
+        location: scheduleForm.category === allScheduleColumns ? "공통 일정" : `${getScheduleColumnLabel(scheduleForm.category)} 구역`,
+        owner: "관리자 등록",
+        assignees: scheduleForm.assignees.trim() || undefined,
+        workAreaGroup: scheduleForm.workAreaGroup.trim() || undefined,
+        status: "confirmed",
+      },
+    ]);
+    selectDate(scheduleForm.date);
+    setScheduleModalOpen(false);
   };
   const removeScheduleColumn = (label: string) => {
     const assignedScheduleCount = schedules.filter((item) => item.category === label).length;
@@ -199,7 +253,7 @@ export function ScheduleView() {
 
   return (
     <section className="admin-view is-active">
-      <header className="page-header page-header--actions"><h1>스케줄 관리</h1><div><button className="light-button" type="button"><MaterialIcon name="download" />엑셀 내보내기</button><button className="dark-button" type="button"><MaterialIcon name="add" />일정 추가</button></div></header>
+      <header className="page-header page-header--actions"><h1>스케줄 관리</h1><div><button className="light-button" type="button"><MaterialIcon name="download" />엑셀 내보내기</button><button className="dark-button" type="button" onClick={openScheduleModal}><MaterialIcon name="add" />일정 추가</button></div></header>
       <div className="page-content schedule-board">
         <section className="schedule-overview" aria-label="스케줄 요약">
           <article className="app-card schedule-summary-card">
@@ -299,30 +353,99 @@ export function ScheduleView() {
             {scheduleColumnsForGrid.map((column, columnIndex) => (
               <div className={`grid-head${columnIndex === scheduleColumnsForGrid.length - 1 ? " is-row-end" : ""}`} key={column.label}>{column.label}</div>
             ))}
-            {hours.map((hour) => (
+            {hours.map((hour, hourIndex) => (
               <Fragment key={hour}>
-                <div className="time-cell">{hour}</div>
-                {scheduleColumnsForGrid.map((column, columnIndex) => {
-                  const item = selectedSchedules.find((schedule) => getScheduleColumnLabel(schedule.category) === column.label && schedule.startTime.startsWith(hour.slice(0, 2)));
-                  return (
-                    <div className={`schedule-cell${columnIndex === scheduleColumnsForGrid.length - 1 ? " is-row-end" : ""}`} key={`${hour}-${column.label}`}>
-                      {item ? (
-                        <article className={`job job--${item.status}`}>
-                          <strong>{item.title}</strong>
-                          <span>{item.startTime} - {item.endTime}</span>
-                          <small>{item.location} · {item.owner}</small>
-                          {item.dependency ? <em>{item.dependency} 이후</em> : null}
-                        </article>
-                      ) : null}
-                    </div>
-                  );
-                })}
+                <div className="time-cell" style={{ gridColumn: 1, gridRow: `${hourIndex * 2 + 2} / span 2` }}>{hour}</div>
+                {scheduleColumnsForGrid.map((column, columnIndex) => (
+                  <div
+                    className={`schedule-cell schedule-cell--background${columnIndex === scheduleColumnsForGrid.length - 1 ? " is-row-end" : ""}`}
+                    key={`${hour}-${column.label}`}
+                    style={{ gridColumn: columnIndex + 2, gridRow: `${hourIndex * 2 + 2} / span 2` }}
+                  />
+                ))}
               </Fragment>
+            ))}
+            {selectedSchedules.map((item) => (
+              <div
+                className={`schedule-cell schedule-cell--job${item.category === allScheduleColumns ? " schedule-cell--span-all" : ""}`}
+                key={item.id}
+                style={getScheduleItemGridStyle(item, scheduleColumnsForGrid, getScheduleColumnLabel, hours)}
+              >
+                <ScheduleJobCard item={item} />
+              </div>
             ))}
           </div>
         </div>
       </div>
+      {isScheduleModalOpen ? (
+        <div className="modal-backdrop" role="presentation">
+          <div className="account-modal schedule-modal" role="dialog" aria-modal="true" aria-labelledby="schedule-modal-title">
+            <header>
+              <h2 id="schedule-modal-title">일정 추가</h2>
+              <button type="button" aria-label="닫기" onClick={() => setScheduleModalOpen(false)}>×</button>
+            </header>
+            <div className="modal-body schedule-modal-body">
+              <label>
+                일정 제목
+                <input value={scheduleForm.title} onChange={(event) => updateScheduleForm("title", event.target.value)} placeholder="예: 점심시간, 무대 안전 점검" />
+              </label>
+              <div className="schedule-modal-grid">
+                <label>
+                  일정 날짜
+                  <input type="date" value={scheduleForm.date} onChange={(event) => updateScheduleForm("date", event.target.value as IsoDateString)} />
+                </label>
+                <label>
+                  시작 시간
+                  <input type="time" value={scheduleForm.startTime} onChange={(event) => updateScheduleForm("startTime", event.target.value)} />
+                </label>
+                <label>
+                  종료 시간
+                  <input type="time" value={scheduleForm.endTime} onChange={(event) => updateScheduleForm("endTime", event.target.value)} />
+                </label>
+              </div>
+              <label>
+                컬럼 분류
+                <select value={scheduleForm.category} onChange={(event) => updateScheduleForm("category", event.target.value)}>
+                  <option value={allScheduleColumns}>{allScheduleColumnsLabel}</option>
+                  {scheduleColumnsForGrid.map((column) => (
+                    <option value={column.label} key={column.label}>{column.label}</option>
+                  ))}
+                </select>
+              </label>
+              <div className="schedule-modal-grid">
+                <label>
+                  매칭 근로자
+                  <input value={scheduleForm.assignees} onChange={(event) => updateScheduleForm("assignees", event.target.value)} placeholder="예: 김작업, 설치 A팀 4명" />
+                </label>
+                <label>
+                  근로 영역 그룹
+                  <input value={scheduleForm.workAreaGroup} onChange={(event) => updateScheduleForm("workAreaGroup", event.target.value)} placeholder="예: 메인 스테이지 하부" />
+                </label>
+              </div>
+              <p><MaterialIcon name="info" />전체 컬럼 일정은 점심시간처럼 모든 분류 위에 하나의 긴 일정 카드로 표시됩니다.</p>
+            </div>
+            <footer>
+              <button className="light-button" type="button" onClick={() => setScheduleModalOpen(false)}>취소</button>
+              <button className="dark-button" type="button" disabled={!canSaveSchedule} onClick={addScheduleItem}>추가</button>
+            </footer>
+          </div>
+        </div>
+      ) : null}
     </section>
+  );
+}
+
+function ScheduleJobCard({ item }: { item: ScheduleItem }) {
+  return (
+    <article className={`job job--${item.status}${item.category === allScheduleColumns ? " job--all-columns" : ""}`}>
+      <strong>{item.title}</strong>
+      <span>{item.startTime} - {item.endTime}</span>
+      <small>{item.location} · {item.owner}</small>
+      {item.assignees || item.workAreaGroup ? (
+        <em>{[item.assignees, item.workAreaGroup].filter(Boolean).join(" · ")}</em>
+      ) : null}
+      {item.dependency ? <em>{item.dependency} 이후</em> : null}
+    </article>
   );
 }
 
@@ -363,6 +486,55 @@ function getFirstDateOfMonth(value: MonthKey): IsoDateString {
 
 function toIsoDateString(value: Date): IsoDateString {
   return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}` as IsoDateString;
+}
+
+function createDefaultScheduleForm(date: IsoDateString, category: string): ScheduleFormState {
+  return {
+    date,
+    startTime: "12:00",
+    endTime: "13:00",
+    title: "",
+    category,
+    assignees: "",
+    workAreaGroup: "",
+  };
+}
+
+function getTimeMinutes(value: string) {
+  const [hour, minute] = value.split(":").map(Number);
+  return hour * 60 + minute;
+}
+
+function getScheduleItemGridStyle(
+  item: ScheduleItem,
+  columns: ScheduleColumn[],
+  getColumnLabel: (category: string) => string,
+  hours: string[],
+) {
+  const startMinutes = getTimeMinutes(item.startTime);
+  const endMinutes = getTimeMinutes(item.endTime);
+  const firstHourMinutes = getTimeMinutes(hours[0]);
+  const rowStart = Math.max(Math.floor((startMinutes - firstHourMinutes) / 30), 0) + 2;
+  const rowSpan = Math.max(Math.ceil((endMinutes - startMinutes) / 30), 1);
+
+  if (item.category === allScheduleColumns) {
+    return {
+      gridColumn: "2 / -1",
+      gridRow: `${rowStart} / span ${rowSpan}`,
+    } satisfies CSSProperties;
+  }
+
+  const columnIndex = Math.max(columns.findIndex((column) => column.label === getColumnLabel(item.category)), 0);
+  return {
+    gridColumn: `${columnIndex + 2} / span 1`,
+    gridRow: `${rowStart} / span ${rowSpan}`,
+  } satisfies CSSProperties;
+}
+
+function getRelativeScheduleDate(offsetDays: number): IsoDateString {
+  const date = new Date(`${defaultScheduleDate}T00:00:00`);
+  date.setDate(date.getDate() + offsetDays);
+  return toIsoDateString(date);
 }
 
 function getMonthDays(value: MonthKey) {
