@@ -1043,8 +1043,8 @@ td {
 
 .schedule-grid {
   display: grid;
-  grid-template-columns: 80px repeat(6, minmax(146px, 1fr));
-  min-width: 1004px;
+  grid-template-columns: 80px repeat(var(--schedule-column-count), minmax(146px, 1fr));
+  min-width: calc(80px + (146px * var(--schedule-column-count)));
 }
 
 .schedule-grid > div {
@@ -1055,7 +1055,7 @@ td {
   background: rgba(255, 255, 255, 0.9);
 }
 
-.schedule-grid > div:nth-child(7n) {
+.schedule-grid > div.is-row-end {
   border-right: 0;
 }
 
@@ -1286,6 +1286,84 @@ td {
 .schedule-date-search {
   grid-template-columns: minmax(190px, 1fr) minmax(150px, 180px) 44px 44px 44px;
   margin-bottom: 0;
+}
+
+.schedule-column-management {
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px;
+}
+
+.schedule-column-management .section-title-row {
+  margin: 0;
+}
+
+.schedule-column-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) max-content;
+  gap: 10px;
+  align-items: center;
+}
+
+.schedule-column-form .dark-button {
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.schedule-column-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.schedule-column-chip {
+  display: inline-grid;
+  grid-template-columns: minmax(0, max-content) auto 30px;
+  min-height: 36px;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  padding: 3px 4px 3px 10px;
+  color: #293241;
+  background: #fff;
+  font-weight: 900;
+}
+
+.schedule-column-chip b {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 0.88rem;
+}
+
+.schedule-column-chip small {
+  color: #677386;
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.schedule-column-chip button {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-left: 1px solid var(--line);
+  padding: 0;
+  color: #526176;
+  background: transparent;
+}
+
+.schedule-column-chip button:not(:disabled):hover,
+.schedule-column-chip button:not(:disabled):focus-visible {
+  color: var(--red);
+  background: #fff2f2;
+}
+
+.schedule-column-chip button:disabled {
+  color: #b6bdc8;
+  cursor: not-allowed;
 }
 
 .rules-management .search-card {
