@@ -141,7 +141,7 @@ export function AdminPage() {
           {projectMessage ? <p className="admin-message admin-message--global" role="status">{projectMessage}</p> : null}
           {view === "dashboard" ? <DashboardView project={selectedProject} /> : null}
           {view === "weather" ? <WeatherView projectId={selectedProjectId} /> : null}
-          {view === "schedule" ? <ScheduleView projectId={selectedProjectId} /> : null}
+          {view === "schedule" ? <ScheduleView project={selectedProject} /> : null}
           {view === "qr" ? <QrView projectId={selectedProjectId} /> : null}
           {view === "workers" ? (
             <WorkersView

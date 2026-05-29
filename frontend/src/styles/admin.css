@@ -1355,9 +1355,62 @@ td {
   margin-bottom: 26px;
 }
 
-.schedule-date-search {
-  grid-template-columns: minmax(190px, 1fr) minmax(150px, 180px) 44px 44px 44px;
-  margin-bottom: 0;
+.schedule-period-card {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto max-content;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+}
+
+.schedule-period-card div:first-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.schedule-period-card span,
+.schedule-period-card p {
+  color: #566174;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.schedule-period-card strong {
+  color: #17263a;
+  font-size: 1rem;
+  font-weight: 950;
+  overflow-wrap: anywhere;
+}
+
+.schedule-period-card p {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.schedule-period-card div:last-child {
+  display: flex;
+  gap: 8px;
+}
+
+.schedule-period-card button {
+  display: inline-flex;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  padding: 0;
+  color: #243149;
+  background: #fff;
+}
+
+.schedule-period-card button:disabled {
+  color: #aeb6c3;
+  background: #f4f5f7;
+  cursor: not-allowed;
 }
 
 .schedule-column-management {
@@ -2707,6 +2760,19 @@ td {
 
   .search-card button {
     min-height: 44px;
+  }
+
+  .schedule-period-card {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .schedule-period-card p {
+    white-space: normal;
+  }
+
+  .schedule-period-card div:last-child {
+    justify-content: flex-start;
   }
 
   .storm-map {

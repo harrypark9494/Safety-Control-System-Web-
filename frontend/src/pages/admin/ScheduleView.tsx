@@ -1,10 +1,10 @@
 import type { CSSProperties } from "react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { MaterialIcon } from "../../components/MaterialIcon";
+import type { Project } from "../../types";
 
 type ScheduleStatus = "confirmed" | "ready" | "risk";
 type IsoDateString = `${number}-${number}-${number}`;
-type MonthKey = `${number}-${number}`;
 
 type ScheduleItem = {
   id: string;
@@ -35,6 +35,11 @@ type ScheduleFormState = {
   workAreaGroup: string;
 };
 
+type ScheduleRange = {
+  startDate: IsoDateString;
+  endDate: IsoDateString;
+};
+
 const defaultScheduleDate: IsoDateString = toIsoDateString(new Date());
 const unassignedScheduleColumn = "미배정";
 const legacyUnassignedScheduleColumn = "미분류";
@@ -50,15 +55,16 @@ const defaultScheduleColumns: ScheduleColumn[] = [
   { label: "특수효과" },
 ];
 
-function createInitialScheduleItems(projectId: string): ScheduleItem[] {
+function createInitialScheduleItems(projectId: string, baseDate: IsoDateString = defaultScheduleDate, endDate: IsoDateString = baseDate): ScheduleItem[] {
   const prefix = projectId || "default";
   const isDraftProject = prefix.includes("winter");
+  const secondDate = clampScheduleDate(getRelativeScheduleDate(baseDate, 1), { startDate: baseDate, endDate });
 
   if (isDraftProject) {
     return [
       {
         id: `${prefix}-planning`,
-        date: defaultScheduleDate,
+        date: baseDate,
         startTime: "09:00",
         endTime: "10:30",
         title: "운영 계획 회의",
@@ -69,7 +75,7 @@ function createInitialScheduleItems(projectId: string): ScheduleItem[] {
       },
       {
         id: `${prefix}-vendor`,
-        date: defaultScheduleDate,
+        date: baseDate,
         startTime: "11:00",
         endTime: "12:00",
         title: "협력사 배정 검토",
@@ -84,7 +90,7 @@ function createInitialScheduleItems(projectId: string): ScheduleItem[] {
   return [
   {
     id: `${prefix}-stage-foundation`,
-    date: defaultScheduleDate,
+    date: baseDate,
     startTime: "07:30",
     endTime: "09:30",
     title: "메인 스테이지 하부 고정",
@@ -95,7 +101,7 @@ function createInitialScheduleItems(projectId: string): ScheduleItem[] {
   },
   {
     id: `${prefix}-stage-panel`,
-    date: defaultScheduleDate,
+    date: baseDate,
     startTime: "09:30",
     endTime: "11:30",
     title: "무대 패널 결합",
@@ -107,7 +113,7 @@ function createInitialScheduleItems(projectId: string): ScheduleItem[] {
   },
   {
     id: `${prefix}-lighting-rigging`,
-    date: defaultScheduleDate,
+    date: baseDate,
     startTime: "11:30",
     endTime: "13:00",
     title: "조명 트러스 러깅",
@@ -119,7 +125,7 @@ function createInitialScheduleItems(projectId: string): ScheduleItem[] {
   },
   {
     id: `${prefix}-speaker-rigging`,
-    date: defaultScheduleDate,
+    date: baseDate,
     startTime: "13:30",
     endTime: "15:00",
     title: "스피커 러깅 시작",
@@ -131,7 +137,7 @@ function createInitialScheduleItems(projectId: string): ScheduleItem[] {
   },
   {
     id: `${prefix}-laser-module`,
-    date: defaultScheduleDate,
+    date: baseDate,
     startTime: "15:30",
     endTime: "16:30",
     title: "레이저 모듈 안전 점검",
@@ -143,7 +149,7 @@ function createInitialScheduleItems(projectId: string): ScheduleItem[] {
   },
   {
     id: `${prefix}-gate-fence`,
-    date: getRelativeScheduleDate(1),
+    date: secondDate,
     startTime: "08:00",
     endTime: "10:00",
     title: "입장 게이트 펜스 설치",
@@ -154,7 +160,7 @@ function createInitialScheduleItems(projectId: string): ScheduleItem[] {
   },
   {
     id: `${prefix}-video-wall`,
-    date: getRelativeScheduleDate(1),
+    date: secondDate,
     startTime: "10:00",
     endTime: "12:00",
     title: "영상월 전원 테스트",
@@ -167,18 +173,21 @@ function createInitialScheduleItems(projectId: string): ScheduleItem[] {
   ];
 }
 
-export function ScheduleView({ projectId }: { projectId: string }) {
-  const [selectedDate, setSelectedDate] = useState<IsoDateString>(defaultScheduleDate);
-  const [visibleMonth, setVisibleMonth] = useState<MonthKey>(getMonthKey(defaultScheduleDate));
+export function ScheduleView({ project }: { project: Project | null }) {
+  const projectId = project?.id ?? "";
+  const scheduleRange = getProjectScheduleRange(project);
+  const scheduleDates = getDateRange(scheduleRange.startDate, scheduleRange.endDate);
+  const [selectedDate, setSelectedDate] = useState<IsoDateString>(scheduleRange.startDate);
   const [scheduleColumns, setScheduleColumns] = useState<ScheduleColumn[]>(defaultScheduleColumns);
-  const [schedules, setSchedules] = useState<ScheduleItem[]>(() => createInitialScheduleItems(projectId));
+  const [schedules, setSchedules] = useState<ScheduleItem[]>(() => createInitialScheduleItems(projectId, scheduleRange.startDate, scheduleRange.endDate));
   const [newColumnLabel, setNewColumnLabel] = useState("");
   const [isScheduleModalOpen, setScheduleModalOpen] = useState(false);
-  const [scheduleForm, setScheduleForm] = useState<ScheduleFormState>(() => createDefaultScheduleForm(defaultScheduleDate, defaultScheduleColumns[0].label));
+  const [scheduleForm, setScheduleForm] = useState<ScheduleFormState>(() => createDefaultScheduleForm(scheduleRange.startDate, defaultScheduleColumns[0].label));
   const activeDateRef = useRef<HTMLButtonElement | null>(null);
   const hours = Array.from({ length: 14 }, (_, index) => `${String(index + 7).padStart(2, "0")}:00`);
-  const monthDays = getMonthDays(visibleMonth);
-  const scheduleMonthOptions = Array.from(new Set([...schedules.map((item) => getMonthKey(item.date)), visibleMonth])).sort();
+  const selectedDateIndex = Math.max(scheduleDates.indexOf(selectedDate), 0);
+  const isFirstScheduleDate = selectedDate <= scheduleRange.startDate;
+  const isLastScheduleDate = selectedDate >= scheduleRange.endDate;
   const normalizedColumnLabel = newColumnLabel.trim();
   const columnLabels = scheduleColumns.map((column) => column.label);
   const columnLabelSet = new Set(columnLabels);
@@ -207,8 +216,7 @@ export function ScheduleView({ projectId }: { projectId: string }) {
     "--schedule-slot-count": hours.length * 2,
   } as CSSProperties & { "--schedule-column-count": number; "--schedule-slot-count": number };
   const selectDate = (date: IsoDateString) => {
-    setSelectedDate(date);
-    setVisibleMonth(getMonthKey(date));
+    setSelectedDate(clampScheduleDate(date, scheduleRange));
   };
   const addScheduleColumn = () => {
     if (!canAddColumn) {
@@ -267,14 +275,13 @@ export function ScheduleView({ projectId }: { projectId: string }) {
     }
   };
   const moveDate = (offset: number) => {
-    const date = new Date(`${selectedDate}T00:00:00`);
-    date.setDate(date.getDate() + offset);
-    selectDate(toIsoDateString(date));
+    const nextIndex = Math.min(Math.max(selectedDateIndex + offset, 0), scheduleDates.length - 1);
+    selectDate(scheduleDates[nextIndex] ?? scheduleRange.startDate);
   };
 
   useEffect(() => {
     activeDateRef.current?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-  }, [selectedDate, visibleMonth]);
+  }, [selectedDate, scheduleRange.startDate, scheduleRange.endDate]);
 
   useEffect(() => {
     setScheduleColumns((columns) => normalizeScheduleColumns(columns));
@@ -282,26 +289,27 @@ export function ScheduleView({ projectId }: { projectId: string }) {
   }, []);
 
   useEffect(() => {
-    setSelectedDate(defaultScheduleDate);
-    setVisibleMonth(getMonthKey(defaultScheduleDate));
+    setSelectedDate(scheduleRange.startDate);
     setScheduleColumns(defaultScheduleColumns);
-    setSchedules(createInitialScheduleItems(projectId));
-  }, [projectId]);
+    setSchedules(createInitialScheduleItems(projectId, scheduleRange.startDate, scheduleRange.endDate));
+    setScheduleForm(createDefaultScheduleForm(scheduleRange.startDate, defaultScheduleColumns[0].label));
+  }, [projectId, scheduleRange.startDate, scheduleRange.endDate]);
 
   return (
     <section className="admin-view is-active">
       <header className="page-header page-header--actions"><h1>스케줄 관리</h1><div><button className="light-button" type="button"><MaterialIcon name="download" />엑셀 내보내기</button><button className="dark-button" type="button" onClick={openScheduleModal}><MaterialIcon name="add" />일정 추가</button></div></header>
       <div className="page-content schedule-board">
-        <section className="app-card search-card schedule-date-search" aria-label="일정 날짜 이동">
-          <input type="date" value={selectedDate} onChange={(event) => selectDate(event.target.value as IsoDateString)} />
-          <select value={visibleMonth} onChange={(event) => selectDate(getFirstDateOfMonth(event.target.value as MonthKey))}>
-            {scheduleMonthOptions.map((month) => (
-              <option value={month} key={month}>{formatScheduleMonth(month)}</option>
-            ))}
-          </select>
-          <button type="button" aria-label="이전 날짜" onClick={() => moveDate(-1)}><MaterialIcon name="chevron_left" /></button>
-          <button type="button" aria-label="다음 날짜" onClick={() => moveDate(1)}><MaterialIcon name="chevron_right" /></button>
-          <button type="button" aria-label="기본 날짜로 이동" onClick={() => selectDate(defaultScheduleDate)}><MaterialIcon name="refresh" /></button>
+        <section className="app-card schedule-period-card" aria-label="프로젝트 일정 기간">
+          <div>
+            <span>프로젝트 기간</span>
+            <strong>{formatScheduleDateRange(scheduleRange)}</strong>
+          </div>
+          <p>{formatScheduleDate(selectedDate)} · {selectedSchedules.length}건</p>
+          <div>
+            <button type="button" aria-label="이전 날짜" disabled={isFirstScheduleDate} onClick={() => moveDate(-1)}><MaterialIcon name="chevron_left" /></button>
+            <button type="button" aria-label="기간 첫 날짜로 이동" disabled={isFirstScheduleDate} onClick={() => selectDate(scheduleRange.startDate)}><MaterialIcon name="first_page" /></button>
+            <button type="button" aria-label="다음 날짜" disabled={isLastScheduleDate} onClick={() => moveDate(1)}><MaterialIcon name="chevron_right" /></button>
+          </div>
         </section>
 
         <section className="app-card schedule-column-management" aria-label="스케줄 컬럼 관리">
@@ -357,8 +365,8 @@ export function ScheduleView({ projectId }: { projectId: string }) {
           </div>
         </section>
 
-        <div className="date-strip" aria-label="선택 월 날짜 목록">
-          {monthDays.map((date) => (
+        <div className="date-strip" aria-label="프로젝트 기간 날짜 목록">
+          {scheduleDates.map((date) => (
             <button ref={selectedDate === date ? activeDateRef : null} className={selectedDate === date ? "is-active" : ""} type="button" key={date} onClick={() => selectDate(date)}>
               <span>{formatScheduleDateShort(date)}</span>
               <small>{schedules.filter((item) => item.date === date).length}건</small>
@@ -411,7 +419,13 @@ export function ScheduleView({ projectId }: { projectId: string }) {
               <div className="schedule-modal-grid">
                 <label>
                   일정 날짜
-                  <input type="date" value={scheduleForm.date} onChange={(event) => updateScheduleForm("date", event.target.value as IsoDateString)} />
+                  <input
+                    type="date"
+                    value={scheduleForm.date}
+                    min={scheduleRange.startDate}
+                    max={scheduleRange.endDate}
+                    onChange={(event) => updateScheduleForm("date", clampScheduleDate(event.target.value as IsoDateString, scheduleRange))}
+                  />
                 </label>
                 <label>
                   시작 시간
@@ -476,31 +490,12 @@ function formatScheduleDate(value: string) {
   }).format(new Date(`${value}T00:00:00`));
 }
 
-function formatScheduleMonth(value: MonthKey) {
-  return new Intl.DateTimeFormat("ko-KR", {
-    year: "numeric",
-    month: "long",
-  }).format(new Date(`${value}-01T00:00:00`));
-}
-
 function formatScheduleDateShort(value: string) {
   return new Intl.DateTimeFormat("ko-KR", {
     month: "2-digit",
     day: "2-digit",
     weekday: "short",
   }).format(new Date(`${value}T00:00:00`));
-}
-
-function getMonthKey(value: IsoDateString): MonthKey {
-  return value.slice(0, 7) as MonthKey;
-}
-
-function getDayOfMonth(value: IsoDateString) {
-  return Number(value.slice(8, 10));
-}
-
-function getFirstDateOfMonth(value: MonthKey): IsoDateString {
-  return `${value}-01` as IsoDateString;
 }
 
 function toIsoDateString(value: Date): IsoDateString {
@@ -550,17 +545,56 @@ function getScheduleItemGridStyle(
   } satisfies CSSProperties;
 }
 
-function getRelativeScheduleDate(offsetDays: number): IsoDateString {
-  const date = new Date(`${defaultScheduleDate}T00:00:00`);
+function getRelativeScheduleDate(baseDate: IsoDateString, offsetDays: number): IsoDateString {
+  const date = new Date(`${baseDate}T00:00:00`);
   date.setDate(date.getDate() + offsetDays);
   return toIsoDateString(date);
 }
 
-function getMonthDays(value: MonthKey) {
-  const [year, month] = value.split("-").map(Number);
-  const lastDate = new Date(year, month, 0).getDate();
+function getProjectScheduleRange(project: Project | null): ScheduleRange {
+  const startDate = isIsoDateString(project?.startDate) ? project.startDate : defaultScheduleDate;
+  const rawEndDate = isIsoDateString(project?.endDate) ? project.endDate : startDate;
 
-  return Array.from({ length: lastDate }, (_, index) => `${value}-${String(index + 1).padStart(2, "0")}` as IsoDateString);
+  return rawEndDate < startDate
+    ? { startDate: rawEndDate, endDate: startDate }
+    : { startDate, endDate: rawEndDate };
+}
+
+function getDateRange(startDate: IsoDateString, endDate: IsoDateString) {
+  const dates: IsoDateString[] = [];
+  const cursor = new Date(`${startDate}T00:00:00`);
+  const end = new Date(`${endDate}T00:00:00`);
+
+  while (cursor <= end) {
+    dates.push(toIsoDateString(cursor));
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return dates.length > 0 ? dates : [startDate];
+}
+
+function clampScheduleDate(date: IsoDateString, range: ScheduleRange) {
+  if (date < range.startDate) {
+    return range.startDate;
+  }
+
+  if (date > range.endDate) {
+    return range.endDate;
+  }
+
+  return date;
+}
+
+function formatScheduleDateRange(range: ScheduleRange) {
+  if (range.startDate === range.endDate) {
+    return formatScheduleDate(range.startDate);
+  }
+
+  return `${formatScheduleDate(range.startDate)} - ${formatScheduleDate(range.endDate)}`;
+}
+
+function isIsoDateString(value: string | null | undefined): value is IsoDateString {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
 function normalizeScheduleColumns(columns: ScheduleColumn[]) {
