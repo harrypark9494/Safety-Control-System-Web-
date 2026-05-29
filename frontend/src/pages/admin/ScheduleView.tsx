@@ -40,6 +40,12 @@ type ScheduleRange = {
   endDate: IsoDateString;
 };
 
+type SchedulePopoverState = {
+  key: string;
+  row: number;
+  columnIndex: number;
+};
+
 const defaultScheduleDate: IsoDateString = toIsoDateString(new Date());
 const unassignedScheduleColumn = "미배정";
 const legacyUnassignedScheduleColumn = "미분류";
@@ -181,10 +187,11 @@ export function ScheduleView({ project }: { project: Project | null }) {
   const [scheduleColumns, setScheduleColumns] = useState<ScheduleColumn[]>(defaultScheduleColumns);
   const [schedules, setSchedules] = useState<ScheduleItem[]>(() => createInitialScheduleItems(projectId, scheduleRange.startDate, scheduleRange.endDate));
   const [newColumnLabel, setNewColumnLabel] = useState("");
-  const [isScheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [activeSchedulePopover, setActiveSchedulePopover] = useState<SchedulePopoverState | null>(null);
   const [scheduleForm, setScheduleForm] = useState<ScheduleFormState>(() => createDefaultScheduleForm(scheduleRange.startDate, defaultScheduleColumns[0].label));
   const activeDateRef = useRef<HTMLButtonElement | null>(null);
   const hours = Array.from({ length: 14 }, (_, index) => `${String(index + 7).padStart(2, "0")}:00`);
+  const scheduleTimeSlots = hours.flatMap((hour) => [hour, addMinutesToTime(hour, 30)]);
   const selectedDateIndex = Math.max(scheduleDates.indexOf(selectedDate), 0);
   const isFirstScheduleDate = selectedDate <= scheduleRange.startDate;
   const isLastScheduleDate = selectedDate >= scheduleRange.endDate;
@@ -213,10 +220,11 @@ export function ScheduleView({ project }: { project: Project | null }) {
   const canSaveSchedule = scheduleForm.title.trim().length > 0 && scheduleForm.startTime < scheduleForm.endTime;
   const scheduleGridStyle = {
     "--schedule-column-count": Math.max(scheduleColumnsForGrid.length, 1),
-    "--schedule-slot-count": hours.length * 2,
+    "--schedule-slot-count": scheduleTimeSlots.length,
   } as CSSProperties & { "--schedule-column-count": number; "--schedule-slot-count": number };
   const selectDate = (date: IsoDateString) => {
     setSelectedDate(clampScheduleDate(date, scheduleRange));
+    setActiveSchedulePopover(null);
   };
   const addScheduleColumn = () => {
     if (!canAddColumn) {
@@ -225,10 +233,6 @@ export function ScheduleView({ project }: { project: Project | null }) {
 
     setScheduleColumns((columns) => [...columns, { label: normalizedColumnLabel }]);
     setNewColumnLabel("");
-  };
-  const openScheduleModal = () => {
-    setScheduleForm(createDefaultScheduleForm(selectedDate, scheduleColumnsForGrid[0]?.label ?? unassignedScheduleColumn));
-    setScheduleModalOpen(true);
   };
   const updateScheduleForm = <Key extends keyof ScheduleFormState>(key: Key, value: ScheduleFormState[Key]) => {
     setScheduleForm((form) => ({ ...form, [key]: value }));
@@ -255,7 +259,11 @@ export function ScheduleView({ project }: { project: Project | null }) {
       },
     ]);
     selectDate(scheduleForm.date);
-    setScheduleModalOpen(false);
+    setActiveSchedulePopover(null);
+  };
+  const openSchedulePopover = (time: string, column: ScheduleColumn, row: number, columnIndex: number) => {
+    setScheduleForm(createDefaultScheduleForm(selectedDate, column.label, time));
+    setActiveSchedulePopover({ key: getScheduleSlotKey(time, column.label), row, columnIndex });
   };
   const removeScheduleColumn = (label: string) => {
     const assignedScheduleCount = schedules.filter((item) => item.category === label).length;
@@ -293,11 +301,12 @@ export function ScheduleView({ project }: { project: Project | null }) {
     setScheduleColumns(defaultScheduleColumns);
     setSchedules(createInitialScheduleItems(projectId, scheduleRange.startDate, scheduleRange.endDate));
     setScheduleForm(createDefaultScheduleForm(scheduleRange.startDate, defaultScheduleColumns[0].label));
+    setActiveSchedulePopover(null);
   }, [projectId, scheduleRange.startDate, scheduleRange.endDate]);
 
   return (
     <section className="admin-view is-active">
-      <header className="page-header page-header--actions"><h1>스케줄 관리</h1><div><button className="light-button" type="button"><MaterialIcon name="download" />엑셀 내보내기</button><button className="dark-button" type="button" onClick={openScheduleModal}><MaterialIcon name="add" />일정 추가</button></div></header>
+      <header className="page-header page-header--actions"><h1>스케줄 관리</h1><div><button className="light-button" type="button"><MaterialIcon name="download" />엑셀 내보내기</button></div></header>
       <div className="page-content schedule-board">
         <section className="app-card schedule-period-card" aria-label="프로젝트 일정 기간">
           <div>
@@ -383,13 +392,46 @@ export function ScheduleView({ project }: { project: Project | null }) {
             {hours.map((hour, hourIndex) => (
               <Fragment key={hour}>
                 <div className="time-cell" style={{ gridColumn: 1, gridRow: `${hourIndex * 2 + 2} / span 2` }}>{hour}</div>
-                {scheduleColumnsForGrid.map((column, columnIndex) => (
-                  <div
-                    className={`schedule-cell schedule-cell--background${columnIndex === scheduleColumnsForGrid.length - 1 ? " is-row-end" : ""}`}
-                    key={`${hour}-${column.label}`}
-                    style={{ gridColumn: columnIndex + 2, gridRow: `${hourIndex * 2 + 2} / span 2` }}
-                  />
-                ))}
+              </Fragment>
+            ))}
+            {scheduleTimeSlots.map((time, slotIndex) => (
+              <Fragment key={time}>
+                {scheduleColumnsForGrid.map((column, columnIndex) => {
+                  const row = slotIndex + 2;
+                  const slotKey = getScheduleSlotKey(time, column.label);
+                  const isSlotOccupied = isScheduleSlotOccupied(selectedSchedules, time, column.label, getScheduleColumnLabel);
+                  const isPopoverActive = activeSchedulePopover?.key === slotKey;
+
+                  return (
+                    <div
+                      className={`schedule-cell schedule-cell--background${columnIndex === scheduleColumnsForGrid.length - 1 ? " is-row-end" : ""}${isSlotOccupied ? " is-occupied" : ""}${isPopoverActive ? " is-editing" : ""}`}
+                      key={slotKey}
+                      style={{ gridColumn: columnIndex + 2, gridRow: `${row} / span 1` }}
+                    >
+                      {!isSlotOccupied ? (
+                        <button
+                          className="schedule-add-cell-button"
+                          type="button"
+                          aria-expanded={isPopoverActive}
+                          aria-label={`${formatScheduleDate(selectedDate)} ${time} ${column.label} 일정 추가`}
+                          onClick={() => openSchedulePopover(time, column, row, columnIndex)}
+                        >
+                          <MaterialIcon name="add" />
+                        </button>
+                      ) : null}
+                      {isPopoverActive ? (
+                        <ScheduleAddPopover
+                          canSave={canSaveSchedule}
+                          form={scheduleForm}
+                          onCancel={() => setActiveSchedulePopover(null)}
+                          onSave={addScheduleItem}
+                          onUpdate={updateScheduleForm}
+                          placement={getSchedulePopoverPlacement(activeSchedulePopover, scheduleColumnsForGrid.length, scheduleTimeSlots.length)}
+                        />
+                      ) : null}
+                    </div>
+                  );
+                })}
               </Fragment>
             ))}
             {selectedSchedules.map((item) => (
@@ -404,67 +446,69 @@ export function ScheduleView({ project }: { project: Project | null }) {
           </div>
         </div>
       </div>
-      {isScheduleModalOpen ? (
-        <div className="modal-backdrop" role="presentation">
-          <div className="account-modal schedule-modal" role="dialog" aria-modal="true" aria-labelledby="schedule-modal-title">
-            <header>
-              <h2 id="schedule-modal-title">일정 추가</h2>
-              <button type="button" aria-label="닫기" onClick={() => setScheduleModalOpen(false)}>×</button>
-            </header>
-            <div className="modal-body schedule-modal-body">
-              <label>
-                일정 제목
-                <input value={scheduleForm.title} onChange={(event) => updateScheduleForm("title", event.target.value)} placeholder="예: 점심시간, 무대 안전 점검" />
-              </label>
-              <div className="schedule-modal-grid">
-                <label>
-                  일정 날짜
-                  <input
-                    type="date"
-                    value={scheduleForm.date}
-                    min={scheduleRange.startDate}
-                    max={scheduleRange.endDate}
-                    onChange={(event) => updateScheduleForm("date", clampScheduleDate(event.target.value as IsoDateString, scheduleRange))}
-                  />
-                </label>
-                <label>
-                  시작 시간
-                  <input type="time" value={scheduleForm.startTime} onChange={(event) => updateScheduleForm("startTime", event.target.value)} />
-                </label>
-                <label>
-                  종료 시간
-                  <input type="time" value={scheduleForm.endTime} onChange={(event) => updateScheduleForm("endTime", event.target.value)} />
-                </label>
-              </div>
-              <label>
-                컬럼 분류
-                <select value={scheduleForm.category} onChange={(event) => updateScheduleForm("category", event.target.value)}>
-                  <option value={allScheduleColumns}>{allScheduleColumnsLabel}</option>
-                  {scheduleColumnsForGrid.map((column) => (
-                    <option value={column.label} key={column.label}>{column.label}</option>
-                  ))}
-                </select>
-              </label>
-              <div className="schedule-modal-grid">
-                <label>
-                  매칭 근로자
-                  <input value={scheduleForm.assignees} onChange={(event) => updateScheduleForm("assignees", event.target.value)} placeholder="예: 김작업, 설치 A팀 4명" />
-                </label>
-                <label>
-                  근로 영역 그룹
-                  <input value={scheduleForm.workAreaGroup} onChange={(event) => updateScheduleForm("workAreaGroup", event.target.value)} placeholder="예: 메인 스테이지 하부" />
-                </label>
-              </div>
-              <p><MaterialIcon name="info" />전체 컬럼 일정은 점심시간처럼 모든 분류 위에 하나의 긴 일정 카드로 표시됩니다.</p>
-            </div>
-            <footer>
-              <button className="light-button" type="button" onClick={() => setScheduleModalOpen(false)}>취소</button>
-              <button className="dark-button" type="button" disabled={!canSaveSchedule} onClick={addScheduleItem}>추가</button>
-            </footer>
-          </div>
-        </div>
-      ) : null}
     </section>
+  );
+}
+
+function ScheduleAddPopover({
+  canSave,
+  form,
+  onCancel,
+  onSave,
+  onUpdate,
+  placement,
+}: {
+  canSave: boolean;
+  form: ScheduleFormState;
+  onCancel: () => void;
+  onSave: () => void;
+  onUpdate: <Key extends keyof ScheduleFormState>(key: Key, value: ScheduleFormState[Key]) => void;
+  placement: string;
+}) {
+  return (
+    <form
+      className={`schedule-add-popover ${placement}`}
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSave();
+      }}
+    >
+      <header>
+        <div>
+          <strong>일정 추가</strong>
+          <p>{formatScheduleDate(form.date)} · {form.category}</p>
+        </div>
+        <button type="button" aria-label="닫기" onClick={onCancel}>
+          <MaterialIcon name="close" />
+        </button>
+      </header>
+      <label>
+        일정 제목
+        <input value={form.title} onChange={(event) => onUpdate("title", event.target.value)} placeholder="예: 무대 안전 점검" autoFocus />
+      </label>
+      <div className="schedule-add-popover-grid">
+        <label>
+          시작
+          <input type="time" value={form.startTime} onChange={(event) => onUpdate("startTime", event.target.value)} />
+        </label>
+        <label>
+          종료
+          <input type="time" value={form.endTime} onChange={(event) => onUpdate("endTime", event.target.value)} />
+        </label>
+      </div>
+      <label>
+        매칭 근로자
+        <input value={form.assignees} onChange={(event) => onUpdate("assignees", event.target.value)} placeholder="예: 설치 A팀 4명" />
+      </label>
+      <label>
+        근로 영역 그룹
+        <input value={form.workAreaGroup} onChange={(event) => onUpdate("workAreaGroup", event.target.value)} placeholder="예: 메인 스테이지 하부" />
+      </label>
+      <footer>
+        <button className="light-button" type="button" onClick={onCancel}>취소</button>
+        <button className="dark-button" type="submit" disabled={!canSave}>추가</button>
+      </footer>
+    </form>
   );
 }
 
@@ -502,11 +546,11 @@ function toIsoDateString(value: Date): IsoDateString {
   return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}` as IsoDateString;
 }
 
-function createDefaultScheduleForm(date: IsoDateString, category: string): ScheduleFormState {
+function createDefaultScheduleForm(date: IsoDateString, category: string, startTime = "12:00"): ScheduleFormState {
   return {
     date,
-    startTime: "12:00",
-    endTime: "13:00",
+    startTime,
+    endTime: addMinutesToTime(startTime, 60),
     title: "",
     category,
     assignees: "",
@@ -517,6 +561,41 @@ function createDefaultScheduleForm(date: IsoDateString, category: string): Sched
 function getTimeMinutes(value: string) {
   const [hour, minute] = value.split(":").map(Number);
   return hour * 60 + minute;
+}
+
+function addMinutesToTime(value: string, minutesToAdd: number) {
+  const nextMinutes = getTimeMinutes(value) + minutesToAdd;
+  const hour = Math.floor(nextMinutes / 60);
+  const minute = nextMinutes % 60;
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
+}
+
+function getScheduleSlotKey(time: string, columnLabel: string) {
+  return `${time}-${columnLabel}`;
+}
+
+function isScheduleSlotOccupied(
+  schedules: ScheduleItem[],
+  slotTime: string,
+  columnLabel: string,
+  getColumnLabel: (category: string) => string,
+) {
+  const slotStart = getTimeMinutes(slotTime);
+  const slotEnd = slotStart + 30;
+
+  return schedules.some((item) => {
+    const itemStart = getTimeMinutes(item.startTime);
+    const itemEnd = getTimeMinutes(item.endTime);
+    const overlaps = itemStart < slotEnd && itemEnd > slotStart;
+    const sameColumn = item.category === allScheduleColumns || getColumnLabel(item.category) === columnLabel;
+    return overlaps && sameColumn;
+  });
+}
+
+function getSchedulePopoverPlacement(popover: SchedulePopoverState, columnCount: number, slotCount: number) {
+  const horizontal = popover.columnIndex >= Math.max(columnCount - 2, 1) ? "is-left-aligned" : "is-right-aligned";
+  const vertical = popover.row > slotCount - 4 ? "is-top-aligned" : "is-bottom-aligned";
+  return `${horizontal} ${vertical}`;
 }
 
 function getScheduleItemGridStyle(
