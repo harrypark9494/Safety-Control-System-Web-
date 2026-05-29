@@ -17,23 +17,16 @@ local-reports/
 .env.*
 !.env.example
 !**/.env.example
+!.env.local.example
+!**/.env.local.example
 .runtimeconfig.json
 *.local
+!*.local.example
+!**/*.local.example
 *.secret
 *.secrets
 
-# Spring Boot local configuration / generated DB files
-application-local.yml
-application-local.yaml
-application-secret.yml
-application-secret.yaml
-backend/src/main/resources/application-local.yml
-backend/src/main/resources/application-local.yaml
-backend/src/main/resources/application-secret.yml
-backend/src/main/resources/application-secret.yaml
-*.mv.db
-*.trace.db
-*.h2.db
+# Local backend configuration / generated data files
 *.sqlite
 *.sqlite3
 *.db
@@ -52,8 +45,6 @@ dist/
 build/
 coverage/
 *.tsbuildinfo
-target/
-.gradle/
 out/
 
 # Vite local cache

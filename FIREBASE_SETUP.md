@@ -47,13 +47,13 @@ firebase deploy --project YOUR_PROJECT_ID --only hosting,firestore:rules,storage
 | --- | --- |
 | `frontend/src/` | React/TypeScript 실제 앱 소스 |
 | `frontend/dist/` | Vite 빌드 결과, Firebase Hosting 배포 대상 |
-| `backend/` | Spring Boot 백엔드 작업 영역 |
+| `backend/` | NestJS 백엔드 작업 영역 |
 | `demos/` | 기존 GitHub Pages mock 데모 보존용 |
 | root | Firebase 설정, 보안 규칙, 프로젝트 문서 |
 
 현재는 안정화된 UI를 React 페이지로 전환해 `frontend/src/`에 둔 상태입니다.
 Firebase 연동을 유지하는 경우에도 프론트엔드 코드는 `frontend/src/` 내부에서
-관리하고, Spring Boot 백엔드는 `backend/`에서 분리해 진행합니다.
+관리하고, NestJS 백엔드는 `backend/`에서 분리해 진행합니다.
 `demos/`는 비교 기준으로 유지합니다.
 
 ## 3. 우선 컬렉션 구조

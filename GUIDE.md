@@ -22,6 +22,9 @@ GitHub Pages에서 확인하던 정적 UI 데모를 Vite + React + TypeScript
 - 정적 HTML/CSS/JS 데모는 실제 앱 소스가 아니라 UI 참고 원본입니다. 모두
   `demos/` 아래에 둡니다.
 - 기존 GitHub Pages 비교용 mock 화면은 `/demos/{demo-name}/` 아래에 보존합니다.
+- 각 로컬에서 접속해 확인할 수 있는 임시 테스트 사이트는 GitHub에 함께 올릴 수
+  있습니다. 단, 실제 계정/연락처/주민등록번호/계좌번호/파일 원본/토큰/서비스
+  계정 키를 포함하지 않고 마스킹된 샘플 데이터만 사용합니다.
 - Google Sheets를 브라우저에서 직접 호출하지 않습니다.
 - 실제 운영 데이터는 프론트엔드 mock 데이터가 아니라 백엔드 API와 운영 DB를 통해
   관리합니다.
@@ -77,7 +80,7 @@ Refs #연계이슈
 | `frontend/src/` | 실제 Firebase Hosting에 올라갈 Vite + React + TypeScript 앱 소스 | 신규 기능과 실사용 전환 작업은 여기에서 진행 |
 | `frontend/dist/` | `frontend`에서 `npm run build`로 생성되는 Vite 빌드 결과 | 직접 수정하지 않음, Firebase Hosting 배포 대상 |
 | `backend/` | NestJS 백엔드 작업 영역 | 같은 `/api` 계약을 Node/NestJS로 재구축 |
-| `demos/` | 기존 HTML/CSS/JS 정적 UI 데모 보존 영역 | UI 비교, 레이아웃 참고, 임시 mock 검증용 |
+| `demos/` | 기존 HTML/CSS/JS 정적 UI 데모와 공개 가능한 임시 테스트 사이트 보존 영역 | UI 비교, 레이아웃 참고, 마스킹된 mock 검증용 |
 | `frontend/index.html` | Vite 앱 진입점 | 데모 허브가 아니라 React 앱 mount 파일 |
 | root config files | Firebase, 문서, 공통 규칙 설정 | 배포/규칙/프로젝트 방향 관리 |
 
@@ -112,7 +115,7 @@ Frontend + Backend together
 → 로그인 화면은 `/api/worker-registrations`, `/api/auth/worker-login` 호출
 
 Backend persistence
-→ 사용자 등록 상태는 JPA 저장소를 통해 관리
+→ 사용자 등록 상태는 서버 저장소를 통해 관리
 
 Test-only mock
 → 테스트 fixture와 `demos/` 보존 화면에만 mock 유지
@@ -497,8 +500,8 @@ CSS 작성 기준:
 
 ## Firebase Transition Files
 
-아래 파일은 현재 repo에 남아 있는 Firebase 전환 검토 산출물입니다. Spring Boot
-백엔드가 실제 운영 방향으로 확정되면, Firebase를 Hosting 용도로만 남길지,
+아래 파일은 현재 repo에 남아 있는 Firebase 전환 검토 산출물입니다. NestJS
+백엔드 운영 방향에 맞춰, Firebase를 Hosting 용도로만 남길지,
 Auth/Firestore/Storage까지 사용할지 별도 결정합니다.
 
 - `firebase.json`: `frontend/dist/` Hosting, Firestore rules, Storage rules 배포 설정
@@ -513,7 +516,7 @@ Auth/Firestore/Storage까지 사용할지 별도 결정합니다.
 - 외부 날씨 API를 호출하지 않습니다.
 - 기상 특보 데이터를 일반 예보 mock에 직접 섞지 않습니다.
 - Firebase 프로젝트 ID와 Web App config는 공개 repo에 실서비스 값을 직접 박지 않습니다.
-- 운영 경로의 Firebase SDK 또는 Spring Boot API 연동에는 무조건적인 mock fallback을 두지 않습니다.
+- 운영 경로의 Firebase SDK 또는 백엔드 API 연동에는 무조건적인 mock fallback을 두지 않습니다.
 - Cloud Functions가 필요해지기 전까지 브라우저가 직접 민감 외부 API나 Google Sheets를 호출하지 않습니다.
 - 운영 DB는 브라우저에서 직접 접근하지 않습니다.
 - 프론트엔드 번들에 DB 접속 정보, 운영 API key, 관리자 권한 판단 로직을 넣지 않습니다.
@@ -526,7 +529,7 @@ Auth/Firestore/Storage까지 사용할지 별도 결정합니다.
 
 ## Suggested Next Work
 
-1. 관리자 인증을 Spring Security 정책에 맞춰 연결합니다.
+1. 관리자 인증을 서버 관리자 인증/인가 정책에 맞춰 연결합니다.
 2. 급여 서류 제출 API와 파일 저장소 권한 검사를 구현합니다.
 3. 대시보드에서 우선 확인할 클릭 액션 목록을 정하고 API 계약을 작성합니다.
 4. 사용자/관리자/급여 서류/대시보드 데이터의 초기 DB 테이블 또는 ERD를 확장합니다.

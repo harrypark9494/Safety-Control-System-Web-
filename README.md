@@ -1,7 +1,7 @@
 # Safety Control System Web
 
 SafetyControl 풀스택 작업 저장소입니다. 현재 실제 앱 경로는 Vite + React +
-TypeScript 프론트엔드와 Spring Boot 백엔드를 기준으로 개발하며, 정적 데모는
+TypeScript 프론트엔드와 NestJS 백엔드를 기준으로 개발하며, 정적 데모는
 비교용 참고 자료로만 보존합니다.
 
 ## GitHub Pages
@@ -101,6 +101,12 @@ Safety-Control-System-Web-/
 - Admin Desktop Demo: 관리자용 데스크탑 관제 UI, 날씨/스케줄/QR/근로자/안전 수칙/어드민 관리 mock 표시
 - Payroll Documents Demo: HR 급여 처리용 기본 정보, 주민등록번호, Kakao 우편번호 주소 검색, 계좌 정보, 신분증/통장 사본 제출 흐름
 
+## Temporary Test Site Policy
+
+GitHub Pages 또는 로컬 정적 서버로 확인할 수 있는 임시 테스트 사이트는 GitHub에 함께 올릴 수 있습니다. 단, 테스트 사이트에 포함되는 데이터는 실제 계정, 연락처, 주민등록번호, 계좌번호, 파일 원본, 토큰, 서비스 계정 키를 사용하지 않고 마스킹된 샘플 값만 사용합니다.
+
+실제 로컬 실행용 비밀값은 계속 `.env.local`, `*.local`, `*.secret`, `*.secrets`에 두고 GitHub에 올리지 않습니다. 공개 가능한 로컬 설정 예시는 `.env.example` 또는 `.env.local.example`처럼 마스킹된 example 파일로만 관리합니다.
+
 Firebase Hosting 배포 대상은 Vite 빌드 결과인 `frontend/dist/`입니다.
 `frontend/src/`는 실제 React/TypeScript 앱 소스이고, `backend/`는 NestJS
 백엔드 작업 영역입니다. `demos/`는 기존 UI 비교용으로만 둡니다.
@@ -125,8 +131,9 @@ npm.cmd run dev:backend
 
 ## Local Test Run
 
-로컬 테스트용 파일은 `.gitignore` 정책에 따라 추적하지 않는 실제 환경 파일로
-둡니다.
+로컬 테스트 동작은 최신 Git 기준의 `dev:local-test` 실행 흐름을 사용합니다.
+실제 로컬 환경 파일은 `.gitignore` 정책에 따라 추적하지 않고, GitHub에는
+마스킹된 example 또는 공개 테스트 사이트용 샘플 데이터만 올립니다.
 
 | File | Purpose |
 | --- | --- |

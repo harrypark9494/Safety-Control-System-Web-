@@ -30,5 +30,5 @@ npm run dev
 - `POST /api/auth/worker-login`
 - `POST /api/auth/admin-login`
 
-현재 저장소는 Spring 로컬 개발과 같은 목적의 in-memory store입니다. 다음 단계에서
+현재 저장소는 로컬 API 검증용 in-memory store입니다. 다음 단계에서
 PostgreSQL 연결, migration, 관리자 API 보호를 붙이면 됩니다.
