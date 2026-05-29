@@ -59,6 +59,7 @@ export function RulesView() {
   const [ruleStatus, setRuleStatus] = useState<SafetyRuleStatus>("active");
   const [ruleContent, setRuleContent] = useState("");
   const [ruleMessage, setRuleMessage] = useState("");
+  const [rulePendingDelete, setRulePendingDelete] = useState<SafetyRule | null>(null);
   const normalizedSearch = ruleSearch.trim().toLowerCase();
   const filteredRules = rules.filter((rule) => {
     const matchesSearch = !normalizedSearch ||
@@ -95,6 +96,25 @@ export function RulesView() {
     setRuleCategory("");
     setRuleStatus("active");
     setRuleContent("");
+  }
+
+  function openDeleteConfirm(rule: SafetyRule) {
+    setRulePendingDelete(rule);
+    setRuleMessage("");
+  }
+
+  function closeDeleteConfirm() {
+    setRulePendingDelete(null);
+  }
+
+  function deleteRule() {
+    if (!rulePendingDelete) {
+      return;
+    }
+
+    setRules((currentRules) => currentRules.filter((rule) => rule.id !== rulePendingDelete.id));
+    setRuleMessage("안전 수칙이 삭제되었습니다.");
+    closeDeleteConfirm();
   }
 
   function saveRule(event: FormEvent<HTMLFormElement>) {
@@ -163,7 +183,16 @@ export function RulesView() {
                     <td>{rule.category}</td>
                     <td><em className={`state ${getRuleStatusMeta(rule.status).tone}`}>{getRuleStatusMeta(rule.status).label}</em></td>
                     <td>{rule.updatedAt}</td>
-                    <td><button className="light-button table-inline-button" type="button" onClick={() => openRuleEditor(rule)}><MaterialIcon name="edit_note" />내용 확인/수정</button></td>
+                    <td>
+                      <span className="table-icon-actions rule-row-actions">
+                        <button className="table-icon-button" type="button" onClick={() => openRuleEditor(rule)} aria-label={`${rule.title} 내용 확인 및 수정`}>
+                          <MaterialIcon name="edit" />
+                        </button>
+                        <button className="table-icon-button is-danger" type="button" onClick={() => openDeleteConfirm(rule)} aria-label={`${rule.title} 삭제`}>
+                          <MaterialIcon name="delete" />
+                        </button>
+                      </span>
+                    </td>
                   </tr>
                 )) : (
                   <tr><td colSpan={5}><p className="empty-table-state">조건에 맞는 안전 수칙이 없습니다.</p></td></tr>
@@ -195,6 +224,25 @@ export function RulesView() {
                 <button className="dark-button" type="submit">저장</button>
               </footer>
             </form>
+          </section>
+        </div>
+      ) : null}
+
+      {rulePendingDelete ? (
+        <div className="modal-backdrop">
+          <section className="account-modal confirm-modal" role="dialog" aria-modal="true" aria-labelledby="rule-delete-title">
+            <header>
+              <h2 id="rule-delete-title">안전 수칙 삭제</h2>
+              <button type="button" aria-label="닫기" onClick={closeDeleteConfirm}><MaterialIcon name="close" /></button>
+            </header>
+            <div className="modal-body confirm-modal-body">
+              <p><strong>{rulePendingDelete.title}</strong> 수칙을 삭제하시겠습니까?</p>
+              <span>삭제한 수칙은 현재 목록에서 즉시 제거됩니다.</span>
+            </div>
+            <footer>
+              <button className="light-button" type="button" onClick={closeDeleteConfirm}>취소</button>
+              <button className="danger-button" type="button" onClick={deleteRule}><MaterialIcon name="delete" />삭제</button>
+            </footer>
           </section>
         </div>
       ) : null}
