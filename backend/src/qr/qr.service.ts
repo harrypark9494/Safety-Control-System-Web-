@@ -33,10 +33,13 @@ export class QrService {
     ));
   }
 
-  getAdminSummary(issuedDate = this.today(), mealType: MealType | 'all' = 'all') {
-    const entitlements = this.ensureAllEntitlements(issuedDate);
+  getAdminSummary(issuedDate = this.today(), mealType: MealType | 'all' = 'all', projectId?: string) {
+    const workers = this.workers.listRegistrations(projectId) as WorkerRegistration[];
+    const workerIds = new Set(workers.map((worker) => worker.uid));
+    const entitlements = this.ensureAllEntitlements(issuedDate, projectId);
     const filteredEvents = this.usageEvents.filter((event) => (
       event.usedAt.startsWith(issuedDate)
+      && workerIds.has(event.workerId)
       && (mealType === 'all' || event.mealType === mealType || event.qrType === 'water')
     ));
     const meal = this.aggregateType(entitlements, filteredEvents, 'meal');
@@ -80,8 +83,8 @@ export class QrService {
     };
   }
 
-  private ensureAllEntitlements(issuedDate: string) {
-    const workers = this.workers.listRegistrations() as WorkerRegistration[];
+  private ensureAllEntitlements(issuedDate: string, projectId?: string) {
+    const workers = this.workers.listRegistrations(projectId) as WorkerRegistration[];
     return workers.flatMap((worker) => this.ensureWorkerEntitlements(worker.uid, issuedDate));
   }
 

@@ -223,6 +223,24 @@ td {
   font-weight: 950;
 }
 
+.page-project-label {
+  margin-right: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 7px 12px;
+  color: #34445c;
+  background: #fff;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.admin-message--global {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  margin: 12px 28px 0;
+}
+
 .page-header--stack {
   align-items: flex-start;
   flex-direction: column;
@@ -2020,6 +2038,184 @@ td {
 .confirm-modal-body span {
   color: #596273;
   font-size: 0.86rem;
+  font-weight: 850;
+}
+
+.project-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(190px, auto);
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 14px;
+  background: #fff;
+}
+
+.project-row.is-selected {
+  border-color: #17263a;
+  background: #f6f8fb;
+}
+
+.project-row div {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.project-row strong,
+.project-row small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-row strong {
+  font-size: 0.96rem;
+  font-weight: 950;
+}
+
+.project-row small {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+.project-status {
+  min-width: 72px;
+  border-radius: 999px;
+  padding: 7px 10px;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 950;
+}
+
+.project-status--active {
+  color: #087c35;
+  background: #e8f7ee;
+}
+
+.project-status--draft {
+  color: #7b4a00;
+  background: #fff2df;
+}
+
+.project-status--archived {
+  color: #596273;
+  background: #edf0f4;
+}
+
+.project-page {
+  gap: 20px;
+}
+
+.project-create-card {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.project-create-card footer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.project-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
+  gap: 12px;
+}
+
+.project-form-grid label {
+  display: grid;
+  gap: 7px;
+  color: #343944;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.project-form-grid input,
+.project-form-grid select {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  padding: 0 12px;
+  color: var(--ink);
+  background: var(--panel);
+  font-weight: 850;
+}
+
+.project-folder-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.project-folder {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.project-folder-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.project-folder-head .material-symbols-rounded {
+  color: #17263a;
+  font-size: 2rem;
+}
+
+.project-folder-head div {
+  display: grid;
+  gap: 2px;
+}
+
+.project-folder-head h2 {
+  font-size: 1rem;
+  font-weight: 950;
+}
+
+.project-folder-head small {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 850;
+}
+
+.project-list {
+  display: grid;
+  gap: 10px;
+}
+
+.project-folder .project-row {
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+}
+
+.project-folder .project-status {
+  justify-self: start;
+}
+
+.project-row-actions {
+  display: grid;
+  grid-template-columns: auto minmax(100px, 1fr);
+  gap: 8px;
+}
+
+.project-row-actions select {
+  min-height: 40px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  padding: 0 8px;
+  background: #fff;
+  font-size: 0.82rem;
   font-weight: 850;
 }
 

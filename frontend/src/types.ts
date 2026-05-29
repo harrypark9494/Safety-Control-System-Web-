@@ -1,4 +1,5 @@
 export type UserRole = "worker" | "admin";
+export type ProjectStatus = "DRAFT" | "ACTIVE" | "ARCHIVED";
 
 export type WorkType = string;
 
@@ -13,6 +14,7 @@ export type WorkerRegistrationStatus = "registered" | "onboarded";
 
 export interface WorkerSession {
   uid: string;
+  projectId?: string;
   role: "worker";
   name: string;
   phone: string;
@@ -36,6 +38,7 @@ export type AppSession = WorkerSession | AdminSession;
 
 export interface WorkerRegistrationAccount {
   uid: string;
+  projectId: string;
   name: string;
   phone: string;
   workType: WorkType;
@@ -45,6 +48,19 @@ export interface WorkerRegistrationAccount {
   payrollDocumentStatus: PayrollDocumentStatus;
   registeredAt: string;
   onboardedAt?: string;
+}
+
+export interface Project {
+  id: string;
+  name: string;
+  status: ProjectStatus;
+  startDate: string;
+  endDate: string | null;
+  location: string;
+  description: string;
+  createdBy: string;
+  createdAt: string;
+  archivedAt: string | null;
 }
 
 export interface WorkTypeSetting {

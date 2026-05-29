@@ -1,6 +1,7 @@
 import { ConflictException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { ApiError } from '../shared/api-error';
+import { DEFAULT_PROJECT_ID } from '../projects/projects.service';
 import { PasswordService } from './password.service';
 import {
   AdminRegistrationRequest,
@@ -22,13 +23,15 @@ export class WorkersService {
   }
 
   createRegistration(request: AdminRegistrationRequest) {
+    const projectId = this.normalizeProjectId(request.projectId);
     const phone = this.normalizePhone(request.phone);
     const workType = this.normalizeExistingWorkType(request.workType);
     const now = new Date().toISOString();
-    const existing = this.registrations.get(phone);
+    const existing = this.registrations.get(this.registrationKey(projectId, phone));
 
     const registration: WorkerRegistration = {
       uid: existing?.uid ?? randomUUID(),
+      projectId,
       name: request.name.trim(),
       phone,
       passwordHash: null,
@@ -42,13 +45,13 @@ export class WorkersService {
       onboardedAt: null,
     };
 
-    this.registrations.set(phone, registration);
+    this.registrations.set(this.registrationKey(projectId, phone), registration);
     return this.toRegistrationResponse(registration);
   }
 
   completeOnboarding(request: OnboardingRequest) {
     const workType = this.normalizeExistingWorkType(request.workType);
-    const worker = this.findByPhone(request.phone);
+    const worker = this.findByPhone(request.phone, request.projectId);
 
     if (worker.name !== request.name.trim() || worker.workType !== workType) {
       throw new ApiError(
@@ -82,6 +85,7 @@ export class WorkersService {
 
     return {
       uid: worker.uid,
+      projectId: worker.projectId,
       role: 'worker',
       name: worker.name,
       phone: worker.phone,
@@ -96,15 +100,17 @@ export class WorkersService {
     };
   }
 
-  listRegistrations() {
+  listRegistrations(projectId?: string) {
+    const normalizedProjectId = projectId?.trim();
     return [...this.registrations.values()]
+      .filter((worker) => !normalizedProjectId || worker.projectId === normalizedProjectId)
       .sort((a, b) => b.registeredAt.localeCompare(a.registeredAt))
       .map((worker) => this.toRegistrationResponse(worker));
   }
 
-  deleteRegistration(phone: string) {
-    const worker = this.findByPhone(phone);
-    this.registrations.delete(worker.phone);
+  deleteRegistration(phone: string, projectId?: string) {
+    const worker = this.findByPhone(phone, projectId);
+    this.registrations.delete(this.registrationKey(worker.projectId, worker.phone));
   }
 
   listWorkTypes() {
@@ -216,7 +222,7 @@ export class WorkersService {
         supervisor: process.env.LOCAL_TEST_WORKER_SUPERVISOR ?? '로컬 관리자',
       });
 
-      const worker = this.findByPhone(localWorker.phone);
+      const worker = this.findByPhone(localWorker.phone, localWorker.projectId);
       worker.passwordHash = this.passwords.hash(localWorkerPassword);
       worker.verificationCode = localWorkerCode;
       worker.registrationStatus = 'onboarded';
@@ -225,15 +231,26 @@ export class WorkersService {
     }
   }
 
-  private findByPhone(phone: string) {
+  private findByPhone(phone: string, projectId?: string) {
     const normalized = this.normalizePhone(phone);
-    const worker = this.registrations.get(normalized);
+    const normalizedProjectId = projectId?.trim();
+    const worker = normalizedProjectId
+      ? this.registrations.get(this.registrationKey(normalizedProjectId, normalized))
+      : [...this.registrations.values()].find((registration) => registration.phone === normalized);
 
     if (!worker) {
       throw new NotFoundException('관리자가 등록한 근로자 정보를 찾을 수 없습니다.');
     }
 
     return worker;
+  }
+
+  private normalizeProjectId(projectId?: string) {
+    return projectId?.trim() || DEFAULT_PROJECT_ID;
+  }
+
+  private registrationKey(projectId: string, phone: string) {
+    return `${projectId}:${phone}`;
   }
 
   private normalizePhone(phone: string) {

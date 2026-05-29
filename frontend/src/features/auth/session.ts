@@ -2,6 +2,8 @@ import type {
   AppSession,
   AdminWeatherOverview,
   MealType,
+  Project,
+  ProjectStatus,
   QrEntitlement,
   QrUsageSummary,
   WeatherThresholds,
@@ -29,6 +31,7 @@ const firebaseConfig = {
 
 type WorkerRegistrationResponse = {
   uid: string;
+  projectId: string;
   name: string;
   phone: string;
   workType: WorkType;
@@ -94,6 +97,7 @@ async function requestNoContent(path: string, init?: RequestInit): Promise<void>
 function toRegistrationAccount(worker: WorkerRegistrationResponse): WorkerRegistrationAccount {
   return {
     uid: worker.uid,
+    projectId: worker.projectId,
     name: worker.name,
     phone: worker.phone,
     workType: worker.workType,
@@ -183,12 +187,54 @@ export async function deleteWorkType(label: string): Promise<void> {
   });
 }
 
-export async function getRegisteredWorkers(): Promise<WorkerRegistrationAccount[]> {
-  const workers = await requestJson<WorkerRegistrationResponse[]>("/api/admin/worker-registrations");
+export async function getAdminProjects(options: { includeArchived?: boolean } = {}): Promise<Project[]> {
+  const params = new URLSearchParams();
+  if (options.includeArchived) {
+    params.set("includeArchived", "true");
+  }
+
+  const query = params.toString();
+  return requestJson<Project[]>(`/api/admin/projects${query ? `?${query}` : ""}`);
+}
+
+export async function getActiveAdminProject(): Promise<Project | null> {
+  return requestJson<Project | null>("/api/admin/projects/active");
+}
+
+export async function createAdminProject(project: {
+  name: string;
+  status: ProjectStatus;
+  startDate: string;
+  endDate?: string | null;
+  location: string;
+  description?: string;
+  createdBy?: string;
+}): Promise<Project> {
+  return requestJson<Project>("/api/admin/projects", {
+    method: "POST",
+    body: JSON.stringify(project),
+  });
+}
+
+export async function updateAdminProjectStatus(projectId: string, status: ProjectStatus): Promise<Project> {
+  return requestJson<Project>(`/api/admin/projects/${encodeURIComponent(projectId)}/status`, {
+    method: "POST",
+    body: JSON.stringify({ status }),
+  });
+}
+
+export async function getRegisteredWorkers(projectId?: string): Promise<WorkerRegistrationAccount[]> {
+  const params = new URLSearchParams();
+  if (projectId) {
+    params.set("projectId", projectId);
+  }
+
+  const workers = await requestJson<WorkerRegistrationResponse[]>(`/api/admin/worker-registrations${params.toString() ? `?${params}` : ""}`);
   return workers.map(toRegistrationAccount);
 }
 
 export async function createRegisteredWorker(
+  projectId: string,
   name: string,
   phone: string,
   workType: WorkType,
@@ -197,14 +243,19 @@ export async function createRegisteredWorker(
 ): Promise<WorkerRegistrationAccount> {
   const worker = await requestJson<WorkerRegistrationResponse>("/api/admin/worker-registrations", {
     method: "POST",
-    body: JSON.stringify({ name, phone: formatPhone(phone), workType, team, supervisor }),
+    body: JSON.stringify({ projectId, name, phone: formatPhone(phone), workType, team, supervisor }),
   });
 
   return toRegistrationAccount(worker);
 }
 
-export async function deleteRegisteredWorker(phone: string): Promise<void> {
-  await requestNoContent(`/api/admin/worker-registrations/${encodeURIComponent(formatPhone(phone))}`, {
+export async function deleteRegisteredWorker(phone: string, projectId?: string): Promise<void> {
+  const params = new URLSearchParams();
+  if (projectId) {
+    params.set("projectId", projectId);
+  }
+
+  await requestNoContent(`/api/admin/worker-registrations/${encodeURIComponent(formatPhone(phone))}${params.toString() ? `?${params}` : ""}`, {
     method: "DELETE",
   });
 }
@@ -213,7 +264,7 @@ export async function getWorkerQrEntitlements(workerId: string): Promise<QrEntit
   return requestJson<QrEntitlement[]>(`/api/worker/qr-entitlements/today?workerId=${encodeURIComponent(workerId)}`);
 }
 
-export async function getAdminQrUsageSummary(options: { date?: string; mealType?: MealType | "all" } = {}): Promise<QrUsageSummary> {
+export async function getAdminQrUsageSummary(options: { date?: string; mealType?: MealType | "all"; projectId?: string } = {}): Promise<QrUsageSummary> {
   const params = new URLSearchParams();
 
   if (options.date) {
@@ -222,6 +273,10 @@ export async function getAdminQrUsageSummary(options: { date?: string; mealType?
 
   if (options.mealType) {
     params.set("mealType", options.mealType);
+  }
+
+  if (options.projectId) {
+    params.set("projectId", options.projectId);
   }
 
   const query = params.toString();

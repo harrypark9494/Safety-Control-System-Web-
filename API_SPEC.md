@@ -51,6 +51,17 @@ worker
 admin
 ```
 
+### ProjectStatus
+
+```text
+DRAFT
+ACTIVE
+ARCHIVED
+```
+
+프로젝트는 `DRAFT → ACTIVE → ARCHIVED` 흐름을 기본으로 하며, 운영 데이터는
+삭제보다 아카이브 상태 전환을 우선합니다.
+
 ### WorkTypeSetting
 
 ```json
@@ -92,6 +103,7 @@ rejected
 ```json
 {
   "uid": "5b7f5d7d-2c0f-4d4d-8b44-3dbb1cbd39f1",
+  "projectId": "waterbomb-2026-summer",
   "name": "홍길동",
   "phone": "010-1234-5678",
   "workType": "직접 고용",
@@ -109,6 +121,7 @@ rejected
 ```json
 {
   "uid": "5b7f5d7d-2c0f-4d4d-8b44-3dbb1cbd39f1",
+  "projectId": "waterbomb-2026-summer",
   "role": "worker",
   "name": "홍길동",
   "phone": "010-1234-5678",
@@ -119,6 +132,23 @@ rejected
   "status": "온보딩 완료",
   "payrollDocumentsRequired": true,
   "payrollDocumentStatus": "missing"
+}
+```
+
+### Project
+
+```json
+{
+  "id": "waterbomb-2026-summer",
+  "name": "2026 워터밤 여름 프로젝트",
+  "status": "ACTIVE",
+  "startDate": "2026-07-19",
+  "endDate": "2026-07-21",
+  "location": "킨텍스 제2전시장",
+  "description": "현재 운영 중인 안전 관제 프로젝트",
+  "createdBy": "system",
+  "createdAt": "2026-05-29T00:00:00Z",
+  "archivedAt": null
 }
 ```
 
@@ -246,6 +276,61 @@ rejected
 
 ## Implemented APIs
 
+### List Admin Projects
+
+`GET /api/admin/projects?includeArchived=true`
+
+관리자 페이지의 프로젝트 전환 메뉴와 프로젝트 단위 데이터 필터링에 사용할 목록입니다.
+`includeArchived=true`이면 종료된 프로젝트도 함께 반환합니다.
+
+Response `200 OK`: `Project[]`
+
+### Get Active Admin Project
+
+`GET /api/admin/projects/active`
+
+관리자 페이지 최초 진입 시 기본으로 선택할 운영 프로젝트를 반환합니다. `ACTIVE`
+프로젝트가 없으면 가장 우선순위가 높은 비아카이브 프로젝트를 반환하고, 프로젝트가
+없으면 `null`을 반환합니다.
+
+Response `200 OK`: `Project | null`
+
+### Create Admin Project
+
+`POST /api/admin/projects`
+
+Request:
+
+```json
+{
+  "name": "2026 워터밤 겨울 준비",
+  "status": "DRAFT",
+  "startDate": "2026-12-18",
+  "endDate": "2026-12-20",
+  "location": "운영 장소 미정",
+  "description": "다음 운영 준비 프로젝트",
+  "createdBy": "admin"
+}
+```
+
+Response `200 OK`: `Project`
+
+### Update Admin Project Status
+
+`POST /api/admin/projects/{projectId}/status`
+
+프로젝트 상태를 `DRAFT`, `ACTIVE`, `ARCHIVED` 중 하나로 변경합니다.
+
+Request:
+
+```json
+{
+  "status": "ARCHIVED"
+}
+```
+
+Response `200 OK`: `Project`
+
 ### List Worker Selectable Work Types
 
 `GET /api/work-types`
@@ -320,7 +405,7 @@ Errors:
 
 `POST /api/worker-registrations`
 
-로그인 페이지의 최초 등록 절차입니다. 관리자가 먼저 등록한 근로자 원장과
+로그인 페이지의 최초 등록 절차입니다. 관리자가 먼저 등록한 프로젝트별 근로자 원장과
 이름, 연락처, 고용 유형이 일치하면 비밀번호와 인증 코드를 저장하고
 `onboarded` 상태로 전환합니다.
 
@@ -328,6 +413,7 @@ Request:
 
 ```json
 {
+  "projectId": "waterbomb-2026-summer",
   "name": "홍길동",
   "phone": "010-1234-5678",
   "code": "123456",
@@ -341,6 +427,7 @@ Response `200 OK`:
 ```json
 {
   "uid": "5b7f5d7d-2c0f-4d4d-8b44-3dbb1cbd39f1",
+  "projectId": "waterbomb-2026-summer",
   "name": "홍길동",
   "phone": "010-1234-5678",
   "workType": "직접 고용",
@@ -383,6 +470,7 @@ Response `200 OK`:
 ```json
 {
   "uid": "5b7f5d7d-2c0f-4d4d-8b44-3dbb1cbd39f1",
+  "projectId": "waterbomb-2026-summer",
   "role": "worker",
   "name": "홍길동",
   "phone": "010-1234-5678",
@@ -433,9 +521,10 @@ Errors:
 
 ### List Worker Registrations
 
-`GET /api/admin/worker-registrations`
+`GET /api/admin/worker-registrations?projectId=waterbomb-2026-summer`
 
-관리자 근로자 관리 화면의 등록 원장 및 온보딩 상태 목록입니다.
+관리자 근로자 관리 화면의 프로젝트별 등록 원장 및 온보딩 상태 목록입니다.
+`projectId`를 생략하면 모든 프로젝트의 근로자를 반환합니다.
 
 Response `200 OK`:
 
@@ -443,6 +532,7 @@ Response `200 OK`:
 [
   {
     "uid": "5b7f5d7d-2c0f-4d4d-8b44-3dbb1cbd39f1",
+    "projectId": "waterbomb-2026-summer",
     "name": "홍길동",
     "phone": "010-1234-5678",
     "workType": "직접 고용",
@@ -467,6 +557,7 @@ Request:
 
 ```json
 {
+  "projectId": "waterbomb-2026-summer",
   "name": "홍길동",
   "phone": "010-1234-5678",
   "workType": "직접 고용",
@@ -479,7 +570,7 @@ Response `200 OK`: `WorkerRegistration`
 
 ### Delete Worker Registration
 
-`DELETE /api/admin/worker-registrations/{phone}`
+`DELETE /api/admin/worker-registrations/{phone}?projectId=waterbomb-2026-summer`
 
 Path params:
 
@@ -503,10 +594,11 @@ Response `200 OK`: `QrEntitlement[]`
 
 ### List Admin QR Usage Summary
 
-`GET /api/admin/qr-usage/summary?date=2026-05-26&mealType=all`
+`GET /api/admin/qr-usage/summary?projectId=waterbomb-2026-summer&date=2026-05-26&mealType=all`
 
-관리자 식권/생수 QR 사용 현황 화면의 지급량, 사용량, 잔여량, 시간대별 사용
-집계를 반환합니다. `mealType`은 `all`, `lunch`, `dinner`를 지원합니다.
+관리자 식권/생수 QR 사용 현황 화면의 프로젝트별 지급량, 사용량, 잔여량,
+시간대별 사용 집계를 반환합니다. `mealType`은 `all`, `lunch`, `dinner`를
+지원합니다.
 
 Response `200 OK`: `QrUsageSummary`
 

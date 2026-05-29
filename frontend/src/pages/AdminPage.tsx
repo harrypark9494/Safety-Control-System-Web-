@@ -2,11 +2,12 @@ import { FormEvent, useEffect, useState } from "react";
 import { MaterialIcon } from "../components/MaterialIcon";
 import "../styles/admin.css";
 import { fallbackWorkTypes } from "../data/workTypes";
-import { clearSession, getRegisteredWorkers, getWorkTypes } from "../features/auth/session";
+import { clearSession, getAdminProjects, getRegisteredWorkers, getWorkTypes } from "../features/auth/session";
 import { navigateTo } from "../features/navigation";
-import type { WorkerRegistrationAccount, WorkTypeSetting } from "../types";
+import type { Project, WorkerRegistrationAccount, WorkTypeSetting } from "../types";
 import { AdminsView } from "./admin/AdminsView";
 import { DashboardView } from "./admin/DashboardView";
+import { ProjectsView } from "./admin/ProjectsView";
 import { QrView } from "./admin/QrView";
 import { RulesView } from "./admin/RulesView";
 import { ScheduleView } from "./admin/ScheduleView";
@@ -24,11 +25,15 @@ const navItems = [
 ] as const;
 
 type View = (typeof navItems)[number][0];
+type AdminView = View | "projects";
 
 export function AdminPage() {
-  const [view, setView] = useState<View>("dashboard");
+  const [view, setView] = useState<AdminView>("dashboard");
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMessage, setModalMessage] = useState("");
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState("");
+  const [projectMessage, setProjectMessage] = useState("");
   const [workers, setWorkers] = useState<WorkerRegistrationAccount[]>([]);
   const [workTypes, setWorkTypes] = useState<WorkTypeSetting[]>(fallbackWorkTypes);
   const [workerMessage, setWorkerMessage] = useState("");
@@ -44,18 +49,42 @@ export function AdminPage() {
   }
 
   useEffect(() => {
-    refreshWorkers();
+    refreshProjects();
     refreshWorkTypes();
   }, []);
 
-  async function refreshWorkers() {
+  useEffect(() => {
+    if (selectedProjectId) {
+      refreshWorkers(selectedProjectId);
+    }
+  }, [selectedProjectId]);
+
+  async function refreshProjects() {
     try {
-      setWorkers(await getRegisteredWorkers());
+      const nextProjects = await getAdminProjects({ includeArchived: true });
+      setProjects(nextProjects);
+      setProjectMessage("");
+      setSelectedProjectId((current) => current || nextProjects.find((project) => project.status === "ACTIVE")?.id || nextProjects[0]?.id || "");
+    } catch (error) {
+      setProjectMessage(error instanceof Error ? error.message : "프로젝트 목록을 불러오지 못했습니다.");
+    }
+  }
+
+  async function refreshWorkers(projectId = selectedProjectId) {
+    if (!projectId) {
+      setWorkers([]);
+      return;
+    }
+
+    try {
+      setWorkers(await getRegisteredWorkers(projectId));
       setWorkerMessage("");
     } catch (error) {
       setWorkerMessage(error instanceof Error ? error.message : "근로자 목록을 불러오지 못했습니다.");
     }
   }
+
+  const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? null;
 
   async function refreshWorkTypes() {
     try {
@@ -91,9 +120,9 @@ export function AdminPage() {
               <MaterialIcon name="admin_panel_settings" className="nav-icon" filled={view === "admins"} />
               어드민 관리
             </button>
-            <button className="nav-item nav-item--plain" type="button">
-              <MaterialIcon name="help" className="nav-icon" />
-              도움말
+            <button className={`nav-item nav-item--plain ${view === "projects" ? "is-active" : ""}`} type="button" onClick={() => setView("projects")}>
+              <MaterialIcon name="folder_managed" className="nav-icon" filled={view === "projects"} />
+              프로젝트 관리
             </button>
             <button className="nav-item nav-item--plain" type="button" onClick={logout}>
               <MaterialIcon name="logout" className="nav-icon" />
@@ -103,12 +132,15 @@ export function AdminPage() {
         </aside>
 
         <section className="admin-main">
+          {projectMessage ? <p className="admin-message admin-message--global" role="status">{projectMessage}</p> : null}
           {view === "dashboard" ? <DashboardView /> : null}
           {view === "weather" ? <WeatherView /> : null}
           {view === "schedule" ? <ScheduleView /> : null}
-          {view === "qr" ? <QrView /> : null}
+          {view === "qr" ? <QrView projectId={selectedProjectId} projectName={selectedProject?.name ?? ""} /> : null}
           {view === "workers" ? (
             <WorkersView
+              projectId={selectedProjectId}
+              projectName={selectedProject?.name ?? ""}
               workers={workers}
               workTypes={workTypes}
               message={workerMessage}
@@ -118,6 +150,14 @@ export function AdminPage() {
           ) : null}
           {view === "rules" ? <RulesView /> : null}
           {view === "admins" ? <AdminsView onOpen={() => setModalOpen(true)} /> : null}
+          {view === "projects" ? (
+            <ProjectsView
+              projects={projects}
+              selectedProjectId={selectedProjectId}
+              onSelect={setSelectedProjectId}
+              onRefresh={refreshProjects}
+            />
+          ) : null}
         </section>
       </main>
 

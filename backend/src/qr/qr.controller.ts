@@ -16,8 +16,9 @@ export class QrController {
   getAdminSummary(
     @Query('date') date?: string,
     @Query('mealType') mealType?: MealType | 'all',
+    @Query('projectId') projectId?: string,
   ) {
-    return this.qr.getAdminSummary(date, mealType ?? 'all');
+    return this.qr.getAdminSummary(date, mealType ?? 'all', projectId);
   }
 
   @Post('qr/scan')

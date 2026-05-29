@@ -3,14 +3,14 @@ import { MaterialIcon } from "../../components/MaterialIcon";
 import { getAdminQrUsageSummary } from "../../features/auth/session";
 import type { MealType, QrUsageSummary } from "../../types";
 
-export function QrView() {
+export function QrView({ projectId, projectName }: { projectId: string; projectName: string }) {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [mealType, setMealType] = useState<MealType | "all">("all");
   const [summary, setSummary] = useState<QrUsageSummary | null>(null);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    getAdminQrUsageSummary({ date, mealType })
+    getAdminQrUsageSummary({ date, mealType, projectId })
       .then((nextSummary) => {
         setSummary(nextSummary);
         setMessage("");
@@ -18,7 +18,7 @@ export function QrView() {
       .catch((error: unknown) => {
         setMessage(error instanceof Error ? error.message : "QR 사용 현황을 불러오지 못했습니다.");
       });
-  }, [date, mealType]);
+  }, [date, mealType, projectId]);
 
   const meal = summary?.totals.meal ?? { issued: 0, used: 0, remaining: 0, usageRate: 0 };
   const water = summary?.totals.water ?? { issued: 0, used: 0, remaining: 0, usageRate: 0 };
@@ -28,6 +28,7 @@ export function QrView() {
     <section className="admin-view is-active">
       <header className="page-header page-header--actions">
         <h1>식권/생수 QR 사용 현황</h1>
+        {projectName ? <span className="page-project-label">{projectName}</span> : null}
         <div>
           <button className="light-button" type="button"><MaterialIcon name="download" />엑셀 다운로드</button>
           <button className="dark-button" type="button"><MaterialIcon name="qr_code_scanner" />QR 수동 발급</button>
@@ -50,7 +51,7 @@ export function QrView() {
             <option value="lunch">중식</option>
             <option value="dinner">석식</option>
           </select>
-          <button type="button" aria-label="새로고침" onClick={() => getAdminQrUsageSummary({ date, mealType }).then(setSummary).catch((error: unknown) => setMessage(error instanceof Error ? error.message : "QR 사용 현황을 불러오지 못했습니다."))}><MaterialIcon name="refresh" /></button>
+          <button type="button" aria-label="새로고침" onClick={() => getAdminQrUsageSummary({ date, mealType, projectId }).then(setSummary).catch((error: unknown) => setMessage(error instanceof Error ? error.message : "QR 사용 현황을 불러오지 못했습니다."))}><MaterialIcon name="refresh" /></button>
         </section>
         {message ? <p className="admin-message" role="status">{message}</p> : null}
         <div className="qr-stats">

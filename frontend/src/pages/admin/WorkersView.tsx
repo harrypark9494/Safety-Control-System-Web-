@@ -25,12 +25,16 @@ const payrollStatusMeta: Record<PayrollDocumentStatus, StatusMeta> = {
 };
 
 export function WorkersView({
+  projectId,
+  projectName,
   workers,
   workTypes,
   message,
   onRefresh,
   onRefreshWorkTypes,
 }: {
+  projectId: string;
+  projectName: string;
   workers: WorkerRegistrationAccount[];
   workTypes: WorkTypeSetting[];
   message: string;
@@ -161,7 +165,7 @@ export function WorkersView({
         await onRefreshWorkTypes();
       }
 
-      await createRegisteredWorker(name, phone, normalizedWorkType, team, supervisor);
+      await createRegisteredWorker(projectId, name, phone, normalizedWorkType, team, supervisor);
       resetRegistrationForm();
       setFormMessage("근로자 등록 정보가 저장되었습니다.");
       setActionMessage("");
@@ -174,7 +178,7 @@ export function WorkersView({
 
   async function removeWorker(phone: string) {
     try {
-      await deleteRegisteredWorker(phone);
+      await deleteRegisteredWorker(phone, projectId);
       setFormMessage("근로자 등록 정보가 삭제되었습니다.");
       setOpenActionWorkerUid("");
       setSelectedWorker(null);
@@ -191,6 +195,7 @@ export function WorkersView({
       <section className="admin-view is-active">
         <header className="page-header page-header--actions">
           <h1>근로자 관리</h1>
+          {projectName ? <span className="page-project-label">{projectName}</span> : null}
           <div>
             <button className="light-button" type="button"><MaterialIcon name="download" />엑셀 다운로드</button>
             <button className="light-button" type="button" onClick={() => setWorkTypeModalOpen(true)}>고용 유형 관리</button>

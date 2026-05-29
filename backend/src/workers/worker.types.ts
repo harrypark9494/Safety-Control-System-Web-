@@ -3,6 +3,7 @@ export type PayrollDocumentStatus = 'missing' | 'submitted' | 'reviewing' | 'app
 
 export interface WorkerRegistration {
   uid: string;
+  projectId: string;
   name: string;
   phone: string;
   passwordHash: string | null;

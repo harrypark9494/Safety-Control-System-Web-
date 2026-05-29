@@ -1,6 +1,10 @@
-import { IsBoolean, IsInt, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class AdminRegistrationRequest {
+  @IsOptional()
+  @IsString()
+  projectId?: string;
+
   @IsString()
   @IsNotEmpty()
   name: string;
@@ -23,6 +27,10 @@ export class AdminRegistrationRequest {
 }
 
 export class OnboardingRequest {
+  @IsOptional()
+  @IsString()
+  projectId?: string;
+
   @IsString()
   @IsNotEmpty()
   name: string;

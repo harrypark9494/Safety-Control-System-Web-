@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
 import {
   AdminRegistrationRequest,
   OnboardingRequest,
@@ -23,8 +23,8 @@ export class WorkersController {
   }
 
   @Get('admin/worker-registrations')
-  listRegistrations() {
-    return this.workers.listRegistrations();
+  listRegistrations(@Query('projectId') projectId?: string) {
+    return this.workers.listRegistrations(projectId);
   }
 
   @Post('admin/worker-registrations')
@@ -33,8 +33,8 @@ export class WorkersController {
   }
 
   @Delete('admin/worker-registrations/:phone')
-  deleteRegistration(@Param('phone') phone: string) {
-    this.workers.deleteRegistration(phone);
+  deleteRegistration(@Param('phone') phone: string, @Query('projectId') projectId?: string) {
+    this.workers.deleteRegistration(phone, projectId);
   }
 
   @Get('work-types')
