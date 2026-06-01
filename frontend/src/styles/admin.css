@@ -753,22 +753,238 @@ td {
   overflow-x: auto;
 }
 
-.forecast-card table {
-  min-width: 600px;
-}
-
-.forecast-card th,
-.forecast-card td {
-  padding: 14px 16px;
-  font-size: 0.92rem;
-}
-
 .weather-source-note {
   margin: -8px 0 16px;
   color: #4c5a70;
   font-size: 0.9rem;
   font-weight: 800;
   overflow-wrap: anywhere;
+}
+
+.forecast-meteogram {
+  --forecast-label-width: 38px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.forecast-trend {
+  position: relative;
+  display: grid;
+  grid-template-columns: var(--forecast-label-width) minmax(var(--forecast-chart-width), 1fr);
+  grid-template-rows: 24px auto;
+  gap: 0;
+  width: 100%;
+  min-width: calc(var(--forecast-label-width) + var(--forecast-chart-width));
+  box-sizing: border-box;
+  border: 0;
+  padding: 2px 0 0;
+  background:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.94), rgba(247, 250, 255, 0.96)),
+    #fbfcff;
+}
+
+.forecast-trend-title {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  padding: 0 180px 4px 0;
+}
+
+.forecast-trend-title h2 {
+  margin: 0;
+  color: #17263a;
+  font-size: 0.82rem;
+  font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.trend-scale {
+  grid-row: 2;
+  display: grid;
+  align-content: space-between;
+  min-height: 132px;
+  padding: 0 6px 4px 0;
+  color: #52627b;
+  font-size: 0.58rem;
+  font-weight: 900;
+  text-align: right;
+}
+
+.trend-scale:empty {
+  visibility: hidden;
+}
+
+.trend-scale strong,
+.trend-scale small {
+  color: #2e3b52;
+}
+
+.trend-scale span {
+  writing-mode: vertical-rl;
+  justify-self: center;
+  color: #6c7789;
+  letter-spacing: 0;
+}
+
+.trend-svg {
+  grid-column: 2;
+  grid-row: 2;
+  display: block;
+  width: 100%;
+  height: 132px;
+  min-height: 0;
+  overflow: visible;
+}
+
+.trend-grid-line {
+  stroke: rgba(49, 70, 104, 0.12);
+  stroke-width: 1;
+}
+
+.trend-time-line {
+  stroke: rgba(49, 70, 104, 0.08);
+  stroke-width: 1;
+}
+
+.trend-threshold {
+  stroke-dasharray: 7 6;
+  stroke-linecap: round;
+  stroke-width: 2;
+}
+
+.trend-temp-threshold {
+  stroke: rgba(207, 45, 45, 0.78);
+}
+
+.trend-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 3.2;
+}
+
+.trend-line-temp {
+  stroke: #ef7d2d;
+}
+
+.trend-point {
+  fill: #fff;
+  stroke-width: 2.6;
+}
+
+.trend-point-temp {
+  stroke: #ef7d2d;
+}
+
+.trend-point-temp.is-risk {
+  fill: #fff7f7;
+  stroke: var(--red);
+}
+
+.trend-value,
+.trend-time-label {
+  fill: #263b5e;
+  font-size: 11px;
+  font-weight: 900;
+  text-anchor: middle;
+}
+
+.trend-time-label {
+  fill: #64748b;
+  font-size: 10px;
+}
+
+.trend-threshold-labels {
+  grid-column: 2;
+  grid-row: 1;
+  z-index: 1;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: end;
+  margin: 0;
+  padding: 0 6px 4px 0;
+}
+
+.trend-threshold-labels span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 20px;
+  border: 1px solid rgba(207, 45, 45, 0.24);
+  padding: 0 8px;
+  color: var(--red);
+  background: #fff;
+  font-size: 0.6rem;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.trend-threshold-labels span::before {
+  content: "";
+  width: 14px;
+  border-top: 2px dashed currentColor;
+}
+
+.forecast-data-grid {
+  display: grid;
+  grid-template-columns: var(--forecast-label-width) repeat(var(--forecast-column-count), minmax(36px, 1fr));
+  width: 100%;
+  min-width: calc(var(--forecast-label-width) + var(--forecast-chart-width));
+  box-sizing: border-box;
+  border: 0;
+  background: transparent;
+}
+
+.forecast-row-label,
+.forecast-cell {
+  display: grid;
+  align-items: center;
+  min-width: 0;
+  min-height: 18px;
+  border: 0;
+  border-bottom: 1px solid rgba(198, 204, 213, 0.68);
+  padding: 0 3px;
+  font-size: 0.62rem;
+  font-weight: 850;
+  line-height: 1;
+  text-align: center;
+}
+
+.forecast-row-label {
+  justify-items: end;
+  padding-right: 8px;
+  color: #6a7485;
+  background: transparent;
+}
+
+.forecast-cell {
+  justify-items: center;
+  color: #253952;
+}
+
+.time-cell {
+  color: #64748b;
+  background: rgba(248, 250, 252, 0.92);
+}
+
+.temp-cell {
+  color: #21324a;
+  background: rgba(255, 248, 236, 0.94);
+}
+
+.rain-cell {
+  color: #0f766e;
+  background: rgba(238, 252, 249, 0.92);
+}
+
+.wind-cell {
+  background: rgba(233, 248, 239, 0.92);
 }
 
 .section-toolbar {

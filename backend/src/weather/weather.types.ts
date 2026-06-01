@@ -9,6 +9,7 @@ export type WeatherForecastItem = {
   icon: string;
   condition: string;
   rainProbability: number;
+  precipitation: number;
   temperature: number;
   windSpeed: number;
   riskLevel: WeatherRiskLevel;

@@ -249,6 +249,7 @@ rejected
       "icon": "rainy",
       "condition": "소나기",
       "rainProbability": 85,
+      "precipitation": 12,
       "temperature": 26,
       "windSpeed": 7.2,
       "riskLevel": "caution"

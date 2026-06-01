@@ -135,14 +135,29 @@ export class WeatherService {
       rainProbability: 55,
       windSpeed: 4.2,
       humidity: 65,
-      forecast24h: [
-        { time: '15:00', icon: 'sunny', condition: '맑음', rainProbability: 10, temperature: 32, windSpeed: 3.8 },
-        { time: '16:00', icon: 'partly_cloudy_day', condition: '구름조금', rainProbability: 15, temperature: 31, windSpeed: 4.1 },
-        { time: '17:00', icon: 'cloud', condition: '흐림', rainProbability: 40, temperature: 29, windSpeed: 5.5 },
-        { time: '18:00', icon: 'rainy', condition: '소나기', rainProbability: 85, temperature: 26, windSpeed: 7.2 },
-        { time: '19:00', icon: 'rainy', condition: '약한비', rainProbability: 60, temperature: 25, windSpeed: 5 },
-      ],
+      forecast24h: this.buildForecast24h(),
     };
+  }
+
+  private buildForecast24h(): Array<Omit<WeatherForecastItem, 'riskLevel'>> {
+    return Array.from({ length: 24 }, (_, index) => {
+      const hour = (12 + index) % 24;
+      const rainBlock = index >= 6 && index <= 10;
+      const temperature = this.roundTo(26 + Math.sin((index - 2) / 3) * 5 + (index < 5 ? 1.5 : 0), 0);
+      const precipitation = rainBlock ? [2, 6, 12, 8, 3][index - 6] : 0;
+      const rainProbability = precipitation > 0 ? Math.min(45 + precipitation * 5, 90) : index > 15 ? 25 : 10;
+      const windSpeed = this.roundTo(2.5 + Math.sin(index / 2) * 1.8 + (rainBlock ? 2 : 0), 1);
+
+      return {
+        time: `${String(hour).padStart(2, '0')}:00`,
+        icon: precipitation > 0 ? 'rainy' : temperature >= 30 ? 'sunny' : 'partly_cloudy_day',
+        condition: precipitation > 0 ? '비' : temperature >= 30 ? '맑음' : '구름조금',
+        rainProbability,
+        precipitation,
+        temperature,
+        windSpeed,
+      };
+    });
   }
 
   private applyCorrection(raw: RawWeatherSnapshot, correctionProfile: WeatherCorrectionProfile): RawWeatherSnapshot {
@@ -222,7 +237,12 @@ export class WeatherService {
       return 'alert';
     }
 
-    if (item.rainProbability >= 70 || item.windSpeed >= thresholds.windSpeed * 0.7) {
+    if (
+      item.precipitation >= thresholds.precipitation * 0.75
+      || item.rainProbability >= 70
+      || item.windSpeed >= thresholds.windSpeed * 0.7
+      || item.temperature >= thresholds.temperature * 0.9
+    ) {
       return 'caution';
     }
 
