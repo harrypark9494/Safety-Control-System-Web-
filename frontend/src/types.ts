@@ -73,7 +73,9 @@ export interface WorkTypeSetting {
 }
 
 export interface AdminScheduleColumn {
+  id?: string;
   label: string;
+  workType?: WorkType;
   workTypes: WorkType[];
   workerCount: number;
 }

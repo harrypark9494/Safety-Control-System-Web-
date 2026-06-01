@@ -67,7 +67,7 @@ ARCHIVED
 ```json
 {
   "label": "직접 고용",
-  "teams": ["Stage Alpha", "직접 고용 A팀"],
+  "teams": ["Stage Alpha"],
   "enabled": true,
   "payrollDocumentsRequired": true,
   "sortOrder": 10,
@@ -368,15 +368,19 @@ Response `200 OK`: `WorkTypeSetting[]`
 `GET /api/admin/schedule-columns?projectId=waterbomb-2026-summer`
 
 스케줄 표 컬럼은 별도 저장값이 아니라 활성 고용 유형의 `teams` 목록에서
-자동 생성합니다. 같은 팀 이름이 여러 고용 유형에 있으면 하나의 컬럼으로 합치고,
-`workerCount`는 선택 프로젝트에 등록된 해당 팀 근로자 수입니다.
+자동 생성합니다. 고용 유형은 상위 폴더, 팀은 그 아래 노드처럼 취급하므로
+컬럼 식별자는 `고용유형 / 팀` 경로를 사용합니다. 같은 팀 이름이 여러 고용
+유형에 있더라도 서로 다른 컬럼으로 유지하며, `workerCount`는 선택 프로젝트에
+등록된 해당 고용유형/팀 근로자 수입니다.
 
 Response `200 OK`:
 
 ```json
 [
   {
+    "id": "단기 아르바이트 / 입장 게이트 A팀",
     "label": "입장 게이트 A팀",
+    "workType": "단기 아르바이트",
     "workTypes": ["단기 아르바이트"],
     "workerCount": 8
   }

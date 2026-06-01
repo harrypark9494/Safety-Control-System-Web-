@@ -131,31 +131,29 @@ export class WorkersService {
 
   listScheduleColumns(projectId?: string): ScheduleColumn[] {
     const normalizedProjectId = projectId?.trim();
-    const workerCountByTeam = [...this.registrations.values()].reduce<Record<string, number>>((counts, worker) => {
+    const workerCountByTeamPath = [...this.registrations.values()].reduce<Record<string, number>>((counts, worker) => {
       if (!normalizedProjectId || worker.projectId === normalizedProjectId) {
-        counts[worker.team] = (counts[worker.team] ?? 0) + 1;
+        const path = this.scheduleColumnId(worker.workType, worker.team);
+        counts[path] = (counts[path] ?? 0) + 1;
       }
       return counts;
     }, {});
-    const columns = new Map<string, ScheduleColumn>();
+    const columns: ScheduleColumn[] = [];
 
     this.listWorkTypes().forEach((workType) => {
       workType.teams.forEach((team) => {
-        const existing = columns.get(team);
-        if (existing) {
-          existing.workTypes.push(workType.label);
-          return;
-        }
-
-        columns.set(team, {
+        const id = this.scheduleColumnId(workType.label, team);
+        columns.push({
+          id,
           label: team,
+          workType: workType.label,
           workTypes: [workType.label],
-          workerCount: workerCountByTeam[team] ?? 0,
+          workerCount: workerCountByTeamPath[id] ?? 0,
         });
       });
     });
 
-    return [...columns.values()];
+    return columns;
   }
 
   saveWorkType(request: WorkTypeRequest) {
@@ -238,7 +236,7 @@ export class WorkersService {
     const now = new Date().toISOString();
     this.workTypes.set('직접 고용', {
       label: '직접 고용',
-      teams: ['Stage Alpha', '직접 고용 A팀'],
+      teams: ['Stage Alpha'],
       enabled: true,
       payrollDocumentsRequired: true,
       sortOrder: 10,
@@ -246,7 +244,7 @@ export class WorkersService {
     });
     this.workTypes.set('외부 고용', {
       label: '외부 고용',
-      teams: ['Local Test', '외부 운영팀'],
+      teams: ['Local Test'],
       enabled: true,
       payrollDocumentsRequired: false,
       sortOrder: 20,
@@ -309,6 +307,10 @@ export class WorkersService {
 
   private registrationKey(projectId: string, phone: string) {
     return `${projectId}:${phone}`;
+  }
+
+  private scheduleColumnId(workType: string, team: string) {
+    return `${workType} / ${team}`;
   }
 
   private normalizePhone(phone: string) {
