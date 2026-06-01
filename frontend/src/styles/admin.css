@@ -1815,7 +1815,7 @@ td {
 .work-type-row,
 .work-type-add-form {
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(140px, auto) minmax(150px, auto);
+  grid-template-columns: minmax(140px, 0.8fr) minmax(240px, 1.2fr) minmax(140px, auto) minmax(150px, auto);
   align-items: center;
   gap: 16px;
   padding: 18px 20px;
@@ -1841,6 +1841,73 @@ td {
   font-weight: 900;
 }
 
+.work-type-team-cell {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.team-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.team-chip {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  gap: 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 4px 7px 4px 10px;
+  color: #273247;
+  background: #f6f7f8;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.team-chip button {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  color: #5d6675;
+  background: transparent;
+}
+
+.team-chip button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.team-chip .material-icon {
+  font-size: 16px;
+  line-height: 16px;
+}
+
+.team-add-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.team-add-row input {
+  min-height: 38px;
+  min-width: 0;
+  border: 1px solid var(--line-strong);
+  padding: 0 12px;
+  background: var(--field);
+  font-weight: 900;
+}
+
+.team-add-row .light-button {
+  min-height: 38px;
+  padding: 0 12px;
+}
+
 .work-type-row label,
 .work-type-add-form label {
   display: inline-flex;
@@ -1859,7 +1926,7 @@ td {
 }
 
 .work-type-add-form {
-  grid-template-columns: minmax(160px, 1fr) minmax(150px, auto) 92px;
+  grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) minmax(150px, auto) 92px;
   border-bottom: 0;
 }
 
@@ -2221,7 +2288,7 @@ td {
 }
 
 .account-modal.work-type-modal {
-  width: min(820px, calc(100vw - 32px));
+  width: min(960px, calc(100vw - 32px));
 }
 
 .account-modal.worker-detail-modal {

@@ -19,6 +19,7 @@ export interface WorkerRegistration {
 
 export interface WorkTypeSetting {
   label: string;
+  teams: string[];
   enabled: boolean;
   payrollDocumentsRequired: boolean;
   sortOrder: number;

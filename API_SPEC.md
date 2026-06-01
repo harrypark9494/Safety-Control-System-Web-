@@ -67,6 +67,7 @@ ARCHIVED
 ```json
 {
   "label": "직접 고용",
+  "teams": ["Stage Alpha", "직접 고용 A팀"],
   "enabled": true,
   "payrollDocumentsRequired": true,
   "sortOrder": 10,
@@ -74,10 +75,12 @@ ARCHIVED
 }
 ```
 
-`workType`은 관리자 고용 유형 설정에 등록된 `label` 문자열입니다. 외부 근로자가
+`workType`은 관리자 고용 유형 설정에 등록된 `label` 문자열입니다. `team`은
+해당 고용 유형의 `teams` 목록에 등록된 하위 팀 문자열입니다. 외부 근로자가
 직접 최초 등록을 진행하므로, 로그인 화면의 고용 유형 선택 박스에는 등록된 모든
 고용 유형을 표시합니다. 서류 제출 이동 여부는 `payrollDocumentsRequired`
-설정으로 계산합니다. 설정에 없는 `workType`은 `400 Bad Request`로 거부합니다.
+설정으로 계산합니다. 설정에 없는 `workType`이나 해당 고용 유형 아래에 없는
+`team`은 `400 Bad Request`로 거부합니다.
 
 ### WorkerRegistrationStatus
 
@@ -356,6 +359,7 @@ Response `200 OK`: `WorkTypeSetting[]`
 `GET /api/admin/work-types`
 
 관리자가 활성/비활성 고용 유형과 서류 제출 필요 여부를 관리하기 위한 전체 목록입니다.
+팀은 고용 유형의 하위 목록으로 함께 관리합니다.
 
 Response `200 OK`: `WorkTypeSetting[]`
 
@@ -368,6 +372,7 @@ Request:
 ```json
 {
   "label": "단기 아르바이트",
+  "teams": ["입장 게이트 A팀", "입장 게이트 B팀"],
   "enabled": true,
   "payrollDocumentsRequired": true,
   "sortOrder": 15
@@ -565,8 +570,9 @@ Response `200 OK`:
 
 `POST /api/admin/worker-registrations`
 
-관리자가 실제 근로자 원장을 먼저 등록합니다. 이후 근로자가 회원가입하면 이
-데이터와 대조합니다.
+관리자가 실제 근로자 원장을 먼저 등록합니다. `team`은 선택한 `workType`의
+하위 팀 목록에 등록된 값이어야 합니다. 이후 근로자가 회원가입하면 이 데이터와
+대조합니다.
 
 Request:
 
@@ -585,7 +591,7 @@ Response `200 OK`: `WorkerRegistration`
 
 Errors:
 
-- `400 Bad Request`: 필수 입력 누락, 연락처 형식 오류, 지원하지 않는 고용 유형
+- `400 Bad Request`: 필수 입력 누락, 연락처 형식 오류, 지원하지 않는 고용 유형 또는 팀
 - `409 Conflict`: 같은 프로젝트에 같은 연락처가 이미 근로자 원장에 등록되어 있음
 
 ### Delete Worker Registration

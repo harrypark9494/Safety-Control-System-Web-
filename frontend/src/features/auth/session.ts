@@ -218,7 +218,7 @@ export async function getWorkTypes(options: { includeDisabled?: boolean } = {}):
   return requestJson<WorkTypeSetting[]>(path);
 }
 
-export async function saveWorkType(setting: Pick<WorkTypeSetting, "label" | "enabled" | "payrollDocumentsRequired" | "sortOrder">): Promise<WorkTypeSetting> {
+export async function saveWorkType(setting: Pick<WorkTypeSetting, "label" | "teams" | "enabled" | "payrollDocumentsRequired" | "sortOrder">): Promise<WorkTypeSetting> {
   return requestJson<WorkTypeSetting>("/api/admin/work-types", {
     method: "POST",
     body: JSON.stringify(setting),

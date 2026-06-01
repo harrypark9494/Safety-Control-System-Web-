@@ -65,6 +65,7 @@ export interface Project {
 
 export interface WorkTypeSetting {
   label: WorkType;
+  teams: string[];
   enabled: boolean;
   payrollDocumentsRequired: boolean;
   sortOrder: number;

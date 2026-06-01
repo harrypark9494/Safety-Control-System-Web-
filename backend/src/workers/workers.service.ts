@@ -26,6 +26,7 @@ export class WorkersService {
     const projectId = this.normalizeProjectId(request.projectId);
     const phone = this.normalizePhone(request.phone);
     const workType = this.normalizeExistingWorkType(request.workType, { requireEnabled: false });
+    const team = this.normalizeExistingTeam(workType, request.team);
     const now = new Date().toISOString();
     const key = this.registrationKey(projectId, phone);
 
@@ -41,7 +42,7 @@ export class WorkersService {
       passwordHash: null,
       verificationCode: null,
       workType,
-      team: request.team.trim(),
+      team,
       supervisor: request.supervisor.trim(),
       registrationStatus: 'registered',
       payrollDocumentStatus: this.initialPayrollDocumentStatus(workType),
@@ -130,8 +131,23 @@ export class WorkersService {
 
   saveWorkType(request: WorkTypeRequest) {
     const label = this.normalizeWorkTypeLabel(request.label);
+    const existing = this.workTypes.get(label);
+    const teams = this.normalizeTeams(request.teams ?? existing?.teams ?? []);
+
+    if (existing) {
+      const removedTeams = existing.teams.filter((team) => !teams.includes(team));
+      const hasAssignedWorkers = [...this.registrations.values()].some((worker) => (
+        worker.workType === label && removedTeams.includes(worker.team)
+      ));
+
+      if (hasAssignedWorkers) {
+        throw new ConflictException('등록된 근로자가 있는 팀은 삭제할 수 없습니다.');
+      }
+    }
+
     const workType: WorkTypeSetting = {
       label,
+      teams,
       enabled: request.enabled,
       payrollDocumentsRequired: request.payrollDocumentsRequired,
       sortOrder: request.sortOrder,
@@ -193,6 +209,7 @@ export class WorkersService {
     const now = new Date().toISOString();
     this.workTypes.set('직접 고용', {
       label: '직접 고용',
+      teams: ['Stage Alpha', '직접 고용 A팀'],
       enabled: true,
       payrollDocumentsRequired: true,
       sortOrder: 10,
@@ -200,6 +217,7 @@ export class WorkersService {
     });
     this.workTypes.set('외부 고용', {
       label: '외부 고용',
+      teams: ['Local Test', '외부 운영팀'],
       enabled: true,
       payrollDocumentsRequired: false,
       sortOrder: 20,
@@ -301,6 +319,38 @@ export class WorkersService {
     }
 
     return normalized;
+  }
+
+  private normalizeExistingTeam(workType: string, team: string) {
+    const normalized = this.normalizeTeamLabel(team);
+    const setting = this.workTypes.get(workType);
+
+    if (!setting?.teams.includes(normalized)) {
+      throw new ApiError(HttpStatus.BAD_REQUEST, 'UNSUPPORTED_TEAM', '선택한 고용 유형에 등록되지 않은 팀입니다.');
+    }
+
+    return normalized;
+  }
+
+  private normalizeTeamLabel(team: string) {
+    const normalized = (team ?? '').trim();
+
+    if (!normalized || normalized.length > 40) {
+      throw new ApiError(HttpStatus.BAD_REQUEST, 'INVALID_TEAM', '팀은 1자 이상 40자 이하여야 합니다.');
+    }
+
+    return normalized;
+  }
+
+  private normalizeTeams(teams: string[]) {
+    const normalizedTeams = teams.map((team) => this.normalizeTeamLabel(team));
+    const uniqueTeams = [...new Set(normalizedTeams)];
+
+    if (uniqueTeams.length === 0) {
+      throw new ApiError(HttpStatus.BAD_REQUEST, 'INVALID_TEAMS', '고용 유형에는 하나 이상의 팀이 필요합니다.');
+    }
+
+    return uniqueTeams;
   }
 
   private initialPayrollDocumentStatus(workType: string): PayrollDocumentStatus {

@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsArray, IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class AdminRegistrationRequest {
   @IsOptional()
@@ -78,6 +78,11 @@ export class WorkTypeRequest {
   @IsString()
   @IsNotEmpty()
   label: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  teams?: string[];
 
   @IsBoolean()
   enabled: boolean;

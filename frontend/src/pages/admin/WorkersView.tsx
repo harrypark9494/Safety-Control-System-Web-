@@ -55,17 +55,14 @@ export function WorkersView({
   const [actionMessage, setActionMessage] = useState("");
   const [registerModalOpen, setRegisterModalOpen] = useState(false);
   const [workTypeModalOpen, setWorkTypeModalOpen] = useState(false);
-  const [workTypeListOpen, setWorkTypeListOpen] = useState(false);
   const [selectedWorker, setSelectedWorker] = useState<WorkerRegistrationAccount | null>(null);
   const [openActionWorkerUid, setOpenActionWorkerUid] = useState("");
   const [actionMenuPosition, setActionMenuPosition] = useState({ top: 0, left: 0 });
   const onboardedCount = workers.filter((worker) => worker.registrationStatus === "onboarded").length;
   const payrollRequiredWorkerCount = workers.filter((worker) => isPayrollDocumentsRequiredWorker(worker, workTypes)).length;
-  const nextSortOrder = getNextWorkTypeSortOrder(workTypes);
   const canManageWorkTypes = workTypesReady;
-  const workTypeQuery = workType.trim().toLowerCase();
-  const filteredWorkTypes = workTypes.filter((option) => option.label.toLowerCase().includes(workTypeQuery));
-  const hasExactWorkType = workTypes.some((option) => option.label === workType.trim());
+  const selectedWorkType = workTypes.find((option) => option.label === workType);
+  const availableTeams = selectedWorkType?.teams ?? [];
   const teamOptions = Array.from(new Set(workers.map((worker) => worker.team).filter(Boolean))).sort((a, b) => a.localeCompare(b, "ko"));
   const workerTypeOptions = Array.from(new Set([
     ...workTypes.map((option) => option.label),
@@ -148,12 +145,10 @@ export function WorkersView({
     setWorkType("");
     setTeam("");
     setSupervisor("");
-    setWorkTypeListOpen(false);
   }
 
   async function registerWorker(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const normalizedWorkType = workType.trim();
 
     try {
       if (!canManageWorkTypes) {
@@ -161,17 +156,17 @@ export function WorkersView({
         return;
       }
 
-      if (!workTypes.some((option) => option.label === normalizedWorkType)) {
-        await saveWorkType({
-          label: normalizedWorkType,
-          enabled: true,
-          payrollDocumentsRequired: false,
-          sortOrder: nextSortOrder,
-        });
-        await onRefreshWorkTypes();
+      if (!selectedWorkType) {
+        setActionMessage("등록된 고용 유형을 선택해 주세요.");
+        return;
       }
 
-      await createRegisteredWorker(projectId, name, phone, normalizedWorkType, team, supervisor);
+      if (!selectedWorkType.teams.includes(team)) {
+        setActionMessage("선택한 고용 유형에 등록된 팀을 선택해 주세요.");
+        return;
+      }
+
+      await createRegisteredWorker(projectId, name, phone, selectedWorkType.label, team, supervisor);
       resetRegistrationForm();
       setFormMessage("근로자 등록 정보가 저장되었습니다.");
       setActionMessage("");
@@ -215,8 +210,8 @@ export function WorkersView({
               <option value="onboarded">온보딩 완료</option>
               <option value="registered">온보딩 대기</option>
             </select>
-            <select value={teamFilter} onChange={(event) => setTeamFilter(event.target.value)} aria-label="담당 구역">
-              <option value="all">담당 구역 전체</option>
+            <select value={teamFilter} onChange={(event) => setTeamFilter(event.target.value)} aria-label="팀">
+              <option value="all">팀 전체</option>
               {teamOptions.map((option) => <option value={option} key={option}>{option}</option>)}
             </select>
             <select value={workerTypeFilter} onChange={(event) => setWorkerTypeFilter(event.target.value)} aria-label="고용 유형">
@@ -234,7 +229,7 @@ export function WorkersView({
               <tr>
                 <th aria-sort={getSortAria("name")}><button className="table-sort-button" type="button" onClick={() => toggleWorkerSort("name")}>이름 <MaterialIcon name={getSortMark("name")} /></button></th>
                 <th aria-sort={getSortAria("phone")}><button className="table-sort-button" type="button" onClick={() => toggleWorkerSort("phone")}>연락처 <MaterialIcon name={getSortMark("phone")} /></button></th>
-                <th aria-sort={getSortAria("team")}><button className="table-sort-button" type="button" onClick={() => toggleWorkerSort("team")}>담당 구역 <MaterialIcon name={getSortMark("team")} /></button></th>
+                <th aria-sort={getSortAria("team")}><button className="table-sort-button" type="button" onClick={() => toggleWorkerSort("team")}>팀 <MaterialIcon name={getSortMark("team")} /></button></th>
                 <th aria-sort={getSortAria("workType")}><button className="table-sort-button" type="button" onClick={() => toggleWorkerSort("workType")}>고용 유형 <MaterialIcon name={getSortMark("workType")} /></button></th>
                 <th aria-sort={getSortAria("registrationStatus")}><button className="table-sort-button" type="button" onClick={() => toggleWorkerSort("registrationStatus")}>온보딩 <MaterialIcon name={getSortMark("registrationStatus")} /></button></th>
                 <th aria-sort={getSortAria("payrollDocumentStatus")}><button className="table-sort-button" type="button" onClick={() => toggleWorkerSort("payrollDocumentStatus")}>서류 <MaterialIcon name={getSortMark("payrollDocumentStatus")} /></button></th>
@@ -337,69 +332,33 @@ export function WorkersView({
                 <label>이름<input value={name} onChange={(event) => setName(event.target.value)} autoComplete="off" required /></label>
                 <label>연락처<input value={phone} onChange={(event) => setPhone(formatPhone(event.target.value))} placeholder="010-1234-5678" autoComplete="off" maxLength={13} required /></label>
                 {!canManageWorkTypes ? <p className="modal-message" role="status">고용 유형 목록을 불러온 뒤 등록할 수 있습니다.</p> : null}
-                <div
-                  className="work-type-picker"
-                  onBlur={(event) => {
-                    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-                      setWorkTypeListOpen(false);
-                    }
-                  }}
-                >
-                  <label>
-                    고용 유형
-                    <span className="work-type-input-row">
-                      <input
-                        value={workType}
-                        onChange={(event) => {
-                          setWorkType(event.target.value);
-                          setWorkTypeListOpen(true);
-                        }}
-                        onFocus={() => setWorkTypeListOpen(true)}
-                        placeholder="예: 단기 아르바이트"
-                        autoComplete="off"
-                        disabled={!canManageWorkTypes}
-                        role="combobox"
-                        aria-expanded={workTypeListOpen}
-                        aria-controls="work-type-options"
-                        maxLength={40}
-                        required
-                      />
-                      <button
-                        type="button"
-                        aria-label="고용 유형 목록 열기"
-                        aria-expanded={workTypeListOpen}
-                        disabled={!canManageWorkTypes}
-                        onClick={() => setWorkTypeListOpen((open) => !open)}
-                      >
-                        <MaterialIcon name="arrow_drop_down" />
-                      </button>
-                    </span>
-                  </label>
-                  {workTypeListOpen ? (
-                    <div className="work-type-picker-panel" id="work-type-options" role="listbox">
-                      {filteredWorkTypes.map((option) => (
-                        <button
-                          className={option.label === workType ? "is-selected" : ""}
-                          key={option.label}
-                          type="button"
-                          role="option"
-                          aria-selected={option.label === workType}
-                          onClick={() => {
-                            setWorkType(option.label);
-                            setWorkTypeListOpen(false);
-                          }}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                      {filteredWorkTypes.length === 0 ? <span className="work-type-empty">일치하는 기존 유형이 없습니다.</span> : null}
-                      {workType.trim() && !hasExactWorkType ? <span className="work-type-new">새 유형으로 저장됩니다: {workType.trim()}</span> : null}
-                    </div>
-                  ) : null}
-                </div>
-                <label>담당 구역<input value={team} onChange={(event) => setTeam(event.target.value)} placeholder="예: Stage Alpha" autoComplete="off" required /></label>
+                <label>
+                  고용 유형
+                  <select
+                    value={workType}
+                    onChange={(event) => {
+                      const nextWorkType = workTypes.find((option) => option.label === event.target.value);
+                      setWorkType(event.target.value);
+                      setTeam(nextWorkType?.teams[0] ?? "");
+                    }}
+                    disabled={!canManageWorkTypes}
+                    required
+                  >
+                    <option value="">고용 유형 선택</option>
+                    {workTypes.map((option) => (
+                      <option key={option.label} value={option.label}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  팀
+                  <select value={team} onChange={(event) => setTeam(event.target.value)} disabled={!selectedWorkType} required>
+                    <option value="">{selectedWorkType ? "팀 선택" : "고용 유형을 먼저 선택"}</option>
+                    {availableTeams.map((option) => <option key={option} value={option}>{option}</option>)}
+                  </select>
+                </label>
                 <label>담당 관리자<input value={supervisor} onChange={(event) => setSupervisor(event.target.value)} placeholder="예: 관리자 A" autoComplete="off" required /></label>
-                <p>새 고용 유형을 입력하면 로그인 선택지에도 함께 추가됩니다.</p>
+                <p>팀은 고용 유형 관리에서 해당 고용 유형 아래에 먼저 등록해야 합니다.</p>
                 {actionMessage ? <strong className="modal-message" role="status">{actionMessage}</strong> : null}
               </div>
               <footer>
@@ -462,7 +421,7 @@ function WorkerDetailModal({
           </div>
           <dl className="worker-detail-list">
             <div><dt>연락처</dt><dd>{worker.phone}</dd></div>
-            <div><dt>담당 구역</dt><dd>{worker.team}</dd></div>
+            <div><dt>팀</dt><dd>{worker.team}</dd></div>
             <div><dt>담당 관리자</dt><dd>{worker.supervisor}</dd></div>
             <div><dt>온보딩 상태</dt><dd>{registrationStatusLabel}</dd></div>
             <div><dt>급여 서류 상태</dt><dd>{payrollDocumentsRequired ? payrollStatusLabel : "대상 아님"}</dd></div>
@@ -574,10 +533,12 @@ function WorkTypeManager({
   onRefreshWorkers: () => Promise<void>;
 }) {
   const [label, setLabel] = useState("");
+  const [teamLabel, setTeamLabel] = useState("");
   const [payrollDocumentsRequired, setPayrollDocumentsRequired] = useState(false);
   const [message, setMessage] = useState("");
   const [editingLabel, setEditingLabel] = useState("");
   const [nextLabel, setNextLabel] = useState("");
+  const [newTeamByWorkType, setNewTeamByWorkType] = useState<Record<string, string>>({});
   const nextSortOrder = getNextWorkTypeSortOrder(workTypes);
 
   async function updateWorkType(workType: WorkTypeSetting, updates: Partial<WorkTypeSetting>) {
@@ -589,6 +550,7 @@ function WorkTypeManager({
 
       await saveWorkType({
         label: workType.label,
+        teams: updates.teams ?? workType.teams,
         enabled: true,
         payrollDocumentsRequired: updates.payrollDocumentsRequired ?? workType.payrollDocumentsRequired,
         sortOrder: updates.sortOrder ?? workType.sortOrder,
@@ -611,11 +573,13 @@ function WorkTypeManager({
 
       await saveWorkType({
         label,
+        teams: [teamLabel],
         enabled: true,
         payrollDocumentsRequired,
         sortOrder: nextSortOrder,
       });
       setLabel("");
+      setTeamLabel("");
       setPayrollDocumentsRequired(false);
       setMessage("고용 유형이 추가되었습니다.");
       await onRefresh();
@@ -640,6 +604,45 @@ function WorkTypeManager({
       await onRefreshWorkers();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "고용 유형 이름 수정에 실패했습니다.");
+    }
+  }
+
+  async function addTeam(workType: WorkTypeSetting) {
+    const nextTeam = (newTeamByWorkType[workType.label] ?? "").trim();
+
+    try {
+      if (!canManage) {
+        setMessage("고용 유형 목록을 불러온 뒤 팀을 추가할 수 있습니다.");
+        return;
+      }
+
+      if (!nextTeam) {
+        setMessage("추가할 팀 이름을 입력해 주세요.");
+        return;
+      }
+
+      if (workType.teams.includes(nextTeam)) {
+        setMessage("이미 등록된 팀입니다.");
+        return;
+      }
+
+      await updateWorkType(workType, { teams: [...workType.teams, nextTeam] });
+      setNewTeamByWorkType((current) => ({ ...current, [workType.label]: "" }));
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "팀 추가에 실패했습니다.");
+    }
+  }
+
+  async function removeTeam(workType: WorkTypeSetting, team: string) {
+    try {
+      if (workers.some((worker) => worker.workType === workType.label && worker.team === team)) {
+        setMessage("해당 팀에 등록된 근로자가 있어 삭제할 수 없습니다.");
+        return;
+      }
+
+      await updateWorkType(workType, { teams: workType.teams.filter((option) => option !== team) });
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "팀 삭제에 실패했습니다.");
     }
   }
 
@@ -679,7 +682,39 @@ function WorkTypeManager({
                 ) : (
                   <strong>{workType.label}</strong>
                 )}
-                <small>등록 근로자 {workerCount}명</small>
+                <small>등록 근로자 {workerCount}명 · 팀 {workType.teams.length}개</small>
+              </div>
+              <div className="work-type-team-cell">
+                <div className="team-chip-list">
+                  {workType.teams.map((team) => {
+                    const teamWorkerCount = workers.filter((worker) => worker.workType === workType.label && worker.team === team).length;
+
+                    return (
+                      <span className="team-chip" key={team}>
+                        {team}
+                        <button
+                          type="button"
+                          aria-label={`${team} 팀 삭제`}
+                          disabled={!canManage || teamWorkerCount > 0 || workType.teams.length === 1}
+                          onClick={() => removeTeam(workType, team)}
+                        >
+                          <MaterialIcon name="close" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+                <div className="team-add-row">
+                  <input
+                    value={newTeamByWorkType[workType.label] ?? ""}
+                    onChange={(event) => setNewTeamByWorkType((current) => ({ ...current, [workType.label]: event.target.value }))}
+                    placeholder="팀 추가"
+                    maxLength={40}
+                    autoComplete="off"
+                    disabled={!canManage}
+                  />
+                  <button className="light-button" type="button" disabled={!canManage} onClick={() => addTeam(workType)}>추가</button>
+                </div>
               </div>
               <label>
                 <input
@@ -712,6 +747,15 @@ function WorkTypeManager({
           value={label}
           onChange={(event) => setLabel(event.target.value)}
           placeholder="새 고용 유형"
+          autoComplete="off"
+          maxLength={40}
+          disabled={!canManage}
+          required
+        />
+        <input
+          value={teamLabel}
+          onChange={(event) => setTeamLabel(event.target.value)}
+          placeholder="기본 팀"
           autoComplete="off"
           maxLength={40}
           disabled={!canManage}
