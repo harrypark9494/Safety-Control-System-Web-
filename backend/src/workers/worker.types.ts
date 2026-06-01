@@ -25,3 +25,9 @@ export interface WorkTypeSetting {
   sortOrder: number;
   updatedAt: string;
 }
+
+export interface ScheduleColumn {
+  label: string;
+  workTypes: string[];
+  workerCount: number;
+}

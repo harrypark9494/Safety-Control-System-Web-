@@ -363,6 +363,26 @@ Response `200 OK`: `WorkTypeSetting[]`
 
 Response `200 OK`: `WorkTypeSetting[]`
 
+### List Admin Schedule Columns
+
+`GET /api/admin/schedule-columns?projectId=waterbomb-2026-summer`
+
+스케줄 표 컬럼은 별도 저장값이 아니라 활성 고용 유형의 `teams` 목록에서
+자동 생성합니다. 같은 팀 이름이 여러 고용 유형에 있으면 하나의 컬럼으로 합치고,
+`workerCount`는 선택 프로젝트에 등록된 해당 팀 근로자 수입니다.
+
+Response `200 OK`:
+
+```json
+[
+  {
+    "label": "입장 게이트 A팀",
+    "workTypes": ["단기 아르바이트"],
+    "workerCount": 8
+  }
+]
+```
+
 ### Save Admin Work Type
 
 `POST /api/admin/work-types`

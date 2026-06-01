@@ -21,6 +21,7 @@ dev server는 `LOCAL_FRONTEND_PORT=3000`에서 열리고, `/api` 요청을
 - `GET /api/health`
 - `GET /api/work-types`
 - `GET /api/admin/work-types`
+- `GET /api/admin/schedule-columns`
 - `POST /api/admin/work-types`
 - `POST /api/admin/work-types/rename`
 - `DELETE /api/admin/work-types/:label`

@@ -72,6 +72,12 @@ export interface WorkTypeSetting {
   updatedAt?: string;
 }
 
+export interface AdminScheduleColumn {
+  label: string;
+  workTypes: WorkType[];
+  workerCount: number;
+}
+
 export interface PayrollSubmission {
   workType: WorkType;
   residentNumber: string;

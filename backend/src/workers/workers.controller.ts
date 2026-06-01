@@ -47,6 +47,11 @@ export class WorkersController {
     return this.workers.listWorkTypes({ includeDisabled: true });
   }
 
+  @Get('admin/schedule-columns')
+  listScheduleColumns(@Query('projectId') projectId?: string) {
+    return this.workers.listScheduleColumns(projectId);
+  }
+
   @Post('admin/work-types')
   saveWorkType(@Body() request: WorkTypeRequest) {
     return this.workers.saveWorkType(request);

@@ -1,5 +1,6 @@
 import type {
   AppSession,
+  AdminScheduleColumn,
   AdminWeatherOverview,
   MealType,
   Project,
@@ -216,6 +217,15 @@ export async function completeWorkerOnboarding(
 export async function getWorkTypes(options: { includeDisabled?: boolean } = {}): Promise<WorkTypeSetting[]> {
   const path = options.includeDisabled ? "/api/admin/work-types" : "/api/work-types";
   return requestJson<WorkTypeSetting[]>(path);
+}
+
+export async function getAdminScheduleColumns(projectId?: string): Promise<AdminScheduleColumn[]> {
+  const params = new URLSearchParams();
+  if (projectId) {
+    params.set("projectId", projectId);
+  }
+
+  return requestJson<AdminScheduleColumn[]>(`/api/admin/schedule-columns${params.toString() ? `?${params}` : ""}`);
 }
 
 export async function saveWorkType(setting: Pick<WorkTypeSetting, "label" | "teams" | "enabled" | "payrollDocumentsRequired" | "sortOrder">): Promise<WorkTypeSetting> {

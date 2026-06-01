@@ -1,9 +1,9 @@
 import { FormEvent, useEffect, useState } from "react";
 import { MaterialIcon } from "../components/MaterialIcon";
 import "../styles/admin.css";
-import { clearSession, getAdminProjects, getRegisteredWorkers, getWorkTypes } from "../features/auth/session";
+import { clearSession, getAdminProjects, getAdminScheduleColumns, getRegisteredWorkers, getWorkTypes } from "../features/auth/session";
 import { navigateTo } from "../features/navigation";
-import type { Project, WorkerRegistrationAccount, WorkTypeSetting } from "../types";
+import type { AdminScheduleColumn, Project, WorkerRegistrationAccount, WorkTypeSetting } from "../types";
 import { AdminsView } from "./admin/AdminsView";
 import { DashboardView } from "./admin/DashboardView";
 import { ProjectsView } from "./admin/ProjectsView";
@@ -37,6 +37,9 @@ export function AdminPage() {
   const [workTypes, setWorkTypes] = useState<WorkTypeSetting[]>([]);
   const [workTypesReady, setWorkTypesReady] = useState(false);
   const [workerMessage, setWorkerMessage] = useState("");
+  const [scheduleColumns, setScheduleColumns] = useState<AdminScheduleColumn[]>([]);
+  const [scheduleColumnsReady, setScheduleColumnsReady] = useState(false);
+  const [scheduleMessage, setScheduleMessage] = useState("");
 
   function submitAdmin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,6 +59,7 @@ export function AdminPage() {
   useEffect(() => {
     if (selectedProjectId) {
       refreshWorkers(selectedProjectId);
+      refreshScheduleColumns(selectedProjectId);
     }
   }, [selectedProjectId]);
 
@@ -91,10 +95,24 @@ export function AdminPage() {
       const nextWorkTypes = await getWorkTypes({ includeDisabled: true });
       setWorkTypes(nextWorkTypes);
       setWorkTypesReady(true);
+      await refreshScheduleColumns(selectedProjectId);
     } catch (error) {
       setWorkTypes([]);
       setWorkTypesReady(false);
       setWorkerMessage(error instanceof Error ? error.message : "고용 유형 목록을 불러오지 못했습니다.");
+    }
+  }
+
+  async function refreshScheduleColumns(projectId = selectedProjectId) {
+    try {
+      const nextColumns = await getAdminScheduleColumns(projectId || undefined);
+      setScheduleColumns(nextColumns);
+      setScheduleColumnsReady(true);
+      setScheduleMessage("");
+    } catch (error) {
+      setScheduleColumns([]);
+      setScheduleColumnsReady(false);
+      setScheduleMessage(error instanceof Error ? error.message : "스케줄 컬럼 목록을 불러오지 못했습니다.");
     }
   }
 
@@ -142,7 +160,7 @@ export function AdminPage() {
           {projectMessage ? <p className="admin-message admin-message--global" role="status">{projectMessage}</p> : null}
           {view === "dashboard" ? <DashboardView project={selectedProject} /> : null}
           {view === "weather" ? <WeatherView projectId={selectedProjectId} /> : null}
-          {view === "schedule" ? <ScheduleView project={selectedProject} /> : null}
+          {view === "schedule" ? <ScheduleView columns={scheduleColumns} columnsReady={scheduleColumnsReady} message={scheduleMessage} project={selectedProject} /> : null}
           {view === "qr" ? <QrView projectId={selectedProjectId} /> : null}
           {view === "workers" ? (
             <WorkersView

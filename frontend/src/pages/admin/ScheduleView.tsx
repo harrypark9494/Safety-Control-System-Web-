@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { MaterialIcon } from "../../components/MaterialIcon";
-import type { Project } from "../../types";
+import type { AdminScheduleColumn, Project } from "../../types";
 
 type ScheduleStatus = "confirmed" | "ready" | "risk";
 type IsoDateString = `${number}-${number}-${number}`;
@@ -23,6 +23,8 @@ type ScheduleItem = {
 
 type ScheduleColumn = {
   label: string;
+  workTypes?: string[];
+  workerCount?: number;
 };
 
 type ScheduleFormState = {
@@ -52,19 +54,18 @@ const legacyUnassignedScheduleColumn = "미분류";
 const allScheduleColumns = "__all_columns__";
 const allScheduleColumnsLabel = "전체 컬럼";
 
-const defaultScheduleColumns: ScheduleColumn[] = [
-  { label: "구조물" },
-  { label: "조명" },
-  { label: "무대" },
-  { label: "영상" },
-  { label: "음향" },
-  { label: "특수효과" },
-];
+const fallbackScheduleColumns: ScheduleColumn[] = [{ label: unassignedScheduleColumn, workerCount: 0 }];
 
-function createInitialScheduleItems(projectId: string, baseDate: IsoDateString = defaultScheduleDate, endDate: IsoDateString = baseDate): ScheduleItem[] {
+function createInitialScheduleItems(
+  projectId: string,
+  columns: ScheduleColumn[],
+  baseDate: IsoDateString = defaultScheduleDate,
+  endDate: IsoDateString = baseDate,
+): ScheduleItem[] {
   const prefix = projectId || "default";
   const isDraftProject = prefix.includes("winter");
   const secondDate = clampScheduleDate(getRelativeScheduleDate(baseDate, 1), { startDate: baseDate, endDate });
+  const getTeamColumn = (index: number) => columns[index]?.label ?? columns[0]?.label ?? unassignedScheduleColumn;
 
   if (isDraftProject) {
     return [
@@ -74,9 +75,9 @@ function createInitialScheduleItems(projectId: string, baseDate: IsoDateString =
         startTime: "09:00",
         endTime: "10:30",
         title: "운영 계획 회의",
-        category: "구조물",
+        category: getTeamColumn(0),
         location: "프로젝트 준비실",
-        owner: "운영팀",
+        owner: getTeamColumn(0),
         status: "ready",
       },
       {
@@ -85,9 +86,9 @@ function createInitialScheduleItems(projectId: string, baseDate: IsoDateString =
         startTime: "11:00",
         endTime: "12:00",
         title: "협력사 배정 검토",
-        category: "음향",
+        category: getTeamColumn(1),
         location: "준비 구역",
-        owner: "관리자",
+        owner: getTeamColumn(1),
         status: "risk",
       },
     ];
@@ -100,9 +101,9 @@ function createInitialScheduleItems(projectId: string, baseDate: IsoDateString =
     startTime: "07:30",
     endTime: "09:30",
     title: "메인 스테이지 하부 고정",
-    category: "구조물",
+    category: getTeamColumn(0),
     location: "메인 스테이지",
-    owner: "설치 A팀",
+    owner: getTeamColumn(0),
     status: "confirmed",
   },
   {
@@ -111,9 +112,9 @@ function createInitialScheduleItems(projectId: string, baseDate: IsoDateString =
     startTime: "09:30",
     endTime: "11:30",
     title: "무대 패널 결합",
-    category: "무대",
+    category: getTeamColumn(1),
     location: "메인 스테이지",
-    owner: "무대 B팀",
+    owner: getTeamColumn(1),
     status: "confirmed",
     dependency: "메인 스테이지 하부 고정",
   },
@@ -123,9 +124,9 @@ function createInitialScheduleItems(projectId: string, baseDate: IsoDateString =
     startTime: "11:30",
     endTime: "13:00",
     title: "조명 트러스 러깅",
-    category: "조명",
+    category: getTeamColumn(2),
     location: "메인 스테이지 상단",
-    owner: "조명 C팀",
+    owner: getTeamColumn(2),
     status: "ready",
     dependency: "무대 패널 결합",
   },
@@ -135,9 +136,9 @@ function createInitialScheduleItems(projectId: string, baseDate: IsoDateString =
     startTime: "13:30",
     endTime: "15:00",
     title: "스피커 러깅 시작",
-    category: "음향",
+    category: getTeamColumn(3),
     location: "좌우 PA 타워",
-    owner: "음향 A팀",
+    owner: getTeamColumn(3),
     status: "ready",
     dependency: "조명 트러스 러깅",
   },
@@ -147,9 +148,9 @@ function createInitialScheduleItems(projectId: string, baseDate: IsoDateString =
     startTime: "15:30",
     endTime: "16:30",
     title: "레이저 모듈 안전 점검",
-    category: "특수효과",
+    category: getTeamColumn(4),
     location: "효과 제어 부스",
-    owner: "특수효과팀",
+    owner: getTeamColumn(4),
     status: "risk",
     dependency: "스피커 러깅 시작",
   },
@@ -159,9 +160,9 @@ function createInitialScheduleItems(projectId: string, baseDate: IsoDateString =
     startTime: "08:00",
     endTime: "10:00",
     title: "입장 게이트 펜스 설치",
-    category: "구조물",
+    category: getTeamColumn(0),
     location: "A 게이트",
-    owner: "안전 시설팀",
+    owner: getTeamColumn(0),
     status: "confirmed",
   },
   {
@@ -170,32 +171,41 @@ function createInitialScheduleItems(projectId: string, baseDate: IsoDateString =
     startTime: "10:00",
     endTime: "12:00",
     title: "영상월 전원 테스트",
-    category: "영상",
+    category: getTeamColumn(1),
     location: "서브 스테이지",
-    owner: "영상 B팀",
+    owner: getTeamColumn(1),
     status: "ready",
     dependency: "입장 게이트 펜스 설치",
   },
   ];
 }
 
-export function ScheduleView({ project }: { project: Project | null }) {
+export function ScheduleView({
+  columns,
+  columnsReady,
+  message,
+  project,
+}: {
+  columns: AdminScheduleColumn[];
+  columnsReady: boolean;
+  message: string;
+  project: Project | null;
+}) {
   const projectId = project?.id ?? "";
   const scheduleRange = getProjectScheduleRange(project);
   const scheduleDates = getDateRange(scheduleRange.startDate, scheduleRange.endDate);
+  const scheduleColumns = normalizeScheduleColumns(columns);
+  const scheduleColumnSignature = scheduleColumns.map((column) => column.label).join("\u001f");
   const [selectedDate, setSelectedDate] = useState<IsoDateString>(scheduleRange.startDate);
-  const [scheduleColumns, setScheduleColumns] = useState<ScheduleColumn[]>(defaultScheduleColumns);
-  const [schedules, setSchedules] = useState<ScheduleItem[]>(() => createInitialScheduleItems(projectId, scheduleRange.startDate, scheduleRange.endDate));
-  const [newColumnLabel, setNewColumnLabel] = useState("");
+  const [schedules, setSchedules] = useState<ScheduleItem[]>(() => createInitialScheduleItems(projectId, scheduleColumns, scheduleRange.startDate, scheduleRange.endDate));
   const [activeSchedulePopover, setActiveSchedulePopover] = useState<SchedulePopoverState | null>(null);
-  const [scheduleForm, setScheduleForm] = useState<ScheduleFormState>(() => createDefaultScheduleForm(scheduleRange.startDate, defaultScheduleColumns[0].label));
+  const [scheduleForm, setScheduleForm] = useState<ScheduleFormState>(() => createDefaultScheduleForm(scheduleRange.startDate, scheduleColumns[0]?.label ?? unassignedScheduleColumn));
   const activeDateRef = useRef<HTMLButtonElement | null>(null);
   const hours = Array.from({ length: 14 }, (_, index) => `${String(index + 7).padStart(2, "0")}:00`);
   const scheduleTimeSlots = hours.flatMap((hour) => [hour, addMinutesToTime(hour, 30)]);
   const selectedDateIndex = Math.max(scheduleDates.indexOf(selectedDate), 0);
   const isFirstScheduleDate = selectedDate <= scheduleRange.startDate;
   const isLastScheduleDate = selectedDate >= scheduleRange.endDate;
-  const normalizedColumnLabel = newColumnLabel.trim();
   const columnLabels = scheduleColumns.map((column) => column.label);
   const columnLabelSet = new Set(columnLabels);
   const selectedSchedules = schedules
@@ -215,8 +225,6 @@ export function ScheduleView({ project }: { project: Project | null }) {
   const scheduleColumnsForGrid = scheduleColumns.some((column) => column.label === unassignedScheduleColumn) || !scheduleCountByCategory[unassignedScheduleColumn]
     ? scheduleColumns
     : [...scheduleColumns, { label: unassignedScheduleColumn }];
-  const columnLabelKeys = new Set(scheduleColumnsForGrid.map((column) => column.label.toLocaleLowerCase("ko-KR")));
-  const canAddColumn = normalizedColumnLabel.length > 0 && !columnLabelKeys.has(normalizedColumnLabel.toLocaleLowerCase("ko-KR"));
   const canSaveSchedule = scheduleForm.title.trim().length > 0 && scheduleForm.startTime < scheduleForm.endTime;
   const scheduleGridStyle = {
     "--schedule-column-count": Math.max(scheduleColumnsForGrid.length, 1),
@@ -225,14 +233,6 @@ export function ScheduleView({ project }: { project: Project | null }) {
   const selectDate = (date: IsoDateString) => {
     setSelectedDate(clampScheduleDate(date, scheduleRange));
     setActiveSchedulePopover(null);
-  };
-  const addScheduleColumn = () => {
-    if (!canAddColumn) {
-      return;
-    }
-
-    setScheduleColumns((columns) => [...columns, { label: normalizedColumnLabel }]);
-    setNewColumnLabel("");
   };
   const updateScheduleForm = <Key extends keyof ScheduleFormState>(key: Key, value: ScheduleFormState[Key]) => {
     setScheduleForm((form) => ({ ...form, [key]: value }));
@@ -265,23 +265,6 @@ export function ScheduleView({ project }: { project: Project | null }) {
     setScheduleForm(createDefaultScheduleForm(selectedDate, column.label, time));
     setActiveSchedulePopover({ key: getScheduleSlotKey(time, column.label), row, columnIndex });
   };
-  const removeScheduleColumn = (label: string) => {
-    const assignedScheduleCount = schedules.filter((item) => item.category === label).length;
-    if (scheduleColumns.length <= 1 || (label === unassignedScheduleColumn && assignedScheduleCount > 0)) {
-      return;
-    }
-
-    setScheduleColumns((columns) => {
-      const nextColumns = columns.filter((column) => column.label !== label);
-      if (assignedScheduleCount === 0 || nextColumns.some((column) => column.label === unassignedScheduleColumn)) {
-        return nextColumns;
-      }
-      return [...nextColumns, { label: unassignedScheduleColumn }];
-    });
-    if (assignedScheduleCount > 0) {
-      setSchedules((items) => items.map((item) => (item.category === label ? { ...item, category: unassignedScheduleColumn } : item)));
-    }
-  };
   const moveDate = (offset: number) => {
     const nextIndex = Math.min(Math.max(selectedDateIndex + offset, 0), scheduleDates.length - 1);
     selectDate(scheduleDates[nextIndex] ?? scheduleRange.startDate);
@@ -292,17 +275,11 @@ export function ScheduleView({ project }: { project: Project | null }) {
   }, [selectedDate, scheduleRange.startDate, scheduleRange.endDate]);
 
   useEffect(() => {
-    setScheduleColumns((columns) => normalizeScheduleColumns(columns));
-    setSchedules((items) => items.map((item) => (item.category === legacyUnassignedScheduleColumn ? { ...item, category: unassignedScheduleColumn } : item)));
-  }, []);
-
-  useEffect(() => {
     setSelectedDate(scheduleRange.startDate);
-    setScheduleColumns(defaultScheduleColumns);
-    setSchedules(createInitialScheduleItems(projectId, scheduleRange.startDate, scheduleRange.endDate));
-    setScheduleForm(createDefaultScheduleForm(scheduleRange.startDate, defaultScheduleColumns[0].label));
+    setSchedules(createInitialScheduleItems(projectId, scheduleColumns, scheduleRange.startDate, scheduleRange.endDate));
+    setScheduleForm(createDefaultScheduleForm(scheduleRange.startDate, scheduleColumns[0]?.label ?? unassignedScheduleColumn));
     setActiveSchedulePopover(null);
-  }, [projectId, scheduleRange.startDate, scheduleRange.endDate]);
+  }, [projectId, scheduleRange.startDate, scheduleRange.endDate, scheduleColumnSignature]);
 
   return (
     <section className="admin-view is-active">
@@ -324,50 +301,19 @@ export function ScheduleView({ project }: { project: Project | null }) {
         <section className="app-card schedule-column-management" aria-label="스케줄 컬럼 관리">
           <div className="section-title-row">
             <div>
-              <h2>스케줄 컬럼</h2>
-              <p>공정 구분은 고정값이 아니라 관리자가 현장 운영 기준에 맞게 추가합니다.</p>
+              <h2>팀 기준 컬럼</h2>
+              <p>스케줄 컬럼은 근로자 고용 유형에 등록된 팀 목록과 자동으로 동기화됩니다.</p>
             </div>
+            <span className="count-pill">{columnsReady ? `${scheduleColumns.length}개 팀` : "불러오는 중"}</span>
           </div>
-          <form
-            className="schedule-column-form"
-            onSubmit={(event) => {
-              event.preventDefault();
-              addScheduleColumn();
-            }}
-          >
-            <input
-              aria-label="새 스케줄 컬럼"
-              placeholder="예: 출입 통제, 전기, VIP 동선"
-              value={newColumnLabel}
-              onChange={(event) => setNewColumnLabel(event.target.value)}
-            />
-            <button className="dark-button" type="submit" disabled={!canAddColumn}>
-              <MaterialIcon name="add" />
-              컬럼 추가
-            </button>
-          </form>
+          {message ? <p className="form-message" role="status">{message}</p> : null}
           <div className="schedule-column-list">
             {scheduleColumnsForGrid.map((column) => {
               const scheduleCount = scheduleCountByCategory[column.label] ?? 0;
-              const deleteDisabled = scheduleColumns.length <= 1 || (column.label === unassignedScheduleColumn && scheduleCount > 0);
-              const deleteTitle = deleteDisabled
-                ? "마지막 컬럼이거나 미배정 일정이 있는 컬럼은 삭제할 수 없습니다."
-                : scheduleCount > 0
-                  ? "컬럼 삭제 후 등록된 일정은 미배정으로 이동합니다."
-                  : "컬럼 삭제";
               return (
                 <span className="schedule-column-chip" key={column.label}>
                   <b>{column.label}</b>
-                  <small>{scheduleCount}건</small>
-                  <button
-                    type="button"
-                    title={deleteTitle}
-                    aria-label={`${column.label} 컬럼 삭제`}
-                    disabled={deleteDisabled}
-                    onClick={() => removeScheduleColumn(column.label)}
-                  >
-                    <MaterialIcon name="close" />
-                  </button>
+                  <small>{scheduleCount}건 · 근로자 {column.workerCount ?? 0}명</small>
                 </span>
               );
             })}
@@ -681,14 +627,18 @@ function normalizeScheduleColumns(columns: ScheduleColumn[]) {
   const labels = new Set<string>();
 
   columns.forEach((column) => {
-    const label = column.label === legacyUnassignedScheduleColumn ? unassignedScheduleColumn : column.label;
-    if (labels.has(label)) {
+    const label = (column.label === legacyUnassignedScheduleColumn ? unassignedScheduleColumn : column.label).trim();
+    if (!label || labels.has(label)) {
       return;
     }
 
-    normalizedColumns.push({ label });
+    normalizedColumns.push({
+      label,
+      workTypes: column.workTypes,
+      workerCount: column.workerCount,
+    });
     labels.add(label);
   });
 
-  return normalizedColumns.length > 0 ? normalizedColumns : [{ label: unassignedScheduleColumn }];
+  return normalizedColumns.length > 0 ? normalizedColumns : fallbackScheduleColumns;
 }

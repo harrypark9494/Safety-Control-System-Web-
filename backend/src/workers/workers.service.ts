@@ -10,7 +10,7 @@ import {
   WorkTypeRenameRequest,
   WorkTypeRequest,
 } from './worker.dto';
-import type { PayrollDocumentStatus, WorkerRegistration, WorkTypeSetting } from './worker.types';
+import type { PayrollDocumentStatus, ScheduleColumn, WorkerRegistration, WorkTypeSetting } from './worker.types';
 
 @Injectable()
 export class WorkersService {
@@ -127,6 +127,35 @@ export class WorkersService {
         }
         return a.label.localeCompare(b.label);
       });
+  }
+
+  listScheduleColumns(projectId?: string): ScheduleColumn[] {
+    const normalizedProjectId = projectId?.trim();
+    const workerCountByTeam = [...this.registrations.values()].reduce<Record<string, number>>((counts, worker) => {
+      if (!normalizedProjectId || worker.projectId === normalizedProjectId) {
+        counts[worker.team] = (counts[worker.team] ?? 0) + 1;
+      }
+      return counts;
+    }, {});
+    const columns = new Map<string, ScheduleColumn>();
+
+    this.listWorkTypes().forEach((workType) => {
+      workType.teams.forEach((team) => {
+        const existing = columns.get(team);
+        if (existing) {
+          existing.workTypes.push(workType.label);
+          return;
+        }
+
+        columns.set(team, {
+          label: team,
+          workTypes: [workType.label],
+          workerCount: workerCountByTeam[team] ?? 0,
+        });
+      });
+    });
+
+    return [...columns.values()];
   }
 
   saveWorkType(request: WorkTypeRequest) {
