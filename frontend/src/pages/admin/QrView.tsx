@@ -10,6 +10,12 @@ export function QrView({ projectId }: { projectId: string }) {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
+    if (!projectId) {
+      setSummary(null);
+      setMessage("프로젝트를 선택하면 QR 사용 현황을 불러옵니다.");
+      return;
+    }
+
     getAdminQrUsageSummary({ date, mealType, projectId })
       .then((nextSummary) => {
         setSummary(nextSummary);
@@ -19,6 +25,17 @@ export function QrView({ projectId }: { projectId: string }) {
         setMessage(error instanceof Error ? error.message : "QR 사용 현황을 불러오지 못했습니다.");
       });
   }, [date, mealType, projectId]);
+
+  function refreshSummary() {
+    if (!projectId) {
+      setMessage("프로젝트를 선택하면 QR 사용 현황을 불러옵니다.");
+      return;
+    }
+
+    getAdminQrUsageSummary({ date, mealType, projectId })
+      .then(setSummary)
+      .catch((error: unknown) => setMessage(error instanceof Error ? error.message : "QR 사용 현황을 불러오지 못했습니다."));
+  }
 
   const meal = summary?.totals.meal ?? { issued: 0, used: 0, remaining: 0, usageRate: 0 };
   const water = summary?.totals.water ?? { issued: 0, used: 0, remaining: 0, usageRate: 0 };
@@ -50,7 +67,7 @@ export function QrView({ projectId }: { projectId: string }) {
             <option value="lunch">중식</option>
             <option value="dinner">석식</option>
           </select>
-          <button type="button" aria-label="새로고침" onClick={() => getAdminQrUsageSummary({ date, mealType, projectId }).then(setSummary).catch((error: unknown) => setMessage(error instanceof Error ? error.message : "QR 사용 현황을 불러오지 못했습니다."))}><MaterialIcon name="refresh" /></button>
+          <button type="button" aria-label="새로고침" onClick={refreshSummary}><MaterialIcon name="refresh" /></button>
         </section>
         {message ? <p className="admin-message" role="status">{message}</p> : null}
         <div className="qr-stats">

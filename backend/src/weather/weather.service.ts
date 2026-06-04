@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
+import { ApiError } from '../shared/api-error';
 import { UpdateWeatherStationRequest, UpdateWeatherThresholdsRequest } from './weather.dto';
 import type {
   AdminWeatherOverview,
@@ -33,7 +34,8 @@ export class WeatherService {
   private readonly projectStates = new Map<string, WeatherProjectState>();
 
   getAdminOverview(projectId?: string): AdminWeatherOverview {
-    const state = this.ensureProjectState(projectId);
+    const normalizedProjectId = this.requireProjectId(projectId);
+    const state = this.ensureProjectState(normalizedProjectId);
     const raw = this.getRawKmaSnapshot();
     const adjusted = this.applyCorrection(raw, state.correctionProfile);
     const metrics = this.buildMetrics(adjusted, state.thresholds);
@@ -92,7 +94,7 @@ export class WeatherService {
   }
 
   private ensureProjectState(projectId?: string) {
-    const key = projectId?.trim() || 'default';
+    const key = this.requireProjectId(projectId);
     const existing = this.projectStates.get(key);
 
     if (existing) {
@@ -124,6 +126,15 @@ export class WeatherService {
     };
     this.projectStates.set(key, state);
     return state;
+  }
+
+  private requireProjectId(projectId?: string) {
+    const normalized = projectId?.trim();
+    if (!normalized) {
+      throw new ApiError(HttpStatus.BAD_REQUEST, 'PROJECT_ID_REQUIRED', 'projectId is required.');
+    }
+
+    return normalized;
   }
 
   private getRawKmaSnapshot(): RawWeatherSnapshot {

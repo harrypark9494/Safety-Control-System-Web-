@@ -238,21 +238,16 @@ export async function completeWorkerOnboarding(
   return toRegistrationAccount(worker);
 }
 
-export async function getWorkerCategories(): Promise<WorkerCategorySetting[]> {
-  return requestJson<WorkerCategorySetting[]>("/api/worker-categories");
+export async function getWorkerCategories(projectId: string): Promise<WorkerCategorySetting[]> {
+  return requestJson<WorkerCategorySetting[]>(`/api/worker-categories?projectId=${encodeURIComponent(projectId)}`);
 }
 
-export async function getAdminWorkerCategories(): Promise<WorkerCategorySetting[]> {
-  return requestJson<WorkerCategorySetting[]>("/api/admin/worker-categories");
+export async function getAdminWorkerCategories(projectId: string): Promise<WorkerCategorySetting[]> {
+  return requestJson<WorkerCategorySetting[]>(`/api/admin/worker-categories?projectId=${encodeURIComponent(projectId)}`);
 }
 
-export async function getAdminScheduleColumns(projectId?: string): Promise<AdminScheduleColumn[]> {
-  const params = new URLSearchParams();
-  if (projectId) {
-    params.set("projectId", projectId);
-  }
-
-  return requestJson<AdminScheduleColumn[]>(`/api/admin/schedule-columns${params.toString() ? `?${params}` : ""}`);
+export async function getAdminScheduleColumns(projectId: string): Promise<AdminScheduleColumn[]> {
+  return requestJson<AdminScheduleColumn[]>(`/api/admin/schedule-columns?projectId=${encodeURIComponent(projectId)}`);
 }
 
 export async function createAdminScheduleColumn(projectId: string, label: string): Promise<AdminScheduleColumn[]> {
@@ -262,33 +257,28 @@ export async function createAdminScheduleColumn(projectId: string, label: string
   });
 }
 
-export async function deleteAdminScheduleColumn(id: string, projectId?: string): Promise<AdminScheduleColumn[]> {
-  const params = new URLSearchParams();
-  if (projectId) {
-    params.set("projectId", projectId);
-  }
-
-  return requestJson<AdminScheduleColumn[]>(`/api/admin/schedule-columns/${encodeURIComponent(id)}${params.toString() ? `?${params}` : ""}`, {
+export async function deleteAdminScheduleColumn(id: string, projectId: string): Promise<AdminScheduleColumn[]> {
+  return requestJson<AdminScheduleColumn[]>(`/api/admin/schedule-columns/${encodeURIComponent(id)}?projectId=${encodeURIComponent(projectId)}`, {
     method: "DELETE",
   });
 }
 
-export async function saveWorkerCategory(setting: Pick<WorkerCategorySetting, "category" | "enabled" | "signupEnabled" | "payrollDocumentsRequired" | "sortOrder">): Promise<WorkerCategorySetting> {
+export async function saveWorkerCategory(projectId: string, setting: Pick<WorkerCategorySetting, "category" | "enabled" | "signupEnabled" | "payrollDocumentsRequired" | "sortOrder">): Promise<WorkerCategorySetting> {
   return requestJson<WorkerCategorySetting>("/api/admin/worker-categories", {
     method: "POST",
-    body: JSON.stringify(setting),
+    body: JSON.stringify({ ...setting, projectId }),
   });
 }
 
-export async function renameWorkerCategory(currentCategory: string, nextCategory: string): Promise<WorkerCategorySetting> {
+export async function renameWorkerCategory(projectId: string, currentCategory: string, nextCategory: string): Promise<WorkerCategorySetting> {
   return requestJson<WorkerCategorySetting>("/api/admin/worker-categories/rename", {
     method: "POST",
-    body: JSON.stringify({ currentCategory, nextCategory }),
+    body: JSON.stringify({ projectId, currentCategory, nextCategory }),
   });
 }
 
-export async function deleteWorkerCategory(category: string): Promise<void> {
-  await requestNoContent(`/api/admin/worker-categories/${encodeURIComponent(category)}`, {
+export async function deleteWorkerCategory(projectId: string, category: string): Promise<void> {
+  await requestNoContent(`/api/admin/worker-categories/${encodeURIComponent(category)}?projectId=${encodeURIComponent(projectId)}`, {
     method: "DELETE",
   });
 }
@@ -335,13 +325,8 @@ export async function updateAdminProjectStatus(projectId: string, status: Projec
   });
 }
 
-export async function getRegisteredWorkers(projectId?: string): Promise<WorkerRegistrationAccount[]> {
-  const params = new URLSearchParams();
-  if (projectId) {
-    params.set("projectId", projectId);
-  }
-
-  const workers = await requestJson<WorkerRegistrationResponse[]>(`/api/admin/worker-registrations${params.toString() ? `?${params}` : ""}`);
+export async function getRegisteredWorkers(projectId: string): Promise<WorkerRegistrationAccount[]> {
+  const workers = await requestJson<WorkerRegistrationResponse[]>(`/api/admin/worker-registrations?projectId=${encodeURIComponent(projectId)}`);
   return workers.map(toRegistrationAccount);
 }
 
@@ -399,8 +384,8 @@ export async function getWorkerQrEntitlements(workerId: string): Promise<QrEntit
   return requestJson<QrEntitlement[]>(`/api/worker/qr-entitlements/today?workerId=${encodeURIComponent(workerId)}`);
 }
 
-export async function getAdminQrUsageSummary(options: { date?: string; mealType?: MealType | "all"; projectId?: string } = {}): Promise<QrUsageSummary> {
-  const params = new URLSearchParams();
+export async function getAdminQrUsageSummary(options: { projectId: string; date?: string; mealType?: MealType | "all" }): Promise<QrUsageSummary> {
+  const params = new URLSearchParams({ projectId: options.projectId });
 
   if (options.date) {
     params.set("date", options.date);
@@ -410,19 +395,12 @@ export async function getAdminQrUsageSummary(options: { date?: string; mealType?
     params.set("mealType", options.mealType);
   }
 
-  if (options.projectId) {
-    params.set("projectId", options.projectId);
-  }
-
   const query = params.toString();
   return requestJson<QrUsageSummary>(`/api/admin/qr-usage/summary${query ? `?${query}` : ""}`);
 }
 
-export async function getAdminWeatherOverview(projectId?: string): Promise<AdminWeatherOverview> {
-  const params = new URLSearchParams();
-  if (projectId) {
-    params.set("projectId", projectId);
-  }
+export async function getAdminWeatherOverview(projectId: string): Promise<AdminWeatherOverview> {
+  const params = new URLSearchParams({ projectId });
 
   try {
     return await requestJson<AdminWeatherOverview>(`/api/admin/weather${params.toString() ? `?${params}` : ""}`);
@@ -435,14 +413,14 @@ export async function getAdminWeatherOverview(projectId?: string): Promise<Admin
   }
 }
 
-export async function updateAdminWeatherStation(station: { projectId?: string; name?: string; latitude: number; longitude: number }): Promise<AdminWeatherOverview> {
+export async function updateAdminWeatherStation(station: { projectId: string; name?: string; latitude: number; longitude: number }): Promise<AdminWeatherOverview> {
   return requestJson<AdminWeatherOverview>("/api/admin/weather/station", {
     method: "POST",
     body: JSON.stringify(station),
   });
 }
 
-export async function updateAdminWeatherThresholds(thresholds: WeatherThresholds & { projectId?: string }): Promise<AdminWeatherOverview> {
+export async function updateAdminWeatherThresholds(thresholds: WeatherThresholds & { projectId: string }): Promise<AdminWeatherOverview> {
   return requestJson<AdminWeatherOverview>("/api/admin/weather/thresholds", {
     method: "POST",
     body: JSON.stringify(thresholds),

@@ -67,7 +67,6 @@ export function AdminPage() {
 
   useEffect(() => {
     refreshProjects();
-    refreshWorkerCategories();
   }, []);
 
   useEffect(() => {
@@ -79,6 +78,7 @@ export function AdminPage() {
   useEffect(() => {
     if (selectedProjectId) {
       refreshWorkers(selectedProjectId);
+      refreshWorkerCategories(selectedProjectId);
       refreshScheduleColumns(selectedProjectId);
     }
   }, [selectedProjectId]);
@@ -102,8 +102,18 @@ export function AdminPage() {
     try {
       const nextProjects = await getAdminProjects({ includeArchived: true });
       setProjects(nextProjects);
+      const nextSelectedProjectId = nextProjects.find((project) => project.status === "ACTIVE")?.id || nextProjects[0]?.id || "";
+      setSelectedProjectId((current) => nextProjects.some((project) => project.id === current) ? current : nextSelectedProjectId);
+
+      if (nextProjects.length === 0) {
+        setProjectMessage("등록된 프로젝트가 없습니다. 새 프로젝트를 먼저 생성해 주세요.");
+        if (canOpenProjectManagement) {
+          setView("projects");
+        }
+        return;
+      }
+
       setProjectMessage("");
-      setSelectedProjectId((current) => current || nextProjects.find((project) => project.status === "ACTIVE")?.id || nextProjects[0]?.id || "");
     } catch (error) {
       setProjectMessage(error instanceof Error ? error.message : "프로젝트 목록을 불러오지 못했습니다.");
     }
@@ -130,12 +140,17 @@ export function AdminPage() {
     setProjectSwitcherOpen(false);
   }
 
-  async function refreshWorkerCategories() {
+  async function refreshWorkerCategories(projectId = selectedProjectId) {
+    if (!projectId) {
+      setWorkerCategories([]);
+      setWorkerCategoriesReady(false);
+      return;
+    }
+
     try {
-      const nextWorkerCategories = await getAdminWorkerCategories();
+      const nextWorkerCategories = await getAdminWorkerCategories(projectId);
       setWorkerCategories(nextWorkerCategories);
       setWorkerCategoriesReady(true);
-      await refreshScheduleColumns(selectedProjectId);
     } catch (error) {
       setWorkerCategories([]);
       setWorkerCategoriesReady(false);
@@ -146,7 +161,7 @@ export function AdminPage() {
   async function refreshScheduleColumns(projectId = selectedProjectId) {
     try {
       setScheduleColumnsReady(false);
-      const nextColumns = await getAdminScheduleColumns(projectId || undefined);
+      const nextColumns = await getAdminScheduleColumns(projectId);
       setScheduleColumns(nextColumns);
       setScheduleColumnsReady(true);
       setScheduleMessage("");
@@ -260,6 +275,7 @@ export function AdminPage() {
             <ProjectsView
               projects={projects}
               selectedProjectId={selectedProjectId}
+              shouldGuideInitialCreate={projects.length === 0}
               onSelect={selectProject}
               onRefresh={refreshProjects}
             />

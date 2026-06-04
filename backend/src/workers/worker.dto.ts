@@ -1,9 +1,9 @@
 import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class AdminRegistrationRequest {
-  @IsOptional()
   @IsString()
-  projectId?: string;
+  @IsNotEmpty()
+  projectId!: string;
 
   @IsString()
   @IsNotEmpty()
@@ -61,9 +61,9 @@ export class AdminRegistrationUpdateRequest {
 }
 
 export class OnboardingRequest {
-  @IsOptional()
   @IsString()
-  projectId?: string;
+  @IsNotEmpty()
+  projectId!: string;
 
   @IsString()
   @IsNotEmpty()
@@ -87,9 +87,9 @@ export class OnboardingRequest {
 }
 
 export class WorkerLoginRequest {
-  @IsOptional()
   @IsString()
-  projectId?: string;
+  @IsNotEmpty()
+  projectId!: string;
 
   @IsString()
   @IsNotEmpty()
@@ -111,6 +111,10 @@ export class WorkerLoginRequest {
 export class WorkerCategoryRequest {
   @IsString()
   @IsNotEmpty()
+  projectId!: string;
+
+  @IsString()
+  @IsNotEmpty()
   category: string;
 
   @IsBoolean()
@@ -129,6 +133,10 @@ export class WorkerCategoryRequest {
 export class WorkerCategoryRenameRequest {
   @IsString()
   @IsNotEmpty()
+  projectId!: string;
+
+  @IsString()
+  @IsNotEmpty()
   currentCategory: string;
 
   @IsString()
@@ -137,9 +145,9 @@ export class WorkerCategoryRenameRequest {
 }
 
 export class ScheduleColumnRequest {
-  @IsOptional()
   @IsString()
-  projectId?: string;
+  @IsNotEmpty()
+  projectId!: string;
 
   @IsString()
   @IsNotEmpty()

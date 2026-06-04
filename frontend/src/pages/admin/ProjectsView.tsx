@@ -1,4 +1,4 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { MaterialIcon } from "../../components/MaterialIcon";
 import { createAdminProject, updateAdminProjectStatus } from "../../features/auth/session";
 import type { Project, ProjectStatus } from "../../types";
@@ -28,11 +28,13 @@ const projectSummaryCards: { filter: ProjectFilter; icon: string; title: string 
 export function ProjectsView({
   projects,
   selectedProjectId,
+  shouldGuideInitialCreate = false,
   onSelect,
   onRefresh,
 }: {
   projects: Project[];
   selectedProjectId: string;
+  shouldGuideInitialCreate?: boolean;
   onSelect: (projectId: string) => void;
   onRefresh: () => Promise<void>;
 }) {
@@ -61,6 +63,14 @@ export function ProjectsView({
     const nextProjects = filter === "ALL" ? projects : projects.filter((project) => project.status === filter);
     return [...nextProjects].sort((a, b) => getProjectEventStartDate(b).localeCompare(getProjectEventStartDate(a)));
   }, [filter, projects]);
+
+  useEffect(() => {
+    if (shouldGuideInitialCreate && projects.length === 0) {
+      setFilter("ALL");
+      setCreateModalOpen(true);
+      setMessage("첫 프로젝트를 생성하면 관리자 운영 데이터가 해당 프로젝트에 묶여 저장됩니다.");
+    }
+  }, [projects.length, shouldGuideInitialCreate]);
 
   async function submitProject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -117,11 +127,24 @@ export function ProjectsView({
       <header className="page-header page-header--actions">
         <h1>프로젝트 관리</h1>
         <button className="dark-button" type="button" onClick={() => setCreateModalOpen(true)}>
-          <MaterialIcon name="add" />새 프로젝트
+          <MaterialIcon name="add" />{projects.length === 0 ? "첫 프로젝트 만들기" : "새 프로젝트"}
         </button>
       </header>
       <div className="page-content admin-tab-page project-page">
         {message ? <p className="form-message" role="status">{message}</p> : null}
+
+        {projects.length === 0 ? (
+          <section className="project-empty-guide" aria-label="프로젝트 생성 안내">
+            <span><MaterialIcon name="create_new_folder" /></span>
+            <div>
+              <h2>첫 프로젝트 등록 필요</h2>
+              <p>프로젝트를 만든 뒤 근로자 원장, 스케줄, QR, 기상 설정을 프로젝트 단위로 관리합니다.</p>
+            </div>
+            <button className="dark-button" type="button" onClick={() => setCreateModalOpen(true)}>
+              <MaterialIcon name="add" />첫 프로젝트 만들기
+            </button>
+          </section>
+        ) : null}
 
         <section className="project-summary-grid" aria-label="프로젝트 상태 요약">
           {projectSummaryCards.map((card) => (
@@ -228,7 +251,7 @@ export function ProjectsView({
                   </div>
                 </article>
               )) : (
-                <p className="empty-table-state">이 조건에 맞는 프로젝트가 없습니다.</p>
+                <p className="empty-table-state">{projects.length === 0 ? "등록된 프로젝트가 없습니다." : "이 조건에 맞는 프로젝트가 없습니다."}</p>
               )}
             </div>
           </div>

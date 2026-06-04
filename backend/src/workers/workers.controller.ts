@@ -68,13 +68,13 @@ export class WorkersController {
   }
 
   @Get('worker-categories')
-  listWorkerSelectableCategories() {
-    return this.workers.listCategories({ signupOnly: true });
+  listWorkerSelectableCategories(@Query('projectId') projectId?: string) {
+    return this.workers.listCategories(projectId, { signupOnly: true });
   }
 
   @Get('admin/worker-categories')
-  listCategories() {
-    return this.workers.listCategories({ includeDisabled: true });
+  listCategories(@Query('projectId') projectId?: string) {
+    return this.workers.listCategories(projectId, { includeDisabled: true });
   }
 
   @Post('admin/worker-categories')
@@ -88,8 +88,8 @@ export class WorkersController {
   }
 
   @Delete('admin/worker-categories/:category')
-  deleteCategory(@Param('category') category: string) {
-    this.workers.deleteCategory(category);
+  deleteCategory(@Param('category') category: string, @Query('projectId') projectId?: string) {
+    this.workers.deleteCategory(projectId, category);
   }
 
   @Get('admin/schedule-columns')

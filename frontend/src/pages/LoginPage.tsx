@@ -34,27 +34,6 @@ export function WorkerLoginPage() {
   useEffect(() => {
     let isMounted = true;
 
-    getWorkerCategories()
-      .then((nextWorkerCategories) => {
-        if (!isMounted) return;
-        setWorkerCategories(nextWorkerCategories);
-        setWorkerCategoriesStatus("ready");
-        setRegisterWorkerCategory((current) => {
-          if (nextWorkerCategories.length === 0) {
-            return "";
-          }
-
-          return nextWorkerCategories.some((category) => category.category === current) ? current : nextWorkerCategories[0].category;
-        });
-      })
-      .catch((error) => {
-        if (!isMounted) return;
-        setWorkerCategories([]);
-        setRegisterWorkerCategory("");
-        setWorkerCategoriesStatus("error");
-        setMessage(error instanceof Error ? error.message : "고용 유형 목록을 불러오지 못했습니다.");
-      });
-
     getSelectableProjects()
       .then((nextProjects) => {
         if (!isMounted) return;
@@ -80,6 +59,43 @@ export function WorkerLoginPage() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!selectedProjectId) {
+      setWorkerCategories([]);
+      setRegisterWorkerCategory("");
+      setWorkerCategoriesStatus(projectsStatus === "loading" ? "loading" : "error");
+      return undefined;
+    }
+
+    let isMounted = true;
+    setWorkerCategoriesStatus("loading");
+
+    getWorkerCategories(selectedProjectId)
+      .then((nextWorkerCategories) => {
+        if (!isMounted) return;
+        setWorkerCategories(nextWorkerCategories);
+        setWorkerCategoriesStatus("ready");
+        setRegisterWorkerCategory((current) => {
+          if (nextWorkerCategories.length === 0) {
+            return "";
+          }
+
+          return nextWorkerCategories.some((category) => category.category === current) ? current : nextWorkerCategories[0].category;
+        });
+      })
+      .catch((error) => {
+        if (!isMounted) return;
+        setWorkerCategories([]);
+        setRegisterWorkerCategory("");
+        setWorkerCategoriesStatus("error");
+        setMessage(error instanceof Error ? error.message : "고용 유형 목록을 불러오지 못했습니다.");
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [projectsStatus, selectedProjectId]);
 
   async function submitWorker(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

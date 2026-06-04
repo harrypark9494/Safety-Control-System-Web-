@@ -371,14 +371,22 @@ DB 영속화 시 1차 운영 데이터는 다음 단위로 분리합니다.
 
 ```text
 worker_registrations       근로자 원장, 온보딩 상태, 급여 서류 상태
-work_type_settings         고용 유형, 급여 서류 필요 여부
-qr_entitlements            근로자별 날짜/QR 유형별 식권·생수 지급권
-qr_usage_events            실제 QR 스캔 사용 이력
-payroll_documents          급여/세무 서류 제출 metadata와 검토 상태
+work_type_settings         프로젝트별 고용 유형, 급여 서류 필요 여부
+schedule_columns           프로젝트별 스케줄 컬럼
+weather_project_settings   프로젝트별 관측 지점, 경보 임계값, 보정 profile
+qr_entitlements            프로젝트/근로자별 날짜/QR 유형별 식권·생수 지급권
+qr_usage_events            프로젝트와 연결된 실제 QR 스캔 사용 이력
+payroll_documents          프로젝트/근로자별 급여/세무 서류 제출 metadata와 검토 상태
 ```
 
 `worker_registrations`의 근로자 분류 필드는 `category`(고용 유형), `company`(소속 업체),
 `team`(팀)으로 분리하며, 담당 역할 용도의 `role` 컬럼은 두지 않습니다.
+관리자 운영 데이터는 프로젝트 단위로 묶여 이동하므로 프로젝트 관리와 어드민 계정
+같은 workspace-level 데이터를 제외하면 운영 API에서 `projectId`를 필수로 받습니다.
+누락 시 기본 프로젝트로 조용히 보정하지 않습니다.
+프로젝트가 하나도 없는 pure 상태에서는 관리자 로그인 후 프로젝트 관리 탭으로 바로
+이동하고, 첫 프로젝트 생성 모달을 열어 운영 데이터 번들의 기준 프로젝트를 먼저
+만들도록 안내합니다.
 
 식권/생수 QR은 근로자 원장에 단순 카운터로만 붙이지 않고, 지급권
 `qr_entitlements`와 사용 이벤트 `qr_usage_events`를 분리합니다. 관리자 QR 화면은

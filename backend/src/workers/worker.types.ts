@@ -33,6 +33,7 @@ export interface WorkerRegistration {
 }
 
 export interface WorkerCategorySetting {
+  projectId: string;
   category: string;
   enabled: boolean;
   signupEnabled: boolean;

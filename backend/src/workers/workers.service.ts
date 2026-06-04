@@ -31,6 +31,7 @@ type UploadedXlsxFile = {
 
 type WorkerListFilters = {
   projectId?: string;
+  allowAllProjects?: boolean;
   search?: string;
   category?: string;
   company?: string;
@@ -68,15 +69,17 @@ export class WorkersService {
   private readonly scheduleColumns = new Map<string, ScheduleColumn[]>();
 
   constructor(private readonly passwords: PasswordService) {
-    this.seedCategories();
-    this.seedScheduleColumns();
-    this.seedWorkerRegistration();
+    if (process.env.ENABLE_DEMO_SEED_DATA !== 'false') {
+      this.seedCategories();
+      this.seedScheduleColumns();
+      this.seedWorkerRegistration();
+    }
   }
 
   createRegistration(request: AdminRegistrationRequest) {
-    const projectId = this.normalizeProjectId(request.projectId);
+    const projectId = this.requireProjectId(request.projectId);
     const phone = this.normalizePhone(request.phone);
-    const category = this.ensureCategory(request.category);
+    const category = this.ensureCategory(projectId, request.category);
     const now = new Date().toISOString();
     const key = this.registrationKey(projectId, phone);
 
@@ -96,7 +99,7 @@ export class WorkersService {
       team: this.normalizeWorkerTeam(request.team ?? ''),
       memo: this.normalizeMemo(request.memo ?? ''),
       registrationStatus: 'registered',
-      payrollDocumentStatus: this.initialPayrollDocumentStatus(category),
+      payrollDocumentStatus: this.initialPayrollDocumentStatus(projectId, category),
       registeredAt: now,
       onboardedAt: null,
     };
@@ -107,11 +110,11 @@ export class WorkersService {
 
   updateRegistration(uid: string, request: AdminRegistrationUpdateRequest) {
     const worker = this.findByUid(uid);
-    const nextProjectId = this.normalizeProjectId(request.projectId ?? worker.projectId);
+    const nextProjectId = request.projectId === undefined ? worker.projectId : this.requireProjectId(request.projectId);
     const nextPhone = request.phone === undefined ? worker.phone : this.normalizePhone(request.phone);
     const nextCategory = request.category === undefined
       ? worker.category
-      : this.ensureCategory(request.category);
+      : this.ensureCategory(nextProjectId, request.category);
     const nextKey = this.registrationKey(nextProjectId, nextPhone);
     const currentKey = this.registrationKey(worker.projectId, worker.phone);
     const existing = this.registrations.get(nextKey);
@@ -136,7 +139,7 @@ export class WorkersService {
     worker.projectId = nextProjectId;
     worker.phone = nextPhone;
     worker.category = nextCategory;
-    worker.payrollDocumentStatus = this.reconcileDocumentStatus(nextCategory, worker.payrollDocumentStatus);
+    worker.payrollDocumentStatus = this.reconcileDocumentStatus(nextProjectId, nextCategory, worker.payrollDocumentStatus);
 
     if (currentKey !== nextKey) {
       this.registrations.delete(currentKey);
@@ -147,7 +150,7 @@ export class WorkersService {
   }
 
   async importRegistrationsXlsx(projectId: string | undefined, file: UploadedXlsxFile | undefined) {
-    const normalizedProjectId = this.normalizeProjectId(projectId);
+    const normalizedProjectId = this.requireProjectId(projectId);
     this.assertXlsxFile(file);
 
     const rows = await readXlsxFile(file.buffer) as unknown as unknown[][];
@@ -196,8 +199,9 @@ export class WorkersService {
   }
 
   completeOnboarding(request: OnboardingRequest) {
-    const category = this.normalizeExistingCategory(request.category, { requireSignupEnabled: true });
-    const worker = this.findByPhone(request.phone, request.projectId);
+    const projectId = this.requireProjectId(request.projectId);
+    const category = this.normalizeExistingCategory(projectId, request.category, { requireSignupEnabled: true });
+    const worker = this.findByPhone(request.phone, projectId);
 
     if (worker.name !== request.name.trim() || worker.category !== category) {
       throw new ApiError(
@@ -215,7 +219,8 @@ export class WorkersService {
   }
 
   login(request: WorkerLoginRequest) {
-    const worker = this.findByPhone(request.phone, request.projectId);
+    const projectId = this.requireProjectId(request.projectId);
+    const worker = this.findByPhone(request.phone, projectId);
 
     if (worker.registrationStatus !== 'onboarded') {
       throw new ApiError(HttpStatus.FORBIDDEN, 'WORKER_ONBOARDING_REQUIRED', 'Worker onboarding is required.');
@@ -240,7 +245,7 @@ export class WorkersService {
       workerTeam: worker.team,
       schedule: 'unassigned',
       status: 'onboarded',
-      payrollDocumentsRequired: this.isPayrollDocumentRequired(worker.category)
+      payrollDocumentsRequired: this.isPayrollDocumentRequired(worker.projectId, worker.category)
         && worker.payrollDocumentStatus === 'missing',
       payrollDocumentStatus: worker.payrollDocumentStatus,
     };
@@ -250,7 +255,7 @@ export class WorkersService {
     const filters: WorkerListFilters = typeof projectIdOrFilters === 'string'
       ? { projectId: projectIdOrFilters }
       : projectIdOrFilters ?? {};
-    const normalizedProjectId = filters.projectId?.trim();
+    const normalizedProjectId = filters.allowAllProjects ? filters.projectId?.trim() : this.requireProjectId(filters.projectId);
     const search = filters.search?.trim().toLowerCase();
     const searchDigits = search?.replace(/\D/g, '');
 
@@ -281,8 +286,10 @@ export class WorkersService {
     this.registrations.delete(this.registrationKey(worker.projectId, worker.phone));
   }
 
-  listCategories(options: { includeDisabled?: boolean; signupOnly?: boolean } = {}) {
+  listCategories(projectId: string | undefined, options: { includeDisabled?: boolean; signupOnly?: boolean } = {}) {
+    const normalizedProjectId = this.requireProjectId(projectId);
     return [...this.categories.values()]
+      .filter((category) => category.projectId === normalizedProjectId)
       .filter((category) => options.includeDisabled || category.enabled)
       .filter((category) => !options.signupOnly || category.signupEnabled)
       .sort((a, b) => {
@@ -294,8 +301,10 @@ export class WorkersService {
   }
 
   saveCategory(request: WorkerCategoryRequest) {
+    const projectId = this.requireProjectId(request.projectId);
     const category = this.normalizeCategoryLabel(request.category);
     const setting: WorkerCategorySetting = {
+      projectId,
       category,
       enabled: true,
       signupEnabled: true,
@@ -303,14 +312,15 @@ export class WorkersService {
       sortOrder: request.sortOrder,
       updatedAt: new Date().toISOString(),
     };
-    this.categories.set(category, setting);
+    this.categories.set(this.categoryKey(projectId, category), setting);
     return setting;
   }
 
   renameCategory(request: WorkerCategoryRenameRequest) {
+    const projectId = this.requireProjectId(request.projectId);
     const currentCategory = this.normalizeCategoryLabel(request.currentCategory);
     const nextCategory = this.normalizeCategoryLabel(request.nextCategory);
-    const current = this.categories.get(currentCategory);
+    const current = this.categories.get(this.categoryKey(projectId, currentCategory));
 
     if (!current) {
       throw new NotFoundException('Category not found.');
@@ -320,7 +330,7 @@ export class WorkersService {
       return current;
     }
 
-    if (this.categories.has(nextCategory)) {
+    if (this.categories.has(this.categoryKey(projectId, nextCategory))) {
       throw new ConflictException('Category already exists.');
     }
 
@@ -329,11 +339,11 @@ export class WorkersService {
       category: nextCategory,
       updatedAt: new Date().toISOString(),
     };
-    this.categories.delete(currentCategory);
-    this.categories.set(nextCategory, renamed);
+    this.categories.delete(this.categoryKey(projectId, currentCategory));
+    this.categories.set(this.categoryKey(projectId, nextCategory), renamed);
 
     for (const worker of this.registrations.values()) {
-      if (worker.category === currentCategory) {
+      if (worker.projectId === projectId && worker.category === currentCategory) {
         worker.category = nextCategory;
       }
     }
@@ -341,27 +351,29 @@ export class WorkersService {
     return renamed;
   }
 
-  deleteCategory(category: string) {
+  deleteCategory(projectId: string | undefined, category: string) {
+    const normalizedProjectId = this.requireProjectId(projectId);
     const normalized = this.normalizeCategoryLabel(category);
+    const key = this.categoryKey(normalizedProjectId, normalized);
 
-    if (!this.categories.has(normalized)) {
+    if (!this.categories.has(key)) {
       throw new NotFoundException('Category not found.');
     }
 
-    if ([...this.registrations.values()].some((worker) => worker.category === normalized)) {
+    if ([...this.registrations.values()].some((worker) => worker.projectId === normalizedProjectId && worker.category === normalized)) {
       throw new ConflictException('Category is used by existing workers.');
     }
 
-    this.categories.delete(normalized);
+    this.categories.delete(key);
   }
 
   listScheduleColumns(projectId?: string): ScheduleColumn[] {
-    const normalizedProjectId = this.normalizeProjectId(projectId);
+    const normalizedProjectId = this.requireProjectId(projectId);
     return this.ensureScheduleColumns(normalizedProjectId);
   }
 
   createScheduleColumn(request: ScheduleColumnRequest): ScheduleColumn[] {
-    const projectId = this.normalizeProjectId(request.projectId);
+    const projectId = this.requireProjectId(request.projectId);
     const label = this.normalizeScheduleColumnLabel(request.label);
     const columns = this.ensureScheduleColumns(projectId);
 
@@ -383,7 +395,7 @@ export class WorkersService {
   }
 
   deleteScheduleColumn(id: string, projectId?: string): ScheduleColumn[] {
-    const normalizedProjectId = this.normalizeProjectId(projectId);
+    const normalizedProjectId = this.requireProjectId(projectId);
     const columns = this.ensureScheduleColumns(normalizedProjectId);
     const nextColumns = columns.filter((column) => column.id !== id);
 
@@ -516,21 +528,25 @@ export class WorkersService {
 
   private seedCategories() {
     const now = new Date().toISOString();
-    this.categories.set('direct-hire', {
-      category: 'direct-hire',
-      enabled: true,
-      signupEnabled: true,
-      payrollDocumentsRequired: true,
-      sortOrder: 10,
-      updatedAt: now,
-    });
-    this.categories.set('external-partner', {
-      category: 'external-partner',
-      enabled: true,
-      signupEnabled: true,
-      payrollDocumentsRequired: false,
-      sortOrder: 20,
-      updatedAt: now,
+    [DEFAULT_PROJECT_ID, 'waterbomb-2026-winter'].forEach((projectId) => {
+      this.categories.set(this.categoryKey(projectId, 'direct-hire'), {
+        projectId,
+        category: 'direct-hire',
+        enabled: true,
+        signupEnabled: true,
+        payrollDocumentsRequired: true,
+        sortOrder: 10,
+        updatedAt: now,
+      });
+      this.categories.set(this.categoryKey(projectId, 'external-partner'), {
+        projectId,
+        category: 'external-partner',
+        enabled: true,
+        signupEnabled: true,
+        payrollDocumentsRequired: false,
+        sortOrder: 20,
+        updatedAt: now,
+      });
     });
   }
 
@@ -566,6 +582,7 @@ export class WorkersService {
 
   private seedWorkerRegistration() {
     this.createRegistration({
+      projectId: DEFAULT_PROJECT_ID,
       name: 'test worker',
       phone: '010-1234-5678',
       category: 'direct-hire',
@@ -579,6 +596,7 @@ export class WorkersService {
 
     if (process.env.ENABLE_LOCAL_TEST_WORKER === 'true' && localWorkerPassword && localWorkerCode) {
       const localWorker = this.createRegistration({
+        projectId: process.env.LOCAL_TEST_WORKER_PROJECT_ID ?? DEFAULT_PROJECT_ID,
         name: process.env.LOCAL_TEST_WORKER_NAME ?? 'local worker',
         phone: process.env.LOCAL_TEST_WORKER_PHONE ?? '010-9000-0001',
         category: process.env.LOCAL_TEST_WORKER_CATEGORY ?? 'external-partner',
@@ -596,20 +614,13 @@ export class WorkersService {
     }
   }
 
-  private findByPhone(phone: string, projectId?: string) {
+  private findByPhone(phone: string, projectId: string) {
     const normalized = this.normalizePhone(phone);
-    const normalizedProjectId = projectId?.trim();
-    const matches = [...this.registrations.values()].filter((registration) => registration.phone === normalized);
-    const worker = normalizedProjectId
-      ? this.registrations.get(this.registrationKey(normalizedProjectId, normalized))
-      : matches[0];
+    const normalizedProjectId = this.requireProjectId(projectId);
+    const worker = this.registrations.get(this.registrationKey(normalizedProjectId, normalized));
 
     if (!worker) {
       throw new NotFoundException('Worker registration not found.');
-    }
-
-    if (!normalizedProjectId && matches.length > 1) {
-      throw new ConflictException('Multiple projects contain this phone. Specify a project.');
     }
 
     return worker;
@@ -625,12 +636,21 @@ export class WorkersService {
     return worker;
   }
 
-  private normalizeProjectId(projectId?: string) {
-    return projectId?.trim() || DEFAULT_PROJECT_ID;
+  private requireProjectId(projectId?: string) {
+    const normalized = projectId?.trim();
+    if (!normalized) {
+      throw new ApiError(HttpStatus.BAD_REQUEST, 'PROJECT_ID_REQUIRED', 'projectId is required.');
+    }
+
+    return normalized;
   }
 
   private registrationKey(projectId: string, phone: string) {
     return `${projectId}:${phone}`;
+  }
+
+  private categoryKey(projectId: string, category: string) {
+    return `${projectId}:${category}`;
   }
 
   private ensureScheduleColumns(projectId: string) {
@@ -658,9 +678,10 @@ export class WorkersService {
     throw new ApiError(HttpStatus.BAD_REQUEST, 'INVALID_PHONE', 'Phone must have 10 or 11 digits.');
   }
 
-  private normalizeExistingCategory(category: string, options: { requireEnabled?: boolean; requireSignupEnabled?: boolean } = {}) {
+  private normalizeExistingCategory(projectId: string, category: string, options: { requireEnabled?: boolean; requireSignupEnabled?: boolean } = {}) {
+    const normalizedProjectId = this.requireProjectId(projectId);
     const normalized = this.normalizeCategoryLabel(category);
-    const setting = this.categories.get(normalized);
+    const setting = this.categories.get(this.categoryKey(normalizedProjectId, normalized));
 
     if (!setting) {
       throw new ApiError(HttpStatus.BAD_REQUEST, 'UNKNOWN_CATEGORY', 'Unknown category.');
@@ -677,28 +698,32 @@ export class WorkersService {
     return normalized;
   }
 
-  private ensureCategory(category: string) {
+  private ensureCategory(projectId: string, category: string) {
+    const normalizedProjectId = this.requireProjectId(projectId);
     const normalized = this.normalizeCategoryLabel(category);
-    const existing = this.categories.get(normalized);
+    const existing = this.categories.get(this.categoryKey(normalizedProjectId, normalized));
 
     if (existing) {
       return normalized;
     }
 
-    this.categories.set(normalized, {
+    this.categories.set(this.categoryKey(normalizedProjectId, normalized), {
+      projectId: normalizedProjectId,
       category: normalized,
       enabled: true,
       signupEnabled: true,
       payrollDocumentsRequired: false,
-      sortOrder: this.nextCategorySortOrder(),
+      sortOrder: this.nextCategorySortOrder(normalizedProjectId),
       updatedAt: new Date().toISOString(),
     });
 
     return normalized;
   }
 
-  private nextCategorySortOrder() {
-    return Math.max(0, ...[...this.categories.values()].map((category) => category.sortOrder)) + 10;
+  private nextCategorySortOrder(projectId: string) {
+    return Math.max(0, ...[...this.categories.values()]
+      .filter((category) => category.projectId === projectId)
+      .map((category) => category.sortOrder)) + 10;
   }
 
   private normalizeCategoryLabel(category: string) {
@@ -735,19 +760,19 @@ export class WorkersService {
     return this.normalizeRequiredText(label, 'INVALID_SCHEDULE_COLUMN', 'schedule column', 40);
   }
 
-  private initialPayrollDocumentStatus(category: string): PayrollDocumentStatus {
-    return this.isPayrollDocumentRequired(category) ? 'missing' : 'approved';
+  private initialPayrollDocumentStatus(projectId: string, category: string): PayrollDocumentStatus {
+    return this.isPayrollDocumentRequired(projectId, category) ? 'missing' : 'approved';
   }
 
-  private reconcileDocumentStatus(category: string, current: PayrollDocumentStatus): PayrollDocumentStatus {
-    if (!this.isPayrollDocumentRequired(category)) {
+  private reconcileDocumentStatus(projectId: string, category: string, current: PayrollDocumentStatus): PayrollDocumentStatus {
+    if (!this.isPayrollDocumentRequired(projectId, category)) {
       return 'approved';
     }
     return current === 'approved' ? 'approved' : current;
   }
 
-  private isPayrollDocumentRequired(category: string) {
-    return this.categories.get(category)?.payrollDocumentsRequired ?? false;
+  private isPayrollDocumentRequired(projectId: string, category: string) {
+    return this.categories.get(this.categoryKey(projectId, category))?.payrollDocumentsRequired ?? false;
   }
 
   private toRegistrationResponse(worker: WorkerRegistration) {

@@ -77,6 +77,12 @@ export function WeatherView({ projectId }: { projectId: string }) {
   }, [projectId]);
 
   async function refreshWeather() {
+    if (!projectId) {
+      setWeather(null);
+      setMessage("프로젝트를 선택하면 기상 데이터를 불러옵니다.");
+      return;
+    }
+
     try {
       const nextWeather = await getAdminWeatherOverview(projectId);
       applyWeatherState(nextWeather);
@@ -97,6 +103,11 @@ export function WeatherView({ projectId }: { projectId: string }) {
   }
 
   async function saveStation() {
+    if (!projectId) {
+      setMessage("프로젝트를 선택한 뒤 관측 지점을 저장할 수 있습니다.");
+      return;
+    }
+
     const nextLatitude = Number(latitude);
     const nextLongitude = Number(longitude);
 
@@ -119,6 +130,11 @@ export function WeatherView({ projectId }: { projectId: string }) {
   }
 
   async function saveThresholds() {
+    if (!projectId) {
+      setMessage("프로젝트를 선택한 뒤 임계값을 저장할 수 있습니다.");
+      return;
+    }
+
     try {
       applyWeatherState(await updateAdminWeatherThresholds({ ...thresholds, projectId }));
       setMessage("자동 경보 임계값을 저장했습니다.");

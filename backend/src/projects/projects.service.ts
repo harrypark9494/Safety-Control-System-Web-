@@ -10,7 +10,9 @@ export class ProjectsService {
   private readonly projects = new Map<string, Project>();
 
   constructor() {
-    this.seedProjects();
+    if (process.env.ENABLE_DEMO_SEED_DATA !== 'false') {
+      this.seedProjects();
+    }
   }
 
   listProjects(options: { includeArchived?: boolean } = {}) {

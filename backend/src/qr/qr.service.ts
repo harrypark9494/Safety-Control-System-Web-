@@ -178,7 +178,7 @@ export class QrService {
   }
 
   private findWorker(workerId: string) {
-    const worker = (this.workers.listRegistrations() as WorkerLookup[])
+    const worker = (this.workers.listRegistrations({ allowAllProjects: true }) as WorkerLookup[])
       .find((registration) => registration.uid === workerId);
 
     if (!worker) {
@@ -189,7 +189,7 @@ export class QrService {
   }
 
   private seedUsageEvents() {
-    const [worker] = this.workers.listRegistrations() as WorkerLookup[];
+    const [worker] = this.workers.listRegistrations({ allowAllProjects: true }) as WorkerLookup[];
 
     if (!worker) {
       return;

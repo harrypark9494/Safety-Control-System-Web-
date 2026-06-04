@@ -205,6 +205,11 @@ export function WorkersView({
         return;
       }
 
+      if (!projectId) {
+        setActionMessage("프로젝트를 선택한 뒤 근로자를 저장할 수 있습니다.");
+        return;
+      }
+
       if (editingWorker) {
         await updateRegisteredWorker(editingWorker.uid, { ...workerForm, phone: formatPhone(workerForm.phone) });
         setFormMessage("근로자 정보가 수정되었습니다.");
@@ -249,6 +254,10 @@ export function WorkersView({
     try {
       setImporting(true);
       setImportActionMessage("");
+      if (!projectId) {
+        setImportActionMessage("프로젝트를 선택한 뒤 XLSX를 업로드할 수 있습니다.");
+        return;
+      }
       const result = await importRegisteredWorkersXlsx(projectId, importFile);
       setImportErrors(result.errors);
       setImportMessage(`업로드 ${result.importedCount}건, 반려 ${result.rejectedCount}건`);
@@ -390,7 +399,7 @@ export function WorkersView({
               <h2 id="category-modal-title">{labels.categoryManage}</h2>
               <button type="button" aria-label={labels.close} onClick={() => setCategoryModalOpen(false)}><MaterialIcon name="close" /></button>
             </header>
-            <WorkerCategoryManager workers={workers} categories={workerCategories} canManage={canManageCategories} onRefresh={onRefreshWorkerCategories} />
+            <WorkerCategoryManager projectId={projectId} workers={workers} categories={workerCategories} canManage={canManageCategories} onRefresh={onRefreshWorkerCategories} />
           </section>
         </div>
       ) : null}
@@ -478,7 +487,7 @@ function WorkerDetailModal({ worker, payrollDocumentsRequired, onEdit, onDelete,
   );
 }
 
-function WorkerCategoryManager({ workers, categories, canManage, onRefresh }: { workers: WorkerRegistrationAccount[]; categories: WorkerCategorySetting[]; canManage: boolean; onRefresh: () => Promise<void> }) {
+function WorkerCategoryManager({ projectId, workers, categories, canManage, onRefresh }: { projectId: string; workers: WorkerRegistrationAccount[]; categories: WorkerCategorySetting[]; canManage: boolean; onRefresh: () => Promise<void> }) {
   const [newCategory, setNewCategory] = useState("");
   const [editingCategory, setEditingCategory] = useState("");
   const [nextCategory, setNextCategory] = useState("");
@@ -487,7 +496,12 @@ function WorkerCategoryManager({ workers, categories, canManage, onRefresh }: { 
 
   async function updateCategory(category: WorkerCategorySetting, updates: Partial<WorkerCategorySetting>) {
     try {
-      await saveWorkerCategory({
+      if (!projectId) {
+        setMessage("프로젝트를 선택한 뒤 고용 유형을 저장할 수 있습니다.");
+        return;
+      }
+
+      await saveWorkerCategory(projectId, {
         category: updates.category ?? category.category,
         enabled: true,
         signupEnabled: true,
@@ -512,7 +526,7 @@ function WorkerCategoryManager({ workers, categories, canManage, onRefresh }: { 
       setMessage("이미 등록된 고용 유형입니다.");
       return;
     }
-    await updateCategory({ category: normalized, enabled: true, signupEnabled: true, payrollDocumentsRequired: false, sortOrder: nextSortOrder }, {});
+    await updateCategory({ projectId, category: normalized, enabled: true, signupEnabled: true, payrollDocumentsRequired: false, sortOrder: nextSortOrder }, {});
     setNewCategory("");
   }
 
@@ -523,7 +537,12 @@ function WorkerCategoryManager({ workers, categories, canManage, onRefresh }: { 
       return;
     }
     try {
-      await renameWorkerCategory(category.category, normalized);
+      if (!projectId) {
+        setMessage("프로젝트를 선택한 뒤 고용 유형을 수정할 수 있습니다.");
+        return;
+      }
+
+      await renameWorkerCategory(projectId, category.category, normalized);
       setEditingCategory("");
       setNextCategory("");
       setMessage("고용 유형 이름이 수정되었습니다.");
@@ -535,7 +554,12 @@ function WorkerCategoryManager({ workers, categories, canManage, onRefresh }: { 
 
   async function removeCategory(category: WorkerCategorySetting) {
     try {
-      await deleteWorkerCategory(category.category);
+      if (!projectId) {
+        setMessage("프로젝트를 선택한 뒤 고용 유형을 삭제할 수 있습니다.");
+        return;
+      }
+
+      await deleteWorkerCategory(projectId, category.category);
       setMessage("고용 유형이 삭제되었습니다.");
       await onRefresh();
     } catch (error) {

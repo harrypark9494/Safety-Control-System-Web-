@@ -15,7 +15,7 @@ export type WorkerRegistrationStatus = "registered" | "onboarded";
 
 export interface WorkerSession {
   uid: string;
-  projectId?: string;
+  projectId: string;
   role: "worker";
   name: string;
   phone: string;
@@ -75,6 +75,7 @@ export interface Project {
 }
 
 export interface WorkerCategorySetting {
+  projectId: string;
   category: WorkerCategory;
   enabled: boolean;
   signupEnabled: boolean;
@@ -101,7 +102,7 @@ export interface WorkerImportResult {
 export interface AdminScheduleColumn {
   id?: string;
   label: string;
-  projectId?: string;
+  projectId: string;
   createdAt?: string;
   updatedAt?: string;
 }
