@@ -6,6 +6,8 @@ export interface Project {
   status: ProjectStatus;
   startDate: string;
   endDate: string | null;
+  eventStartDate: string;
+  eventEndDate: string | null;
   location: string;
   description: string;
   createdBy: string;

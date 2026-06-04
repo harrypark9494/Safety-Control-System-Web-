@@ -18,6 +18,14 @@ export class ProjectRequest {
   @IsString()
   endDate?: string | null;
 
+  @IsOptional()
+  @IsString()
+  eventStartDate?: string;
+
+  @IsOptional()
+  @IsString()
+  eventEndDate?: string | null;
+
   @IsString()
   @IsNotEmpty()
   location: string;

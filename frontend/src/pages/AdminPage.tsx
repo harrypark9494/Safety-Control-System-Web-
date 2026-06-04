@@ -241,8 +241,8 @@ export function AdminPage() {
 
 function formatProjectStatus(status: Project["status"]) {
   return {
-    DRAFT: "준비 중",
-    ACTIVE: "운영 중",
-    ARCHIVED: "아카이브",
+    DRAFT: "준비중",
+    ACTIVE: "활성",
+    ARCHIVED: "종료",
   }[status];
 }

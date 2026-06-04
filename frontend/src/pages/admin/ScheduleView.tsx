@@ -213,6 +213,8 @@ export function ScheduleView({
   const [selectedDate, setSelectedDate] = useState<IsoDateString>(scheduleRange.startDate);
   const [schedules, setSchedules] = useState<ScheduleItem[]>(() => createInitialScheduleItems(projectId, scheduleColumns, scheduleRange.startDate, scheduleRange.endDate));
   const [activeSchedulePopover, setActiveSchedulePopover] = useState<SchedulePopoverState | null>(null);
+  const [editingScheduleId, setEditingScheduleId] = useState<string | null>(null);
+  const [activeScheduleActionId, setActiveScheduleActionId] = useState<string | null>(null);
   const [scheduleForm, setScheduleForm] = useState<ScheduleFormState>(() => createDefaultScheduleForm(scheduleRange.startDate, scheduleColumns[0] ? getScheduleColumnKey(scheduleColumns[0]) : unassignedScheduleColumn));
   const [newColumnLabel, setNewColumnLabel] = useState("");
   const [columnMessage, setColumnMessage] = useState("");
@@ -260,33 +262,66 @@ export function ScheduleView({
   const selectDate = (date: IsoDateString) => {
     setSelectedDate(clampScheduleDate(date, scheduleRange));
     setActiveSchedulePopover(null);
+    setEditingScheduleId(null);
+    setActiveScheduleActionId(null);
   };
   const updateScheduleForm = <Key extends keyof ScheduleFormState>(key: Key, value: ScheduleFormState[Key]) => {
     setScheduleForm((form) => ({ ...form, [key]: value }));
   };
-  const addScheduleItem = () => {
+  const closeScheduleEditor = () => {
+    setActiveSchedulePopover(null);
+    setEditingScheduleId(null);
+    setActiveScheduleActionId(null);
+  };
+  const saveScheduleItem = () => {
     if (!canSaveSchedule) {
       return;
     }
 
-    setSchedules((items) => [
-      ...items,
-      {
-        id: `schedule-${Date.now()}`,
-        date: scheduleForm.date,
-        startTime: scheduleForm.startTime,
-        endTime: scheduleForm.endTime,
-        title: scheduleForm.title.trim(),
-        category: scheduleForm.category,
-        location: scheduleForm.category === allScheduleColumns ? "공통 일정" : `${getScheduleColumnLabel(scheduleForm.category)} 구역`,
-        owner: "관리자 등록",
-        assignees: scheduleForm.assignees.trim() || undefined,
-        workAreaGroup: scheduleForm.workAreaGroup.trim() || undefined,
-        status: "confirmed",
-      },
-    ]);
+    const existingSchedule = editingScheduleId ? schedules.find((item) => item.id === editingScheduleId) : null;
+    const nextItem: ScheduleItem = {
+      id: editingScheduleId ?? `schedule-${Date.now()}`,
+      date: scheduleForm.date,
+      startTime: scheduleForm.startTime,
+      endTime: scheduleForm.endTime,
+      title: scheduleForm.title.trim(),
+      category: scheduleForm.category,
+      location: scheduleForm.category === allScheduleColumns ? "공통 일정" : `${getScheduleColumnLabel(scheduleForm.category)} 구역`,
+      owner: existingSchedule?.owner ?? "관리자 등록",
+      assignees: scheduleForm.assignees.trim() || undefined,
+      workAreaGroup: scheduleForm.workAreaGroup.trim() || undefined,
+      status: existingSchedule?.status ?? "confirmed",
+      dependency: existingSchedule?.dependency,
+    };
+
+    setSchedules((items) => editingScheduleId
+      ? items.map((item) => (item.id === editingScheduleId ? nextItem : item))
+      : [...items, nextItem]);
     selectDate(scheduleForm.date);
-    setActiveSchedulePopover(null);
+    closeScheduleEditor();
+  };
+  const editScheduleItem = (item: ScheduleItem) => {
+    setScheduleForm({
+      date: item.date,
+      startTime: item.startTime,
+      endTime: item.endTime,
+      title: item.title,
+      category: item.category,
+      assignees: item.assignees ?? "",
+      workAreaGroup: item.workAreaGroup ?? "",
+    });
+    setEditingScheduleId(item.id);
+    setActiveScheduleActionId(null);
+    setActiveSchedulePopover({ key: getScheduleEditKey(item.id), row: 0, columnIndex: 0 });
+  };
+  const deleteScheduleItem = (id: string) => {
+    setSchedules((items) => items.filter((item) => item.id !== id));
+    if (editingScheduleId === id) {
+      closeScheduleEditor();
+    }
+    if (activeScheduleActionId === id) {
+      setActiveScheduleActionId(null);
+    }
   };
   const addScheduleColumn = async () => {
     if (!canCreateColumn) {
@@ -323,6 +358,8 @@ export function ScheduleView({
   const openSchedulePopover = (time: string, column: ScheduleColumn, row: number, columnIndex: number) => {
     const columnKey = getScheduleColumnKey(column);
     setScheduleForm(createDefaultScheduleForm(selectedDate, columnKey, time));
+    setEditingScheduleId(null);
+    setActiveScheduleActionId(null);
     setActiveSchedulePopover({ key: getScheduleSlotKey(time, columnKey), row, columnIndex });
   };
   const moveDate = (offset: number) => {
@@ -339,6 +376,8 @@ export function ScheduleView({
     setSchedules(createInitialScheduleItems(projectId, scheduleColumns, scheduleRange.startDate, scheduleRange.endDate));
     setScheduleForm(createDefaultScheduleForm(scheduleRange.startDate, scheduleColumns[0] ? getScheduleColumnKey(scheduleColumns[0]) : unassignedScheduleColumn));
     setActiveSchedulePopover(null);
+    setEditingScheduleId(null);
+    setActiveScheduleActionId(null);
   }, [projectId, scheduleRange.startDate, scheduleRange.endDate, columnsReady]);
 
   return (
@@ -400,7 +439,20 @@ export function ScheduleView({
                     <div
                       className={`schedule-cell schedule-cell--background${columnIndex === scheduleColumnsForGrid.length - 1 ? " is-row-end" : ""}${isSlotOccupied ? " is-occupied" : ""}${isPopoverActive ? " is-editing" : ""}`}
                       key={slotKey}
+                      onClick={() => {
+                        if (!isSlotOccupied) {
+                          openSchedulePopover(time, column, row, columnIndex);
+                        }
+                      }}
+                      onKeyDown={(event) => {
+                        if (!isSlotOccupied && (event.key === "Enter" || event.key === " ")) {
+                          event.preventDefault();
+                          openSchedulePopover(time, column, row, columnIndex);
+                        }
+                      }}
+                      role={isSlotOccupied ? undefined : "button"}
                       style={{ gridColumn: columnIndex + 2, gridRow: `${row} / span 1` }}
+                      tabIndex={isSlotOccupied ? undefined : 0}
                     >
                       {!isSlotOccupied ? (
                         <button
@@ -408,7 +460,10 @@ export function ScheduleView({
                           type="button"
                           aria-expanded={isPopoverActive}
                           aria-label={`${formatScheduleDate(selectedDate)} ${time} ${getScheduleColumnDisplayName(column)} 일정 추가`}
-                          onClick={() => openSchedulePopover(time, column, row, columnIndex)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            openSchedulePopover(time, column, row, columnIndex);
+                          }}
                         >
                           <MaterialIcon name="add" />
                         </button>
@@ -416,9 +471,10 @@ export function ScheduleView({
                       {isPopoverActive ? (
                         <ScheduleAddPopover
                           canSave={canSaveSchedule}
+                          mode="create"
                           form={scheduleForm}
-                          onCancel={() => setActiveSchedulePopover(null)}
-                          onSave={addScheduleItem}
+                          onCancel={closeScheduleEditor}
+                          onSave={saveScheduleItem}
                           onUpdate={updateScheduleForm}
                           placement={getSchedulePopoverPlacement(activeSchedulePopover, scheduleColumnsForGrid.length, scheduleTimeSlots.length)}
                         />
@@ -430,11 +486,34 @@ export function ScheduleView({
             ))}
             {selectedSchedules.map((item) => (
               <div
-                className={`schedule-cell schedule-cell--job${item.category === allScheduleColumns ? " schedule-cell--span-all" : ""}`}
+                className={`schedule-cell schedule-cell--job${activeScheduleActionId === item.id ? " is-menu-open" : ""}${item.category === allScheduleColumns ? " schedule-cell--span-all" : ""}`}
                 key={item.id}
                 style={getScheduleItemGridStyle(item, scheduleColumnsForGrid, getScheduleColumnCategory, hours)}
               >
-                <ScheduleJobCard item={item} />
+                <ScheduleJobCard
+                  isActionsOpen={activeScheduleActionId === item.id}
+                  item={item}
+                  onCloseActions={() => setActiveScheduleActionId(null)}
+                  onDelete={() => deleteScheduleItem(item.id)}
+                  onEdit={() => editScheduleItem(item)}
+                  onToggleActions={() => {
+                    setActiveSchedulePopover(null);
+                    setEditingScheduleId(null);
+                    setActiveScheduleActionId((activeId) => activeId === item.id ? null : item.id);
+                  }}
+                />
+                {activeSchedulePopover?.key === getScheduleEditKey(item.id) ? (
+                  <ScheduleAddPopover
+                    canSave={canSaveSchedule}
+                    mode="edit"
+                    form={scheduleForm}
+                    onCancel={closeScheduleEditor}
+                    onDelete={() => deleteScheduleItem(item.id)}
+                    onSave={saveScheduleItem}
+                    onUpdate={updateScheduleForm}
+                    placement="is-left-aligned is-bottom-aligned"
+                  />
+                ) : null}
               </div>
             ))}
           </div>
@@ -502,14 +581,18 @@ export function ScheduleView({
 function ScheduleAddPopover({
   canSave,
   form,
+  mode,
   onCancel,
+  onDelete,
   onSave,
   onUpdate,
   placement,
 }: {
   canSave: boolean;
   form: ScheduleFormState;
+  mode: "create" | "edit";
   onCancel: () => void;
+  onDelete?: () => void;
   onSave: () => void;
   onUpdate: <Key extends keyof ScheduleFormState>(key: Key, value: ScheduleFormState[Key]) => void;
   placement: string;
@@ -517,6 +600,7 @@ function ScheduleAddPopover({
   return (
     <form
       className={`schedule-add-popover ${placement}`}
+      onClick={(event) => event.stopPropagation()}
       onSubmit={(event) => {
         event.preventDefault();
         onSave();
@@ -524,7 +608,7 @@ function ScheduleAddPopover({
     >
       <header>
         <div>
-          <strong>일정 추가</strong>
+          <strong>{mode === "edit" ? "일정 수정" : "일정 추가"}</strong>
           <p>{formatScheduleDate(form.date)} · {form.category}</p>
         </div>
         <button type="button" aria-label="닫기" onClick={onCancel}>
@@ -554,16 +638,41 @@ function ScheduleAddPopover({
         <input value={form.workAreaGroup} onChange={(event) => onUpdate("workAreaGroup", event.target.value)} placeholder="예: 메인 스테이지 하부" />
       </label>
       <footer>
+        {mode === "edit" && onDelete ? <button className="table-action-danger" type="button" onClick={onDelete}>삭제</button> : null}
         <button className="light-button" type="button" onClick={onCancel}>취소</button>
-        <button className="dark-button" type="submit" disabled={!canSave}>추가</button>
+        <button className="dark-button" type="submit" disabled={!canSave}>{mode === "edit" ? "저장" : "추가"}</button>
       </footer>
     </form>
   );
 }
 
-function ScheduleJobCard({ item }: { item: ScheduleItem }) {
+function ScheduleJobCard({
+  isActionsOpen,
+  item,
+  onCloseActions,
+  onDelete,
+  onEdit,
+  onToggleActions,
+}: {
+  isActionsOpen: boolean;
+  item: ScheduleItem;
+  onCloseActions: () => void;
+  onDelete: () => void;
+  onEdit: () => void;
+  onToggleActions: () => void;
+}) {
   return (
-    <article className={`job job--${item.status}${item.category === allScheduleColumns ? " job--all-columns" : ""}`}>
+    <article className={`job job--${item.status}${isActionsOpen ? " is-actions-open" : ""}${item.category === allScheduleColumns ? " job--all-columns" : ""}`}>
+      <div className="job-actions">
+        <button type="button" aria-expanded={isActionsOpen} aria-label={`${item.title} 관리 메뉴`} onClick={onToggleActions}><MaterialIcon name="more_vert" /></button>
+        {isActionsOpen ? (
+          <div className="job-actions-popover" role="menu">
+            <button type="button" role="menuitem" onClick={onEdit}><MaterialIcon name="edit" />수정</button>
+            <button type="button" role="menuitem" onClick={onDelete}><MaterialIcon name="delete" />삭제</button>
+            <button type="button" role="menuitem" onClick={onCloseActions}><MaterialIcon name="close" />닫기</button>
+          </div>
+        ) : null}
+      </div>
       <strong>{item.title}</strong>
       <span>{item.startTime} - {item.endTime}</span>
       <small>{item.location} · {item.owner}</small>
@@ -621,6 +730,10 @@ function addMinutesToTime(value: string, minutesToAdd: number) {
 
 function getScheduleSlotKey(time: string, columnLabel: string) {
   return `${time}-${columnLabel}`;
+}
+
+function getScheduleEditKey(id: string) {
+  return `edit-${id}`;
 }
 
 function isScheduleSlotOccupied(

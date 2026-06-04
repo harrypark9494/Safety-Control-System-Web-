@@ -20,7 +20,7 @@ export class ProjectsService {
         if (a.status !== b.status) {
           return this.statusRank(a.status) - this.statusRank(b.status);
         }
-        return b.startDate.localeCompare(a.startDate);
+        return b.eventStartDate.localeCompare(a.eventStartDate);
       });
   }
 
@@ -39,6 +39,8 @@ export class ProjectsService {
       status: request.status ?? 'DRAFT',
       startDate: request.startDate,
       endDate: request.endDate ?? null,
+      eventStartDate: request.eventStartDate ?? request.startDate,
+      eventEndDate: request.eventEndDate ?? request.endDate ?? null,
       location: request.location.trim(),
       description: request.description?.trim() ?? '',
       createdBy: request.createdBy?.trim() || 'admin',
@@ -75,8 +77,10 @@ export class ProjectsService {
       id: DEFAULT_PROJECT_ID,
       name: '2026 워터밤 여름 프로젝트',
       status: 'ACTIVE',
-      startDate: '2026-07-19',
-      endDate: '2026-07-21',
+      startDate: '2026-07-14',
+      endDate: '2026-07-24',
+      eventStartDate: '2026-07-19',
+      eventEndDate: '2026-07-21',
       location: '킨텍스 제2전시장',
       description: '현재 운영 중인 안전 관제 프로젝트',
       createdBy: 'system',
@@ -87,8 +91,10 @@ export class ProjectsService {
       id: 'waterbomb-2026-winter',
       name: '2026 워터밤 겨울 준비',
       status: 'DRAFT',
-      startDate: '2026-12-18',
-      endDate: '2026-12-20',
+      startDate: '2026-12-01',
+      endDate: '2026-12-31',
+      eventStartDate: '2026-12-18',
+      eventEndDate: '2026-12-20',
       location: '운영 장소 미정',
       description: '다음 운영 준비 프로젝트',
       createdBy: 'system',
