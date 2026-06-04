@@ -80,7 +80,9 @@ export function WeatherView({ projectId }: { projectId: string }) {
     try {
       const nextWeather = await getAdminWeatherOverview(projectId);
       applyWeatherState(nextWeather);
-      setMessage("기상청 예보 데이터가 동기화되었습니다.");
+      setMessage(nextWeather.source.mode === "test-fixture"
+        ? "실시간 기상 API 연결 실패로 테스트 fixture를 표시 중입니다."
+        : "기상청 예보 데이터가 동기화되었습니다.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "기상 데이터를 불러오지 못했습니다.");
     }

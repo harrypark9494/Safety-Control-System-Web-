@@ -190,6 +190,10 @@ npm.cmd run dev:frontend
 관리자 접속 주소는 `http://localhost:3000/login/admin/`이며,
 `Google 계정으로 계속` 버튼을 누르면 로컬 관리자 세션으로 바로 진입합니다.
 
+로컬 테스트에서는 `VITE_ENABLE_TEST_WEATHER_MOCK=true`로 기상 API 실패 시 관리자
+기상 탭에 테스트 fixture를 표시합니다. 실제 API 응답이 오면 API 데이터를 우선
+사용하고, fixture 응답은 `source.mode: "test-fixture"`로 구분됩니다.
+
 근로자 대시보드 테스트 계정:
 
 | Field | Env key | Shared local value |

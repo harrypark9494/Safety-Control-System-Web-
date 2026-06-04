@@ -9,6 +9,7 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_APP_ID?: string;
   readonly VITE_ADMIN_GOOGLE_DOMAIN?: string;
   readonly VITE_ENABLE_LOCAL_ADMIN_BYPASS?: string;
+  readonly VITE_ENABLE_TEST_WEATHER_MOCK?: string;
 }
 
 interface ImportMeta {
