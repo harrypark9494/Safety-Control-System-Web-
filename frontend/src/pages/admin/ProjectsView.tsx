@@ -167,6 +167,7 @@ export function ProjectsView({
 
           <div className="project-history-table" role="table" aria-label="프로젝트 이력 목록">
             <div className="project-history-head" role="row">
+              <span role="columnheader">선택</span>
               <span role="columnheader">프로젝트</span>
               <span role="columnheader">행사 스케줄</span>
               <span role="columnheader">실제 스케줄</span>
@@ -177,6 +178,18 @@ export function ProjectsView({
             <div className="project-history-body">
               {filteredProjects.length > 0 ? filteredProjects.map((project) => (
                 <article className={`project-history-row ${project.id === selectedProjectId ? "is-selected" : ""}`} role="row" key={project.id}>
+                  <div className="project-select-cell" role="cell">
+                    <button
+                      className={project.id === selectedProjectId ? "is-selected" : ""}
+                      type="button"
+                      aria-label={`${project.name} 선택`}
+                      aria-pressed={project.id === selectedProjectId}
+                      onClick={() => onSelect(project.id)}
+                    >
+                      <MaterialIcon name={project.id === selectedProjectId ? "check_circle" : "radio_button_unchecked"} filled={project.id === selectedProjectId} />
+                      <span>{project.id === selectedProjectId ? "선택됨" : "선택"}</span>
+                    </button>
+                  </div>
                   <div className="project-history-name" role="cell">
                     <button type="button" onClick={() => onSelect(project.id)}>
                       <strong>{project.name}</strong>

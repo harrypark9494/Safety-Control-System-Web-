@@ -126,8 +126,15 @@ td {
   font-weight: 800;
 }
 
+.project-switcher {
+  position: relative;
+  min-width: 0;
+}
+
 .current-project-button {
-  display: block;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 24px;
+  align-items: center;
   width: 100%;
   min-height: 50px;
   margin-top: 4px;
@@ -137,6 +144,11 @@ td {
   color: #17263a;
   background: #fff;
   text-align: left;
+}
+
+.current-project-button > .material-symbols-rounded {
+  color: #596273;
+  font-size: 1.35rem;
 }
 
 .current-project-button span {
@@ -169,6 +181,85 @@ td {
 .current-project-button:disabled {
   cursor: default;
   opacity: 1;
+}
+
+.project-switcher-menu {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  display: grid;
+  max-height: min(360px, 60vh);
+  overflow-y: auto;
+  border: 1px solid var(--line-strong);
+  border-radius: 6px;
+  padding: 6px;
+  background: #fff;
+  box-shadow: 0 18px 42px rgba(8, 21, 39, 0.18);
+}
+
+.project-switcher-menu button {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 22px;
+  align-items: center;
+  min-height: 48px;
+  gap: 8px;
+  border-radius: 4px;
+  padding: 8px 10px;
+  color: #17263a;
+  background: transparent;
+  text-align: left;
+}
+
+.project-switcher-menu button:hover,
+.project-switcher-menu button.is-selected {
+  background: #f1f5f9;
+}
+
+.project-switcher-menu button span {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+  margin: 0;
+}
+
+.project-switcher-menu b,
+.project-switcher-menu small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-switcher-menu b {
+  font-size: 0.82rem;
+  font-weight: 950;
+}
+
+.project-switcher-menu small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.project-switcher-menu .material-symbols-rounded {
+  color: var(--green);
+  font-size: 1.2rem;
+}
+
+.project-switcher-menu .project-switcher-manage {
+  grid-template-columns: 22px minmax(0, 1fr);
+  margin-top: 6px;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  color: #34445c;
+  font-size: 0.8rem;
+  font-weight: 950;
+}
+
+.project-switcher-menu .project-switcher-manage .material-symbols-rounded {
+  color: #596273;
 }
 
 .admin-nav,
@@ -2917,6 +3008,7 @@ td {
 .project-history-row {
   display: grid;
   grid-template-columns:
+    92px
     minmax(220px, 1.45fr)
     minmax(156px, 0.95fr)
     minmax(156px, 0.95fr)
@@ -2957,6 +3049,32 @@ td {
 
 .project-history-row.is-selected {
   background: #f6f8fb;
+}
+
+.project-select-cell button {
+  display: inline-grid;
+  grid-template-columns: 18px auto;
+  align-items: center;
+  min-height: 34px;
+  gap: 5px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  padding: 0 9px;
+  color: #34445c;
+  background: #fff;
+  font-size: 0.78rem;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.project-select-cell button.is-selected {
+  color: #087c35;
+  border-color: rgba(7, 184, 79, 0.36);
+  background: #e8f7ee;
+}
+
+.project-select-cell .material-symbols-rounded {
+  font-size: 1.05rem;
 }
 
 .project-history-name button {
@@ -3620,6 +3738,11 @@ td {
     display: none;
   }
 
+  .current-project-button span,
+  .project-switcher-menu button span {
+    display: grid;
+  }
+
   .nav-item {
     grid-template-columns: 1fr;
     justify-items: center;
@@ -3696,6 +3819,10 @@ td {
     max-height: 42vh;
     border-right: 0;
     border-bottom: 1px solid var(--line-strong);
+  }
+
+  .project-switcher-menu {
+    width: min(280px, calc(100vw - 28px));
   }
 
   .admin-nav,

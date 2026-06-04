@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { MaterialIcon } from "../components/MaterialIcon";
 import "../styles/admin.css";
 import { clearSession, getAdminProjects, getAdminScheduleColumns, getRegisteredWorkers, getSession, getAdminWorkerCategories } from "../features/auth/session";
@@ -39,6 +39,7 @@ export function AdminPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [projectMessage, setProjectMessage] = useState("");
+  const [projectSwitcherOpen, setProjectSwitcherOpen] = useState(false);
   const [workers, setWorkers] = useState<WorkerRegistrationAccount[]>([]);
   const [workerCategories, setWorkerCategories] = useState<WorkerCategorySetting[]>([]);
   const [workerCategoriesReady, setWorkerCategoriesReady] = useState(false);
@@ -52,6 +53,7 @@ export function AdminPage() {
   const primaryNavItems = navItems.slice(0, 6).filter(([id]) => allowedViews.includes(id));
   const canOpenAdminManagement = allowedViews.includes("admins");
   const canOpenProjectManagement = allowedViews.includes("projects");
+  const projectSwitcherRef = useRef<HTMLDivElement | null>(null);
 
   function submitAdmin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -81,6 +83,21 @@ export function AdminPage() {
     }
   }, [selectedProjectId]);
 
+  useEffect(() => {
+    if (!projectSwitcherOpen) {
+      return undefined;
+    }
+
+    function closeProjectSwitcher(event: MouseEvent) {
+      if (!projectSwitcherRef.current?.contains(event.target as Node)) {
+        setProjectSwitcherOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", closeProjectSwitcher);
+    return () => document.removeEventListener("mousedown", closeProjectSwitcher);
+  }, [projectSwitcherOpen]);
+
   async function refreshProjects() {
     try {
       const nextProjects = await getAdminProjects({ includeArchived: true });
@@ -107,6 +124,11 @@ export function AdminPage() {
   }
 
   const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? null;
+
+  function selectProject(projectId: string) {
+    setSelectedProjectId(projectId);
+    setProjectSwitcherOpen(false);
+  }
 
   async function refreshWorkerCategories() {
     try {
@@ -142,12 +164,48 @@ export function AdminPage() {
           <div className="brand-block">
             <strong>워터밤 안전 관제 시스템</strong>
             <span>관리자 페이지</span>
-            <button className="current-project-button" type="button" onClick={() => canOpenProjectManagement ? setView("projects") : undefined} disabled={!canOpenProjectManagement}>
-              <span>
-                <b>{selectedProject?.name ?? "프로젝트 선택 필요"}</b>
-                <small>{selectedProject ? `${formatProjectStatus(selectedProject.status)} · ${selectedProject.location}` : "프로젝트 관리에서 선택"}</small>
-              </span>
-            </button>
+            <div className="project-switcher" ref={projectSwitcherRef}>
+              <button
+                className="current-project-button"
+                type="button"
+                onClick={() => setProjectSwitcherOpen((current) => !current)}
+                disabled={projects.length === 0}
+                aria-haspopup="listbox"
+                aria-expanded={projectSwitcherOpen}
+              >
+                <span>
+                  <b>{selectedProject?.name ?? "프로젝트 선택 필요"}</b>
+                  <small>{selectedProject ? `${formatProjectStatus(selectedProject.status)} · ${selectedProject.location}` : "선택 가능한 프로젝트 없음"}</small>
+                </span>
+                <MaterialIcon name="expand_more" />
+              </button>
+              {projectSwitcherOpen ? (
+                <div className="project-switcher-menu" role="listbox" aria-label="프로젝트 선택">
+                  {projects.map((project) => (
+                    <button
+                      className={project.id === selectedProjectId ? "is-selected" : ""}
+                      type="button"
+                      role="option"
+                      aria-selected={project.id === selectedProjectId}
+                      key={project.id}
+                      onClick={() => selectProject(project.id)}
+                    >
+                      <span>
+                        <b>{project.name}</b>
+                        <small>{formatProjectStatus(project.status)} · {project.location}</small>
+                      </span>
+                      {project.id === selectedProjectId ? <MaterialIcon name="check" /> : null}
+                    </button>
+                  ))}
+                  {canOpenProjectManagement ? (
+                    <button className="project-switcher-manage" type="button" onClick={() => { setProjectSwitcherOpen(false); setView("projects"); }}>
+                      <MaterialIcon name="folder_managed" />
+                      프로젝트 관리
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
           </div>
 
           <nav className="admin-nav" aria-label="주요 메뉴">
@@ -202,7 +260,7 @@ export function AdminPage() {
             <ProjectsView
               projects={projects}
               selectedProjectId={selectedProjectId}
-              onSelect={setSelectedProjectId}
+              onSelect={selectProject}
               onRefresh={refreshProjects}
             />
           ) : null}
