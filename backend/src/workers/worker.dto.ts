@@ -103,3 +103,13 @@ export class WorkTypeRenameRequest {
   @IsNotEmpty()
   nextLabel: string;
 }
+
+export class ScheduleColumnRequest {
+  @IsOptional()
+  @IsString()
+  projectId?: string;
+
+  @IsString()
+  @IsNotEmpty()
+  label: string;
+}

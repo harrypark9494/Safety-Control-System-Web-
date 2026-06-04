@@ -368,25 +368,54 @@ Response `200 OK`: `WorkTypeSetting[]`
 
 `GET /api/admin/schedule-columns?projectId=waterbomb-2026-summer`
 
-스케줄 표 컬럼은 별도 저장값이 아니라 활성 고용 유형의 `teams` 목록에서
-자동 생성합니다. 고용 유형은 상위 폴더, 팀은 그 아래 노드처럼 취급하므로
-컬럼 식별자는 `고용유형 / 팀` 경로를 사용합니다. 같은 팀 이름이 여러 고용
-유형에 있더라도 서로 다른 컬럼으로 유지하며, `workerCount`는 선택 프로젝트에
-등록된 해당 고용유형/팀 근로자 수입니다.
+스케줄 표 컬럼은 프로젝트별 수동 관리 목록입니다. 근로자 관리의 고용 유형/팀
+설정과 자동 동기화하지 않으며, 관리자가 스케줄 관리 화면에서 직접 추가하거나
+삭제합니다. 기존 고용 유형의 팀 목록은 스케줄 컬럼 초기값으로도 사용하지 않고,
+근로자 매핑이나 팀별 인원 집계도 스케줄 컬럼에서 관리하지 않습니다.
 
 Response `200 OK`:
 
 ```json
 [
   {
-    "id": "단기 아르바이트 / 입장 게이트 A팀",
+    "id": "7f705b3d-c6d8-4b6e-b3f0-5a8651adf874",
     "label": "입장 게이트 A팀",
-    "workType": "단기 아르바이트",
-    "workTypes": ["단기 아르바이트"],
-    "workerCount": 8
+    "projectId": "waterbomb-2026-summer",
+    "createdAt": "2026-06-04T00:00:00.000Z",
+    "updatedAt": "2026-06-04T00:00:00.000Z"
   }
 ]
 ```
+
+### Create Admin Schedule Column
+
+`POST /api/admin/schedule-columns`
+
+Request:
+
+```json
+{
+  "projectId": "waterbomb-2026-summer",
+  "label": "입장 게이트 A팀"
+}
+```
+
+Response `201 Created`: 변경 후 `ScheduleColumn[]`
+
+Errors:
+
+- `400 Bad Request`: 컬럼명 누락 또는 길이 초과
+- `409 Conflict`: 같은 프로젝트에 이미 같은 이름의 스케줄 컬럼이 있음
+
+### Delete Admin Schedule Column
+
+`DELETE /api/admin/schedule-columns/{id}?projectId=waterbomb-2026-summer`
+
+Response `200 OK`: 변경 후 `ScheduleColumn[]`
+
+Errors:
+
+- `404 Not Found`: 스케줄 컬럼 없음
 
 ### Save Admin Work Type
 

@@ -3,6 +3,7 @@ import {
   AdminRegistrationRequest,
   OnboardingRequest,
   WorkerLoginRequest,
+  ScheduleColumnRequest,
   WorkTypeRenameRequest,
   WorkTypeRequest,
 } from './worker.dto';
@@ -50,6 +51,16 @@ export class WorkersController {
   @Get('admin/schedule-columns')
   listScheduleColumns(@Query('projectId') projectId?: string) {
     return this.workers.listScheduleColumns(projectId);
+  }
+
+  @Post('admin/schedule-columns')
+  createScheduleColumn(@Body() request: ScheduleColumnRequest) {
+    return this.workers.createScheduleColumn(request);
+  }
+
+  @Delete('admin/schedule-columns/:id')
+  deleteScheduleColumn(@Param('id') id: string, @Query('projectId') projectId?: string) {
+    return this.workers.deleteScheduleColumn(id, projectId);
   }
 
   @Post('admin/work-types')

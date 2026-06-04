@@ -160,7 +160,7 @@ export function AdminPage() {
           {projectMessage ? <p className="admin-message admin-message--global" role="status">{projectMessage}</p> : null}
           {view === "dashboard" ? <DashboardView project={selectedProject} /> : null}
           {view === "weather" ? <WeatherView projectId={selectedProjectId} /> : null}
-          {view === "schedule" ? <ScheduleView columns={scheduleColumns} columnsReady={scheduleColumnsReady} message={scheduleMessage} project={selectedProject} /> : null}
+          {view === "schedule" ? <ScheduleView columns={scheduleColumns} columnsReady={scheduleColumnsReady} message={scheduleMessage} project={selectedProject} onColumnsChange={setScheduleColumns} /> : null}
           {view === "qr" ? <QrView projectId={selectedProjectId} /> : null}
           {view === "workers" ? (
             <WorkersView

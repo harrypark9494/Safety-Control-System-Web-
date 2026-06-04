@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { MaterialIcon } from "../../components/MaterialIcon";
+import { createAdminScheduleColumn, deleteAdminScheduleColumn } from "../../features/auth/session";
 import type { AdminScheduleColumn, Project } from "../../types";
 
 type ScheduleStatus = "confirmed" | "ready" | "risk";
@@ -24,9 +25,6 @@ type ScheduleItem = {
 type ScheduleColumn = {
   id?: string;
   label: string;
-  workType?: string;
-  workTypes?: string[];
-  workerCount?: number;
 };
 
 type ScheduleFormState = {
@@ -56,7 +54,7 @@ const legacyUnassignedScheduleColumn = "미분류";
 const allScheduleColumns = "__all_columns__";
 const allScheduleColumnsLabel = "전체 컬럼";
 
-const fallbackScheduleColumns: ScheduleColumn[] = [{ label: unassignedScheduleColumn, workerCount: 0 }];
+const fallbackScheduleColumns: ScheduleColumn[] = [{ label: unassignedScheduleColumn }];
 
 function createInitialScheduleItems(
   projectId: string,
@@ -199,22 +197,27 @@ export function ScheduleView({
   columns,
   columnsReady,
   message,
+  onColumnsChange,
   project,
 }: {
   columns: AdminScheduleColumn[];
   columnsReady: boolean;
   message: string;
+  onColumnsChange: (columns: AdminScheduleColumn[]) => void;
   project: Project | null;
 }) {
   const projectId = project?.id ?? "";
   const scheduleRange = getProjectScheduleRange(project);
   const scheduleDates = getDateRange(scheduleRange.startDate, scheduleRange.endDate);
   const scheduleColumns = normalizeScheduleColumns(columns);
-  const scheduleColumnSignature = scheduleColumns.map((column) => `${getScheduleColumnKey(column)}:${column.workerCount ?? 0}`).join("\u001f");
   const [selectedDate, setSelectedDate] = useState<IsoDateString>(scheduleRange.startDate);
   const [schedules, setSchedules] = useState<ScheduleItem[]>(() => createInitialScheduleItems(projectId, scheduleColumns, scheduleRange.startDate, scheduleRange.endDate));
   const [activeSchedulePopover, setActiveSchedulePopover] = useState<SchedulePopoverState | null>(null);
   const [scheduleForm, setScheduleForm] = useState<ScheduleFormState>(() => createDefaultScheduleForm(scheduleRange.startDate, scheduleColumns[0] ? getScheduleColumnKey(scheduleColumns[0]) : unassignedScheduleColumn));
+  const [newColumnLabel, setNewColumnLabel] = useState("");
+  const [columnMessage, setColumnMessage] = useState("");
+  const [isSavingColumn, setIsSavingColumn] = useState(false);
+  const [columnModalOpen, setColumnModalOpen] = useState(false);
   const activeDateRef = useRef<HTMLButtonElement | null>(null);
   const hours = Array.from({ length: 14 }, (_, index) => `${String(index + 7).padStart(2, "0")}:00`);
   const scheduleTimeSlots = hours.flatMap((hour) => [hour, addMinutesToTime(hour, 30)]);
@@ -249,6 +252,7 @@ export function ScheduleView({
     ? scheduleColumns
     : [...scheduleColumns, { label: unassignedScheduleColumn }];
   const canSaveSchedule = scheduleForm.title.trim().length > 0 && scheduleForm.startTime < scheduleForm.endTime;
+  const canCreateColumn = projectId.length > 0 && newColumnLabel.trim().length > 0 && !isSavingColumn;
   const scheduleGridStyle = {
     "--schedule-column-count": Math.max(scheduleColumnsForGrid.length, 1),
     "--schedule-slot-count": scheduleTimeSlots.length,
@@ -284,6 +288,38 @@ export function ScheduleView({
     selectDate(scheduleForm.date);
     setActiveSchedulePopover(null);
   };
+  const addScheduleColumn = async () => {
+    if (!canCreateColumn) {
+      return;
+    }
+
+    try {
+      setIsSavingColumn(true);
+      const nextColumns = await createAdminScheduleColumn(projectId, newColumnLabel);
+      onColumnsChange(nextColumns);
+      setNewColumnLabel("");
+      setColumnMessage("스케줄 컬럼이 추가되었습니다.");
+    } catch (error) {
+      setColumnMessage(error instanceof Error ? error.message : "스케줄 컬럼 추가에 실패했습니다.");
+    } finally {
+      setIsSavingColumn(false);
+    }
+  };
+  const removeScheduleColumn = async (column: ScheduleColumn) => {
+    const columnId = column.id?.trim();
+    if (!columnId || !projectId) {
+      return;
+    }
+
+    try {
+      const nextColumns = await deleteAdminScheduleColumn(columnId, projectId);
+      onColumnsChange(nextColumns);
+      setColumnMessage("스케줄 컬럼이 삭제되었습니다.");
+      setActiveSchedulePopover(null);
+    } catch (error) {
+      setColumnMessage(error instanceof Error ? error.message : "스케줄 컬럼 삭제에 실패했습니다.");
+    }
+  };
   const openSchedulePopover = (time: string, column: ScheduleColumn, row: number, columnIndex: number) => {
     const columnKey = getScheduleColumnKey(column);
     setScheduleForm(createDefaultScheduleForm(selectedDate, columnKey, time));
@@ -303,11 +339,17 @@ export function ScheduleView({
     setSchedules(createInitialScheduleItems(projectId, scheduleColumns, scheduleRange.startDate, scheduleRange.endDate));
     setScheduleForm(createDefaultScheduleForm(scheduleRange.startDate, scheduleColumns[0] ? getScheduleColumnKey(scheduleColumns[0]) : unassignedScheduleColumn));
     setActiveSchedulePopover(null);
-  }, [projectId, scheduleRange.startDate, scheduleRange.endDate, scheduleColumnSignature]);
+  }, [projectId, scheduleRange.startDate, scheduleRange.endDate]);
 
   return (
     <section className="admin-view is-active">
-      <header className="page-header page-header--actions"><h1>스케줄 관리</h1><div><button className="light-button" type="button"><MaterialIcon name="download" />엑셀 내보내기</button></div></header>
+      <header className="page-header page-header--actions">
+        <h1>스케줄 관리</h1>
+        <div>
+          <button className="light-button" type="button"><MaterialIcon name="download" />엑셀 내보내기</button>
+          <button className="dark-button" type="button" disabled={!projectId} onClick={() => setColumnModalOpen(true)}><MaterialIcon name="view_column" />컬럼 관리</button>
+        </div>
+      </header>
       <div className="page-content schedule-board">
         <section className="app-card schedule-period-card" aria-label="프로젝트 일정 기간">
           <div>
@@ -319,29 +361,6 @@ export function ScheduleView({
             <button type="button" aria-label="이전 날짜" disabled={isFirstScheduleDate} onClick={() => moveDate(-1)}><MaterialIcon name="chevron_left" /></button>
             <button type="button" aria-label="기간 첫 날짜로 이동" disabled={isFirstScheduleDate} onClick={() => selectDate(scheduleRange.startDate)}><MaterialIcon name="first_page" /></button>
             <button type="button" aria-label="다음 날짜" disabled={isLastScheduleDate} onClick={() => moveDate(1)}><MaterialIcon name="chevron_right" /></button>
-          </div>
-        </section>
-
-        <section className="app-card schedule-column-management" aria-label="스케줄 컬럼 관리">
-          <div className="section-title-row">
-            <div>
-              <h2>팀 기준 컬럼</h2>
-              <p>스케줄 컬럼은 고용유형 아래에 등록된 팀 목록과 자동으로 동기화됩니다.</p>
-            </div>
-            <span className="count-pill">{columnsReady ? `${scheduleColumns.length}개 팀` : "불러오는 중"}</span>
-          </div>
-          {message ? <p className="form-message" role="status">{message}</p> : null}
-          <div className="schedule-column-list">
-            {scheduleColumnsForGrid.map((column) => {
-              const columnKey = getScheduleColumnKey(column);
-              const scheduleCount = scheduleCountByCategory[columnKey] ?? 0;
-              return (
-                <span className="schedule-column-chip" key={columnKey}>
-                  <b>{column.label}</b>
-                  <small>{scheduleCount}건 · 근로자 {column.workerCount ?? 0}명</small>
-                </span>
-              );
-            })}
           </div>
         </section>
 
@@ -421,6 +440,61 @@ export function ScheduleView({
           </div>
         </div>
       </div>
+      {columnModalOpen ? (
+        <div className="modal-backdrop">
+          <section className="account-modal schedule-column-modal" role="dialog" aria-modal="true" aria-labelledby="schedule-column-modal-title">
+            <header>
+              <h2 id="schedule-column-modal-title">스케줄 컬럼 관리</h2>
+              <button type="button" aria-label="닫기" onClick={() => setColumnModalOpen(false)}><MaterialIcon name="close" /></button>
+            </header>
+            <form
+              className="account-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                void addScheduleColumn();
+              }}
+            >
+              <div className="modal-body schedule-column-modal-body">
+                <label>
+                  컬럼명
+                  <span className="schedule-column-input-row">
+                    <input
+                      value={newColumnLabel}
+                      onChange={(event) => setNewColumnLabel(event.target.value)}
+                      placeholder="예: 메인 스테이지 A"
+                      disabled={!projectId || isSavingColumn}
+                      autoFocus
+                    />
+                    <button className="dark-button" type="submit" disabled={!canCreateColumn}><MaterialIcon name="add" />추가</button>
+                  </span>
+                </label>
+                {message || columnMessage ? <strong className="modal-message" role="status">{columnMessage || message}</strong> : null}
+                <div className="schedule-column-list" aria-label="등록된 스케줄 컬럼">
+                  {scheduleColumns.map((column) => {
+                    const columnKey = getScheduleColumnKey(column);
+                    const scheduleCount = scheduleCountByCategory[columnKey] ?? 0;
+                    return (
+                      <span className="schedule-column-chip" key={columnKey}>
+                        <b>{column.label}</b>
+                        <small>{scheduleCount}건</small>
+                        {column.id ? (
+                          <button type="button" aria-label={`${column.label} 컬럼 삭제`} onClick={() => void removeScheduleColumn(column)}>
+                            <MaterialIcon name="close" />
+                          </button>
+                        ) : null}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+              <footer>
+                <button className="light-button" type="button" onClick={() => setColumnModalOpen(false)}>닫기</button>
+                <button className="dark-button" type="button" onClick={() => setColumnModalOpen(false)}>확인</button>
+              </footer>
+            </form>
+          </section>
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -667,9 +741,6 @@ function normalizeScheduleColumns(columns: ScheduleColumn[]) {
     normalizedColumns.push({
       id,
       label,
-      workType: column.workType,
-      workTypes: column.workTypes,
-      workerCount: column.workerCount,
     });
     labels.add(id);
   });
@@ -681,14 +752,6 @@ function getScheduleColumnKey(column: ScheduleColumn) {
   return column.id?.trim() || column.label;
 }
 
-function getScheduleColumnParentName(column: ScheduleColumn) {
-  return column.workType || column.workTypes?.[0] || "고용유형 미지정";
-}
-
 function getScheduleColumnDisplayName(column: ScheduleColumn) {
-  if (column.label === unassignedScheduleColumn) {
-    return unassignedScheduleColumn;
-  }
-
-  return `${getScheduleColumnParentName(column)} / ${column.label}`;
+  return column.label;
 }

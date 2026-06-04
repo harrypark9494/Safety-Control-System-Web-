@@ -29,7 +29,7 @@ export interface WorkTypeSetting {
 export interface ScheduleColumn {
   id: string;
   label: string;
-  workType: string;
-  workTypes: string[];
-  workerCount: number;
+  projectId: string;
+  createdAt: string;
+  updatedAt: string;
 }

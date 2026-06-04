@@ -7,6 +7,7 @@ import {
   AdminRegistrationRequest,
   OnboardingRequest,
   WorkerLoginRequest,
+  ScheduleColumnRequest,
   WorkTypeRenameRequest,
   WorkTypeRequest,
 } from './worker.dto';
@@ -16,6 +17,7 @@ import type { PayrollDocumentStatus, ScheduleColumn, WorkerRegistration, WorkTyp
 export class WorkersService {
   private readonly registrations = new Map<string, WorkerRegistration>();
   private readonly workTypes = new Map<string, WorkTypeSetting>();
+  private readonly scheduleColumns = new Map<string, ScheduleColumn[]>();
 
   constructor(private readonly passwords: PasswordService) {
     this.seedWorkTypes();
@@ -130,30 +132,43 @@ export class WorkersService {
   }
 
   listScheduleColumns(projectId?: string): ScheduleColumn[] {
-    const normalizedProjectId = projectId?.trim();
-    const workerCountByTeamPath = [...this.registrations.values()].reduce<Record<string, number>>((counts, worker) => {
-      if (!normalizedProjectId || worker.projectId === normalizedProjectId) {
-        const path = this.scheduleColumnId(worker.workType, worker.team);
-        counts[path] = (counts[path] ?? 0) + 1;
-      }
-      return counts;
-    }, {});
-    const columns: ScheduleColumn[] = [];
+    const normalizedProjectId = this.normalizeProjectId(projectId);
+    return this.ensureScheduleColumns(normalizedProjectId);
+  }
 
-    this.listWorkTypes().forEach((workType) => {
-      workType.teams.forEach((team) => {
-        const id = this.scheduleColumnId(workType.label, team);
-        columns.push({
-          id,
-          label: team,
-          workType: workType.label,
-          workTypes: [workType.label],
-          workerCount: workerCountByTeamPath[id] ?? 0,
-        });
-      });
-    });
+  createScheduleColumn(request: ScheduleColumnRequest): ScheduleColumn[] {
+    const projectId = this.normalizeProjectId(request.projectId);
+    const label = this.normalizeScheduleColumnLabel(request.label);
+    const columns = this.ensureScheduleColumns(projectId);
 
-    return columns;
+    if (columns.some((column) => column.label === label)) {
+      throw new ConflictException('이미 등록된 스케줄 컬럼입니다.');
+    }
+
+    const now = new Date().toISOString();
+    const column: ScheduleColumn = {
+      id: randomUUID(),
+      projectId,
+      label,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    columns.push(column);
+    return this.listScheduleColumns(projectId);
+  }
+
+  deleteScheduleColumn(id: string, projectId?: string): ScheduleColumn[] {
+    const normalizedProjectId = this.normalizeProjectId(projectId);
+    const columns = this.ensureScheduleColumns(normalizedProjectId);
+    const nextColumns = columns.filter((column) => column.id !== id);
+
+    if (nextColumns.length === columns.length) {
+      throw new NotFoundException('스케줄 컬럼을 찾을 수 없습니다.');
+    }
+
+    this.scheduleColumns.set(normalizedProjectId, nextColumns);
+    return this.listScheduleColumns(normalizedProjectId);
   }
 
   saveWorkType(request: WorkTypeRequest) {
@@ -309,8 +324,16 @@ export class WorkersService {
     return `${projectId}:${phone}`;
   }
 
-  private scheduleColumnId(workType: string, team: string) {
-    return `${workType} / ${team}`;
+  private ensureScheduleColumns(projectId: string) {
+    const existing = this.scheduleColumns.get(projectId);
+    if (existing) {
+      return existing;
+    }
+
+    const columns: ScheduleColumn[] = [];
+
+    this.scheduleColumns.set(projectId, columns);
+    return columns;
   }
 
   private normalizePhone(phone: string) {
@@ -368,6 +391,16 @@ export class WorkersService {
 
     if (!normalized || normalized.length > 40) {
       throw new ApiError(HttpStatus.BAD_REQUEST, 'INVALID_TEAM', '팀은 1자 이상 40자 이하여야 합니다.');
+    }
+
+    return normalized;
+  }
+
+  private normalizeScheduleColumnLabel(label: string) {
+    const normalized = (label ?? '').trim();
+
+    if (!normalized || normalized.length > 40) {
+      throw new ApiError(HttpStatus.BAD_REQUEST, 'INVALID_SCHEDULE_COLUMN', '스케줄 컬럼은 1자 이상 40자 이하여야 합니다.');
     }
 
     return normalized;

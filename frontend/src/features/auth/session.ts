@@ -228,6 +228,24 @@ export async function getAdminScheduleColumns(projectId?: string): Promise<Admin
   return requestJson<AdminScheduleColumn[]>(`/api/admin/schedule-columns${params.toString() ? `?${params}` : ""}`);
 }
 
+export async function createAdminScheduleColumn(projectId: string, label: string): Promise<AdminScheduleColumn[]> {
+  return requestJson<AdminScheduleColumn[]>("/api/admin/schedule-columns", {
+    method: "POST",
+    body: JSON.stringify({ projectId, label }),
+  });
+}
+
+export async function deleteAdminScheduleColumn(id: string, projectId?: string): Promise<AdminScheduleColumn[]> {
+  const params = new URLSearchParams();
+  if (projectId) {
+    params.set("projectId", projectId);
+  }
+
+  return requestJson<AdminScheduleColumn[]>(`/api/admin/schedule-columns/${encodeURIComponent(id)}${params.toString() ? `?${params}` : ""}`, {
+    method: "DELETE",
+  });
+}
+
 export async function saveWorkType(setting: Pick<WorkTypeSetting, "label" | "teams" | "enabled" | "payrollDocumentsRequired" | "sortOrder">): Promise<WorkTypeSetting> {
   return requestJson<WorkTypeSetting>("/api/admin/work-types", {
     method: "POST",

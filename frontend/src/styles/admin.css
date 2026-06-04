@@ -1771,14 +1771,16 @@ td {
   cursor: not-allowed;
 }
 
-.schedule-column-management {
+.schedule-column-input-row {
   display: grid;
-  gap: 14px;
-  padding: 18px 20px;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 8px;
+  align-items: center;
 }
 
-.schedule-column-management .section-title-row {
-  margin: 0;
+.schedule-column-input-row button {
+  min-height: 44px;
+  padding: 0 14px;
 }
 
 .schedule-column-list {
@@ -1789,7 +1791,7 @@ td {
 
 .schedule-column-chip {
   display: inline-grid;
-  grid-template-columns: minmax(0, max-content) auto;
+  grid-template-columns: minmax(0, max-content) auto 24px;
   min-height: 36px;
   align-items: center;
   gap: 8px;
@@ -1811,6 +1813,30 @@ td {
   color: #677386;
   font-size: 0.74rem;
   font-weight: 900;
+}
+
+.schedule-column-chip button {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: #697487;
+  background: transparent;
+  cursor: pointer;
+}
+
+.schedule-column-chip button:hover,
+.schedule-column-chip button:focus-visible {
+  border-color: var(--line-strong);
+  color: #b42318;
+  background: #fff6f4;
+}
+
+.schedule-column-chip button .material-symbols-rounded {
+  font-size: 1rem;
 }
 
 .rules-management .search-card {
@@ -2475,6 +2501,10 @@ td {
   width: min(560px, calc(100vw - 32px));
 }
 
+.account-modal.schedule-column-modal {
+  width: min(640px, calc(100vw - 32px));
+}
+
 .account-modal.rule-modal {
   width: min(680px, calc(100vw - 32px));
 }
@@ -2485,6 +2515,11 @@ td {
 
 .rule-modal-body {
   max-height: min(72vh, 680px);
+  overflow-y: auto;
+}
+
+.schedule-column-modal-body {
+  max-height: min(64vh, 520px);
   overflow-y: auto;
 }
 
