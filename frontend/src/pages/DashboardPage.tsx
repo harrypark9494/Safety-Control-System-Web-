@@ -762,7 +762,7 @@ function SafetyTab() {
 function ProfileTab({ worker, logout }: { worker: ReturnType<typeof getSession>; logout: () => void }) {
   const name = worker?.role === "worker" ? worker.name : "현장 매니저";
   const phone = worker?.role === "worker" ? worker.phone : "010-0000-0000";
-  const team = worker?.role === "worker" ? worker.team : "인프라팀";
+  const team = worker?.role === "worker" ? `${worker.company} / ${worker.workerRole}` : "site team";
 
   return (
     <section className="tab-panel">

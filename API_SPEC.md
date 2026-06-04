@@ -126,17 +126,20 @@ Missing, unknown, or disabled categories are rejected with `400 Bad Request`.
   "uid": "5b7f5d7d-2c0f-4d4d-8b44-3dbb1cbd39f1",
   "projectId": "waterbomb-2026-summer",
   "role": "worker",
-  "name": "홍길동",
+  "name": "Hong Gil-dong",
   "phone": "010-1234-5678",
-  "workType": "직접 고용",
-  "team": "직접 고용 A팀",
-  "supervisor": "관리자 A",
-  "schedule": "근무 일정 배정 전",
-  "status": "온보딩 완료",
+  "category": "direct-hire",
+  "company": "Madeone",
+  "workerRole": "safety lead",
+  "schedule": "unassigned",
+  "status": "onboarded",
   "payrollDocumentsRequired": true,
   "payrollDocumentStatus": "missing"
 }
 ```
+
+`role` remains the auth/session discriminator. The worker's assignment role is exposed
+as `workerRole` in session responses to avoid colliding with the auth role field.
 
 ### Project
 
@@ -370,24 +373,23 @@ Request:
 
 Response `200 OK`: `Project`
 
-### List Worker Selectable Work Types
+### List Worker Selectable Categories
 
-`GET /api/work-types`
+`GET /api/worker-categories`
 
-로그인/최초 등록 화면에서 선택할 수 있는 활성 고용 유형 목록입니다.
-`enabled=false`인 고용 유형은 관리자 화면에서는 보이지만 일반 사용자 선택지에는
-포함하지 않습니다.
+Lists category settings that workers may choose during signup or first login.
+Only `enabled=true` and `signupEnabled=true` settings are returned.
 
-Response `200 OK`: `WorkTypeSetting[]`
+Response `200 OK`: `WorkerCategorySetting[]`
 
-### List Admin Work Types
+### List Admin Worker Categories
 
-`GET /api/admin/work-types`
+`GET /api/admin/worker-categories`
 
-관리자가 활성/비활성 고용 유형과 서류 제출 필요 여부를 관리하기 위한 전체 목록입니다.
-팀은 고용 유형의 하위 목록으로 함께 관리합니다.
+Lists all category settings for admin management, including disabled and signup-disabled
+settings. Company and role are not managed as nested category catalogs in the first pass.
 
-Response `200 OK`: `WorkTypeSetting[]`
+Response `200 OK`: `WorkerCategorySetting[]`
 
 ### List Admin Schedule Columns
 
@@ -442,165 +444,124 @@ Errors:
 
 - `404 Not Found`: 스케줄 컬럼 없음
 
-### Save Admin Work Type
+### Save Admin Worker Category
 
-`POST /api/admin/work-types`
+`POST /api/admin/worker-categories`
 
 Request:
 
 ```json
 {
-  "label": "단기 아르바이트",
-  "teams": ["입장 게이트 A팀", "입장 게이트 B팀"],
+  "category": "short-term-staff",
   "enabled": true,
+  "signupEnabled": true,
   "payrollDocumentsRequired": true,
   "sortOrder": 15
 }
 ```
 
-Response `200 OK`: `WorkTypeSetting`
+Response `200 OK`: `WorkerCategorySetting`
 
-### Rename Admin Work Type
+### Rename Admin Worker Category
 
-`POST /api/admin/work-types/rename`
+`POST /api/admin/worker-categories/rename`
 
-고용 유형 이름을 수정합니다. 기존 근로자 등록 원장에서 같은 고용 유형을 쓰던
-근로자도 새 이름으로 함께 갱신합니다.
+Renames a category and updates existing worker registrations that reference it.
 
 Request:
 
 ```json
 {
-  "currentLabel": "외부 고용",
-  "nextLabel": "협력사 고용"
+  "currentCategory": "external",
+  "nextCategory": "partner-company"
 }
 ```
 
-Response `200 OK`: `WorkTypeSetting`
+Response `200 OK`: `WorkerCategorySetting`
 
 Errors:
 
-- `404 Not Found`: 기존 고용 유형 없음
-- `409 Conflict`: 새 이름이 이미 등록되어 있음
+- `404 Not Found`: existing category not found
+- `409 Conflict`: next category already exists
 
-### Delete Admin Work Type
+### Delete Admin Worker Category
 
-`DELETE /api/admin/work-types/{label}`
+`DELETE /api/admin/worker-categories/{category}`
 
-고용 유형을 삭제합니다. 해당 고용 유형을 사용하는 근로자가 있으면 삭제하지
-않습니다.
+Deletes a category only when no worker registration uses it.
 
 Response `200 OK`: empty
 
 Errors:
 
-- `404 Not Found`: 고용 유형 없음
-- `409 Conflict`: 해당 고용 유형을 사용하는 근로자가 있음
+- `404 Not Found`: category not found
+- `409 Conflict`: category is used by existing workers
 
-### Complete Worker Onboarding
+### Worker Onboarding
 
 `POST /api/worker-registrations`
 
-로그인 페이지의 최초 등록 절차입니다. 관리자가 먼저 등록한 프로젝트별 근로자 원장과
-이름, 연락처, 고용 유형이 일치하면 비밀번호와 인증 코드를 저장하고
-`onboarded` 상태로 전환합니다.
+Worker signup matches a pre-registered worker ledger entry by project, name, phone, and
+category, then stores password and verification code and moves the registration to
+`onboarded`.
 
 Request:
 
 ```json
 {
   "projectId": "waterbomb-2026-summer",
-  "name": "홍길동",
+  "name": "Hong Gil-dong",
   "phone": "010-1234-5678",
   "code": "123456",
   "password": "user-password",
-  "workType": "직접 고용"
+  "category": "direct-hire"
 }
 ```
 
-Response `200 OK`:
-
-```json
-{
-  "uid": "5b7f5d7d-2c0f-4d4d-8b44-3dbb1cbd39f1",
-  "projectId": "waterbomb-2026-summer",
-  "name": "홍길동",
-  "phone": "010-1234-5678",
-  "workType": "직접 고용",
-  "team": "직접 고용 확인 대기",
-  "supervisor": "관리자 배정 전",
-  "registrationStatus": "onboarded",
-  "payrollDocumentStatus": "missing",
-  "registeredAt": "2026-05-22T08:00:00Z",
-  "onboardedAt": "2026-05-22T08:10:00Z"
-}
-```
+Response `200 OK`: `WorkerRegistration`
 
 Errors:
 
-- `400 Bad Request`: 필수 입력 누락, 비밀번호 길이 미달, 지원하지 않거나 비활성화된 고용 유형
-- `403 Forbidden`: 관리자 등록 정보와 불일치
-- `404 Not Found`: 관리자 등록 정보 없음
+- `400 Bad Request`: missing input, short password, missing/unknown/disabled category
+- `403 Forbidden`: worker ledger mismatch
+- `404 Not Found`: worker ledger entry not found
 
 ### Worker Login
 
 `POST /api/auth/worker-login`
 
-온보딩이 완료된 근로자만 로그인할 수 있습니다. 해당 고용 유형 설정의
-`payrollDocumentsRequired=true`이고 급여 서류가 `missing`이면 프론트엔드는
-대시보드보다 급여 서류 제출 화면을 먼저 표시합니다.
-동일한 근로자는 여러 프로젝트에 참여할 수 있으므로, 로그인 요청은 프로젝트를
-함께 지정합니다.
+Only onboarded workers can log in. If the matched category has
+`payrollDocumentsRequired=true` and the worker document status is `missing`, the frontend
+routes the worker to document submission before the dashboard.
 
 Request:
 
 ```json
 {
   "projectId": "waterbomb-2026-summer",
-  "name": "홍길동",
+  "name": "Hong Gil-dong",
   "phone": "010-1234-5678",
   "code": "123456",
   "password": "user-password"
 }
 ```
 
-Response `200 OK`:
-
-```json
-{
-  "uid": "5b7f5d7d-2c0f-4d4d-8b44-3dbb1cbd39f1",
-  "projectId": "waterbomb-2026-summer",
-  "role": "worker",
-  "name": "홍길동",
-  "phone": "010-1234-5678",
-  "workType": "직접 고용",
-  "team": "직접 고용 A팀",
-  "supervisor": "관리자 A",
-  "schedule": "근무 일정 배정 전",
-  "status": "온보딩 완료",
-  "payrollDocumentsRequired": true,
-  "payrollDocumentStatus": "missing"
-}
-```
+Response `200 OK`: `WorkerSession`
 
 Errors:
 
-- `401 Unauthorized`: 이름, 연락처, 인증 코드, 비밀번호 불일치
-- `403 Forbidden`: 회원가입 절차 미완료
-- `404 Not Found`: 등록 정보 없음
+- `401 Unauthorized`: name, phone, code, or password mismatch
+- `403 Forbidden`: onboarding incomplete
+- `404 Not Found`: registration not found
 
 ### Admin Login
 
 `POST /api/auth/admin-login`
 
-관리자 화면 진입은 Google 로그인으로 처리합니다. 프론트엔드는 Firebase Auth
-Google Provider로 로그인한 뒤 Firebase ID token을 백엔드에 전달하고, 백엔드는
-Firebase Admin SDK로 토큰 서명과 `email_verified`를 검증합니다. 그 다음
-`ADMIN_ALLOWED_EMAILS` 또는 `ADMIN_ALLOWED_DOMAIN` 설정과 비교해 관리자 진입을
-허용합니다.
-
-프론트의 `hd` 파라미터는 Google 계정 선택 UX를 좁히는 힌트일 뿐이며, 권한 판단은
-백엔드에서만 합니다.
+The admin frontend signs in with Firebase Auth Google Provider, sends the Firebase ID
+token to the backend, and the backend validates token signature, email verification,
+and the configured admin allow-list/domain. The frontend `hd` parameter is only a UX
+hint; authorization decisions remain backend-owned.
 
 Request:
 
@@ -614,55 +575,34 @@ Response `200 OK`: `AdminSession`
 
 Errors:
 
-- `401 Unauthorized`: 토큰 검증 실패, 이메일 없음, 이메일 미인증
-- `403 Forbidden`: 허용된 관리자 이메일 또는 도메인이 아님
-- `503 Service Unavailable`: Firebase Admin SDK 또는 관리자 허용 설정 누락
+- `401 Unauthorized`: token validation failed, email missing, or email unverified
+- `403 Forbidden`: email or domain is not allowed for admin access
+- `503 Service Unavailable`: Firebase Admin SDK or admin allow-list is not configured
 
 ### List Worker Registrations
 
 `GET /api/admin/worker-registrations?projectId=waterbomb-2026-summer`
 
-관리자 근로자 관리 화면의 프로젝트별 등록 원장 및 온보딩 상태 목록입니다.
-`projectId`를 생략하면 모든 프로젝트의 근로자를 반환합니다.
+Admin worker ledger with onboarding, document, and QR usage state. `projectId` may be
+omitted to list every project.
 
-Response `200 OK`:
-
-```json
-[
-  {
-    "uid": "5b7f5d7d-2c0f-4d4d-8b44-3dbb1cbd39f1",
-    "projectId": "waterbomb-2026-summer",
-    "name": "홍길동",
-    "phone": "010-1234-5678",
-    "workType": "직접 고용",
-    "team": "직접 고용 확인 대기",
-    "supervisor": "관리자 배정 전",
-    "registrationStatus": "registered",
-    "payrollDocumentStatus": "missing",
-    "registeredAt": "2026-05-22T08:00:00Z",
-    "onboardedAt": null
-  }
-]
-```
+Response `200 OK`: `WorkerRegistration[]`
 
 ### Create Worker Registration
 
 `POST /api/admin/worker-registrations`
-
-관리자가 실제 근로자 원장을 먼저 등록합니다. `team`은 선택한 `workType`의
-하위 팀 목록에 등록된 값이어야 합니다. 이후 근로자가 회원가입하면 이 데이터와
-대조합니다.
 
 Request:
 
 ```json
 {
   "projectId": "waterbomb-2026-summer",
-  "name": "홍길동",
+  "name": "Hong Gil-dong",
   "phone": "010-1234-5678",
-  "workType": "직접 고용",
-  "team": "직접 고용 A팀",
-  "supervisor": "관리자 A"
+  "category": "direct-hire",
+  "company": "Madeone",
+  "role": "safety lead",
+  "memo": "site lead"
 }
 ```
 
@@ -670,22 +610,66 @@ Response `200 OK`: `WorkerRegistration`
 
 Errors:
 
-- `400 Bad Request`: 필수 입력 누락, 연락처 형식 오류, 지원하지 않는 고용 유형 또는 팀
-- `409 Conflict`: 같은 프로젝트에 같은 연락처가 이미 근로자 원장에 등록되어 있음
+- `400 Bad Request`: missing input, invalid phone, missing/unknown/disabled category, empty company or role
+- `409 Conflict`: same project already has the phone registered
+
+### Update Worker Registration
+
+`PATCH /api/admin/worker-registrations/{uid}`
+
+Request fields are the editable subset of `WorkerRegistration`: `name`, `phone`, `category`,
+`company`, `role`, and `memo`. Category must resolve to `WorkerCategorySetting`; company and role
+are normalized free text in the first pass.
+
+Response `200 OK`: `WorkerRegistration`
+
+Errors:
+
+- `400 Bad Request`: invalid phone, category, company, role, or memo
+- `404 Not Found`: registration uid not found
+- `409 Conflict`: updated phone duplicates another worker in the same project
 
 ### Delete Worker Registration
 
-`DELETE /api/admin/worker-registrations/{phone}?projectId=waterbomb-2026-summer`
-
-Path params:
-
-- `phone`: URL encoded phone number, 예: `010-1234-5678`
+`DELETE /api/admin/worker-registrations/{uid}`
 
 Response `200 OK`: empty body
 
 Errors:
 
-- `404 Not Found`: 등록 정보 없음
+- `404 Not Found`: registration uid not found
+
+### Import Worker Registrations XLSX
+
+`POST /api/admin/worker-registrations/import-xlsx`
+
+Content type: `multipart/form-data`, field name: `file`. Only `.xlsx` is accepted; `.xls`, `.csv`,
+and other extensions are rejected before parsing. Required Excel columns are C(category), D(role),
+E(company), F(name), H(phone), and I(memo). B(No.) and G(resident registration number) are ignored
+and never stored, displayed, logged, or echoed in error responses.
+
+Row error shape never includes raw name, phone, memo, resident number, or raw row payload:
+
+```json
+{
+  "row": 12,
+  "column": "H",
+  "label": "phone",
+  "code": "INVALID_PHONE",
+  "message": "Phone format is invalid."
+}
+```
+
+Response `200 OK`:
+
+```json
+{
+  "importedCount": 10,
+  "rejectedCount": 1,
+  "errors": [],
+  "workers": []
+}
+```
 
 ### List Worker QR Entitlements
 
@@ -737,7 +721,9 @@ Response `200 OK`:
     "uid": "5b7f5d7d-2c0f-4d4d-8b44-3dbb1cbd39f1",
     "name": "홍길동",
     "projectId": "waterbomb-2026-summer",
-    "team": "직접 고용 A팀"
+    "category": "direct-hire",
+    "company": "Madeone",
+    "role": "safety lead"
   },
   "date": "2026-05-26",
   "entitlements": [
@@ -805,6 +791,11 @@ Response `200 OK`: `{ "event": QrUsageEvent, "entitlement": QrEntitlement }`
 자동 경보 임계값을 함께 조회합니다. 현재 구현은 실제 기상청 호출 전 단계의
 백엔드 어댑터 placeholder이며, 프론트엔드는 이 API만 호출합니다. `projectId`별로
 관측 지점과 자동 경보 임계값을 분리합니다.
+
+테스트 환경에서 백엔드 또는 외부 기상 연동이 준비되지 않은 경우에만
+`VITE_ENABLE_TEST_WEATHER_MOCK=true`로 프론트엔드 기상 fixture fallback을 켤 수
+있습니다. 이 경우 응답의 `source.mode`는 `test-fixture`로 표시되며 운영 배포
+환경에서는 사용하지 않습니다.
 
 Response `200 OK`: `AdminWeatherOverview`
 
@@ -895,7 +886,7 @@ DB에 남깁니다. 주민등록번호, 계좌번호, 신분증/통장 이미지
   {
     "workerId": "5b7f5d7d-2c0f-4d4d-8b44-3dbb1cbd39f1",
     "workerName": "홍길동",
-    "workType": "직접 고용",
+    "category": "직접 고용",
     "payrollDocumentStatus": "submitted",
     "submittedAt": "2026-05-22T08:20:00Z",
     "files": [

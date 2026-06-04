@@ -3,13 +3,13 @@ import "../styles/login.css";
 import {
   completeWorkerOnboarding,
   getSelectableProjects,
-  getWorkTypes,
+  getWorkerCategories,
   signInAdmin,
   signInWorker,
 } from "../features/auth/session";
 import { getSecureEntryPath, navigateTo } from "../features/navigation";
 import { formatPhone } from "../features/phone";
-import type { Project, WorkType, WorkTypeSetting } from "../types";
+import type { Project, WorkerCategory, WorkerCategorySetting } from "../types";
 
 export function WorkerLoginPage() {
   const [mode, setMode] = useState<"register" | "login">("register");
@@ -17,9 +17,9 @@ export function WorkerLoginPage() {
   const [registerPhone, setRegisterPhone] = useState("");
   const [registerCode, setRegisterCode] = useState("");
   const [registerPassword, setRegisterPassword] = useState("");
-  const [workTypes, setWorkTypes] = useState<WorkTypeSetting[]>([]);
-  const [registerWorkType, setRegisterWorkType] = useState<WorkType>("");
-  const [workTypesStatus, setWorkTypesStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [workerCategories, setWorkerCategories] = useState<WorkerCategorySetting[]>([]);
+  const [registerWorkerCategory, setRegisterWorkerCategory] = useState<WorkerCategory>("");
+  const [workerCategoriesStatus, setWorkerCategoriesStatus] = useState<"loading" | "ready" | "error">("loading");
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [projectsStatus, setProjectsStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -28,30 +28,30 @@ export function WorkerLoginPage() {
   const [loginCode, setLoginCode] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [message, setMessage] = useState("");
-  const canRegisterWithWorkTypes = workTypesStatus === "ready" && workTypes.length > 0;
+  const canRegisterWithWorkerCategories = workerCategoriesStatus === "ready" && workerCategories.length > 0;
   const canUseWorkerProject = projectsStatus === "ready" && projects.length > 0 && Boolean(selectedProjectId);
 
   useEffect(() => {
     let isMounted = true;
 
-    getWorkTypes()
-      .then((nextWorkTypes) => {
+    getWorkerCategories()
+      .then((nextWorkerCategories) => {
         if (!isMounted) return;
-        setWorkTypes(nextWorkTypes);
-        setWorkTypesStatus("ready");
-        setRegisterWorkType((current) => {
-          if (nextWorkTypes.length === 0) {
+        setWorkerCategories(nextWorkerCategories);
+        setWorkerCategoriesStatus("ready");
+        setRegisterWorkerCategory((current) => {
+          if (nextWorkerCategories.length === 0) {
             return "";
           }
 
-          return nextWorkTypes.some((workType) => workType.label === current) ? current : nextWorkTypes[0].label;
+          return nextWorkerCategories.some((category) => category.category === current) ? current : nextWorkerCategories[0].category;
         });
       })
       .catch((error) => {
         if (!isMounted) return;
-        setWorkTypes([]);
-        setRegisterWorkType("");
-        setWorkTypesStatus("error");
+        setWorkerCategories([]);
+        setRegisterWorkerCategory("");
+        setWorkerCategoriesStatus("error");
         setMessage(error instanceof Error ? error.message : "고용 유형 목록을 불러오지 못했습니다.");
       });
 
@@ -96,12 +96,12 @@ export function WorkerLoginPage() {
       }
 
       if (mode === "register") {
-        if (!canRegisterWithWorkTypes) {
+        if (!canRegisterWithWorkerCategories) {
           setMessage("고용 유형 목록을 불러온 뒤 최초 등록을 진행할 수 있습니다.");
           return;
         }
 
-        await completeWorkerOnboarding(selectedProjectId, registerName, phone, code, password, registerWorkType);
+        await completeWorkerOnboarding(selectedProjectId, registerName, phone, code, password, registerWorkerCategory);
         setMessage("등록된 근로자 정보와 일치합니다. 이제 로그인할 수 있습니다.");
         setMode("login");
         setLoginName(registerName);
@@ -242,20 +242,20 @@ export function WorkerLoginPage() {
             <label className="login-field">
               <span className="login-field-title">고용 유형</span>
               <select
-                name="workType"
-                value={registerWorkType}
-                onChange={(event) => setRegisterWorkType(event.target.value as WorkType)}
-                disabled={!canRegisterWithWorkTypes}
+                name="category"
+                value={registerWorkerCategory}
+                onChange={(event) => setRegisterWorkerCategory(event.target.value as WorkerCategory)}
+                disabled={!canRegisterWithWorkerCategories}
                 required
               >
-                {!canRegisterWithWorkTypes ? (
+                {!canRegisterWithWorkerCategories ? (
                   <option value="">
-                    {workTypesStatus === "loading" ? "고용 유형을 불러오는 중입니다" : "등록 가능한 고용 유형이 없습니다"}
+                    {workerCategoriesStatus === "loading" ? "고용 유형을 불러오는 중입니다" : "등록 가능한 고용 유형이 없습니다"}
                   </option>
                 ) : null}
-                {workTypes.map((workTypeOption) => (
-                  <option key={workTypeOption.label} value={workTypeOption.label}>
-                    {workTypeOption.label}
+                {workerCategories.map((categoryOption) => (
+                  <option key={categoryOption.category} value={categoryOption.category}>
+                    {categoryOption.category}
                   </option>
                 ))}
               </select>
@@ -280,7 +280,7 @@ export function WorkerLoginPage() {
             />
           </label>
 
-          <button className="primary-button" type="submit" disabled={!canUseWorkerProject || (mode === "register" && !canRegisterWithWorkTypes)}>
+          <button className="primary-button" type="submit" disabled={!canUseWorkerProject || (mode === "register" && !canRegisterWithWorkerCategories)}>
             {mode === "register" ? "회원가입 완료" : "대시보드로 로그인"}
           </button>
         </form>
