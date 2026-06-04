@@ -557,7 +557,7 @@ function WorkerCategoryManager({ workers, categories, canManage, onRefresh }: { 
                 {isEditing ? <input value={nextCategory} onChange={(event) => setNextCategory(event.target.value)} autoComplete="off" maxLength={40} /> : <strong>{category.category}</strong>}
                 <small>등록 근로자 {workerCount}명</small>
               </div>
-              <label>서류 필요 <input type="checkbox" checked={category.payrollDocumentsRequired} disabled={!canManage} onChange={(event) => updateCategory(category, { payrollDocumentsRequired: event.target.checked })} /></label>
+              <label className="work-type-document-toggle">서류 필요 <input type="checkbox" checked={category.payrollDocumentsRequired} disabled={!canManage} onChange={(event) => updateCategory(category, { payrollDocumentsRequired: event.target.checked })} /></label>
               <div className="work-type-actions">
                 {isEditing ? (
                   <>

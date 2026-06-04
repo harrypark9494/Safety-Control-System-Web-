@@ -2078,7 +2078,7 @@ td {
 }
 
 .work-type-row {
-  grid-template-columns: minmax(140px, 1fr) minmax(116px, auto) minmax(148px, auto);
+  grid-template-columns: minmax(140px, 1fr) minmax(116px, max-content) minmax(148px, auto);
 }
 
 .work-type-add-form {
@@ -2205,7 +2205,7 @@ td {
   padding: 0 12px;
 }
 
-.work-type-row label,
+.work-type-manager .work-type-document-toggle,
 .work-type-add-form label {
   display: inline-flex;
   align-items: center;
@@ -2216,8 +2216,9 @@ td {
   white-space: nowrap;
 }
 
-.work-type-row input[type="checkbox"],
+.work-type-manager .work-type-document-toggle input[type="checkbox"],
 .work-type-add-form input[type="checkbox"] {
+  flex: 0 0 auto;
   width: 18px;
   height: 18px;
   accent-color: var(--green);
