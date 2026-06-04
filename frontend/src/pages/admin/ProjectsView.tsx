@@ -236,15 +236,19 @@ export function ProjectsView({
                 <label>프로젝트명<input value={name} onChange={(event) => setName(event.target.value)} placeholder="예: 2026 워터밤 겨울 준비" required /></label>
                 <label>장소<input value={location} onChange={(event) => setLocation(event.target.value)} placeholder="예: 킨텍스 제2전시장" required /></label>
                 <label>상태<select value={status} onChange={(event) => setStatus(event.target.value as ProjectStatus)}><option value="DRAFT">준비중</option><option value="ACTIVE">활성</option><option value="ARCHIVED">종료</option></select></label>
-                <div className="project-schedule-row">
+                <div className="project-schedule-stack">
                   <span>실제 스케줄</span>
-                  <label>시작<input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} required /></label>
-                  <label>종료<input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} required /></label>
+                  <div>
+                    <input aria-label="실제 스케줄 시작일" type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} required />
+                    <input aria-label="실제 스케줄 종료일" type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} required />
+                  </div>
                 </div>
-                <div className="project-schedule-row">
+                <div className="project-schedule-stack">
                   <span>행사 스케줄</span>
-                  <label>시작<input type="date" value={eventStartDate} onChange={(event) => setEventStartDate(event.target.value)} required /></label>
-                  <label>종료<input type="date" value={eventEndDate} onChange={(event) => setEventEndDate(event.target.value)} required /></label>
+                  <div>
+                    <input aria-label="행사 스케줄 시작일" type="date" value={eventStartDate} onChange={(event) => setEventStartDate(event.target.value)} required />
+                    <input aria-label="행사 스케줄 종료일" type="date" value={eventEndDate} onChange={(event) => setEventEndDate(event.target.value)} required />
+                  </div>
                 </div>
                 <label>설명<input value={description} onChange={(event) => setDescription(event.target.value)} placeholder="운영 메모" /></label>
                 {message ? <strong className="modal-message" role="status" aria-live="polite">{message}</strong> : null}
