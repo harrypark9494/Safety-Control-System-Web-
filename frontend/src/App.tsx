@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { AdminPage } from "./pages/AdminPage";
 import { DashboardPage } from "./pages/DashboardPage";
-import { LoginPage } from "./pages/LoginPage";
+import { AdminLoginPage, WorkerLoginPage } from "./pages/LoginPage";
 import { PayrollDocumentsPage } from "./pages/PayrollDocumentsPage";
 import { getSession, requiresPayrollDocuments } from "./features/auth/session";
 import {
@@ -12,6 +12,10 @@ import {
 } from "./features/navigation";
 
 const exposedSecurePaths = ["/app", "/dashboard", "/payroll-documents", "/admin"];
+
+function getLoginPathForExposedPath(path: string): string {
+  return path.endsWith("/admin") ? "/login/admin/" : "/login/worker/";
+}
 
 export function App() {
   const [path, setPath] = useState(() => window.location.pathname.replace(/\/+$/, "") || "/");
@@ -32,26 +36,34 @@ export function App() {
 
   useEffect(() => {
     if (exposedSecurePaths.some((securePath) => path.endsWith(securePath))) {
-      replaceWith(getSession() ? getSecureEntryPath() : "/login/");
+      replaceWith(getSession() ? getSecureEntryPath() : getLoginPathForExposedPath(path));
     }
   }, [path]);
 
   if (path.endsWith("/login")) {
-    return <LoginPage />;
+    return <WorkerLoginPage />;
+  }
+
+  if (path.endsWith("/login/worker")) {
+    return <WorkerLoginPage />;
+  }
+
+  if (path.endsWith("/login/admin")) {
+    return <AdminLoginPage />;
   }
 
   if (isSecureEntryPath(path)) {
     return <SecureEntry />;
   }
 
-  return <LoginPage />;
+  return <WorkerLoginPage />;
 }
 
 function SecureEntry() {
   const session = getSession();
 
   if (!session) {
-    return <LoginPage />;
+    return <WorkerLoginPage />;
   }
 
   if (session.role === "admin") {

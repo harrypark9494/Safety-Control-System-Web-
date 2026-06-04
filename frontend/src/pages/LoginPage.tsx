@@ -11,8 +11,7 @@ import { getSecureEntryPath, navigateTo } from "../features/navigation";
 import { formatPhone } from "../features/phone";
 import type { Project, WorkType, WorkTypeSetting } from "../types";
 
-export function LoginPage() {
-  const [tab, setTab] = useState<"worker" | "admin">("worker");
+export function WorkerLoginPage() {
   const [mode, setMode] = useState<"register" | "login">("register");
   const [registerName, setRegisterName] = useState("");
   const [registerPhone, setRegisterPhone] = useState("");
@@ -119,6 +118,182 @@ export function LoginPage() {
     }
   }
 
+  return (
+    <main className="login-shell">
+      <LoginHeader />
+
+      <section className="login-panel login-panel--narrow" aria-label="근로자 로그인 양식">
+        <LoginPageHeading title="근로자 로그인" />
+
+        <div className="mode-switch" role="tablist" aria-label="근로자 절차">
+          <button
+            className={`mode-button ${mode === "register" ? "active" : ""}`}
+            type="button"
+            aria-selected={mode === "register"}
+            onClick={() => setMode("register")}
+          >
+            최초 등록
+          </button>
+          <button
+            className={`mode-button ${mode === "login" ? "active" : ""}`}
+            type="button"
+            aria-selected={mode === "login"}
+            onClick={() => setMode("login")}
+          >
+            로그인
+          </button>
+        </div>
+
+        <form className="worker-flow active" onSubmit={submitWorker}>
+          <label className="login-field">
+            <span className="login-field-title">프로젝트</span>
+            <select
+              name="projectId"
+              value={selectedProjectId}
+              onChange={(event) => setSelectedProjectId(event.target.value)}
+              disabled={!canUseWorkerProject}
+              required
+            >
+              {!canUseWorkerProject ? (
+                <option value="">
+                  {projectsStatus === "loading" ? "프로젝트를 불러오는 중입니다" : "선택 가능한 프로젝트가 없습니다"}
+                </option>
+              ) : null}
+              {projects.map((project) => (
+                <option key={project.id} value={project.id}>
+                  {project.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          {mode === "register" ? (
+            <label className="login-field">
+              <span className="login-field-title">이름</span>
+              <input
+                name="name"
+                type="text"
+                autoComplete="name"
+                value={registerName}
+                onChange={(event) => setRegisterName(event.target.value)}
+                required
+              />
+            </label>
+          ) : (
+            <label className="login-field">
+              <span className="login-field-title">이름</span>
+              <input
+                name="name"
+                type="text"
+                autoComplete="name"
+                value={loginName}
+                onChange={(event) => setLoginName(event.target.value)}
+                required
+              />
+            </label>
+          )}
+
+          <label className="login-field">
+            <span className="login-field-title">연락처</span>
+            <input
+              name="phone"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder="010-1234-5678"
+              maxLength={13}
+              value={mode === "register" ? registerPhone : loginPhone}
+              onChange={(event) => {
+                const next = formatPhone(event.target.value);
+                if (mode === "register") setRegisterPhone(next);
+                else setLoginPhone(next);
+              }}
+              required
+            />
+          </label>
+
+          <label className="login-field">
+            <span className="login-field-title">인증 코드</span>
+            <div className="code-row">
+              <input
+                name="code"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                value={mode === "register" ? registerCode : loginCode}
+                onChange={(event) => {
+                  if (mode === "register") setRegisterCode(event.target.value);
+                  else setLoginCode(event.target.value);
+                }}
+                required
+              />
+              <button
+                className="secondary-button request-code"
+                type="button"
+                onClick={() => setMessage("인증 코드 발송 API 연동이 필요합니다. 현재는 발급받은 코드를 입력해 주세요.")}
+              >
+                코드 요청
+              </button>
+            </div>
+          </label>
+
+          {mode === "register" ? (
+            <label className="login-field">
+              <span className="login-field-title">고용 유형</span>
+              <select
+                name="workType"
+                value={registerWorkType}
+                onChange={(event) => setRegisterWorkType(event.target.value as WorkType)}
+                disabled={!canRegisterWithWorkTypes}
+                required
+              >
+                {!canRegisterWithWorkTypes ? (
+                  <option value="">
+                    {workTypesStatus === "loading" ? "고용 유형을 불러오는 중입니다" : "등록 가능한 고용 유형이 없습니다"}
+                  </option>
+                ) : null}
+                {workTypes.map((workTypeOption) => (
+                  <option key={workTypeOption.label} value={workTypeOption.label}>
+                    {workTypeOption.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+
+          <label className="login-field">
+            <span className="login-field-title">
+              {mode === "register" ? "비밀번호 설정" : "비밀번호"}
+            </span>
+            <input
+              name="password"
+              type="password"
+              autoComplete={mode === "register" ? "new-password" : "current-password"}
+              placeholder={mode === "register" ? "8자 이상" : "등록된 비밀번호"}
+              value={mode === "register" ? registerPassword : loginPassword}
+              onChange={(event) => {
+                if (mode === "register") setRegisterPassword(event.target.value);
+                else setLoginPassword(event.target.value);
+              }}
+              required
+            />
+          </label>
+
+          <button className="primary-button" type="submit" disabled={!canUseWorkerProject || (mode === "register" && !canRegisterWithWorkTypes)}>
+            {mode === "register" ? "회원가입 완료" : "대시보드로 로그인"}
+          </button>
+        </form>
+
+        <LoginMessage message={message} />
+      </section>
+    </main>
+  );
+}
+
+export function AdminLoginPage() {
+  const [message, setMessage] = useState("");
+
   async function submitAdmin() {
     try {
       await signInAdmin();
@@ -129,222 +304,53 @@ export function LoginPage() {
   }
 
   return (
-    <>
-      <main className="login-shell">
-        <header className="login-header" aria-labelledby="login-title">
-          <h1>워터밤 안전 관제 시스템</h1>
-        </header>
+    <main className="login-shell">
+      <LoginHeader />
 
-        <section className="login-panel login-panel--narrow" aria-label="로그인 양식">
-          <div className="page-heading">
-            <div>
-              <p className="eyebrow">Safety Control</p>
-              <h2 id="login-title">로그인</h2>
-            </div>
+      <section className="login-panel login-panel--narrow" aria-label="관리자 로그인 양식">
+        <LoginPageHeading title="관리자 로그인" />
+
+        <div className="auth-form active" role="tabpanel">
+          <div className="admin-copy">
+            <h2>관리자 Google 로그인</h2>
           </div>
+          <button className="google-button" type="button" onClick={submitAdmin}>
+            <span className="google-g" aria-hidden="true">
+              G
+            </span>
+            Google 계정으로 계속
+          </button>
+        </div>
 
-          <div className="tabs" role="tablist" aria-label="로그인 유형">
-            <button
-              className={`tab-button ${tab === "worker" ? "active" : ""}`}
-              type="button"
-              role="tab"
-              aria-selected={tab === "worker"}
-              onClick={() => setTab("worker")}
-            >
-              일반 사용자
-            </button>
-            <button
-              className={`tab-button ${tab === "admin" ? "active" : ""}`}
-              type="button"
-              role="tab"
-              aria-selected={tab === "admin"}
-              onClick={() => setTab("admin")}
-            >
-              관리자
-            </button>
-          </div>
+        <LoginMessage message={message} />
+      </section>
+    </main>
+  );
+}
 
-          {tab === "worker" ? (
-            <div className="auth-form active" role="tabpanel">
-              <div className="mode-switch" role="tablist" aria-label="일반 사용자 절차">
-                <button
-                  className={`mode-button ${mode === "register" ? "active" : ""}`}
-                  type="button"
-                  aria-selected={mode === "register"}
-                  onClick={() => setMode("register")}
-                >
-                  최초 등록
-                </button>
-                <button
-                  className={`mode-button ${mode === "login" ? "active" : ""}`}
-                  type="button"
-                  aria-selected={mode === "login"}
-                  onClick={() => setMode("login")}
-                >
-                  로그인
-                </button>
-              </div>
+function LoginHeader() {
+  return (
+    <header className="login-header">
+      <h1>워터밤 안전 관제 시스템</h1>
+    </header>
+  );
+}
 
-              <form className="worker-flow active" onSubmit={submitWorker}>
-                <label className="login-field">
-                  <span className="login-field-title">프로젝트</span>
-                  <select
-                    name="projectId"
-                    value={selectedProjectId}
-                    onChange={(event) => setSelectedProjectId(event.target.value)}
-                    disabled={!canUseWorkerProject}
-                    required
-                  >
-                    {!canUseWorkerProject ? (
-                      <option value="">
-                        {projectsStatus === "loading" ? "프로젝트를 불러오는 중입니다" : "선택 가능한 프로젝트가 없습니다"}
-                      </option>
-                    ) : null}
-                    {projects.map((project) => (
-                      <option key={project.id} value={project.id}>
-                        {project.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+function LoginPageHeading({ title }: { title: string }) {
+  return (
+    <div className="page-heading">
+      <div>
+        <p className="eyebrow">Safety Control</p>
+        <h2>{title}</h2>
+      </div>
+    </div>
+  );
+}
 
-                {mode === "register" ? (
-                  <label className="login-field">
-                    <span className="login-field-title">이름</span>
-                    <input
-                      name="name"
-                      type="text"
-                      autoComplete="name"
-                      value={registerName}
-                      onChange={(event) => setRegisterName(event.target.value)}
-                      required
-                    />
-                  </label>
-                ) : (
-                  <label className="login-field">
-                    <span className="login-field-title">이름</span>
-                    <input
-                      name="name"
-                      type="text"
-                      autoComplete="name"
-                      value={loginName}
-                      onChange={(event) => setLoginName(event.target.value)}
-                      required
-                    />
-                  </label>
-                )}
-
-                <label className="login-field">
-                  <span className="login-field-title">연락처</span>
-                  <input
-                    name="phone"
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="tel"
-                    placeholder="010-1234-5678"
-                    maxLength={13}
-                    value={mode === "register" ? registerPhone : loginPhone}
-                    onChange={(event) => {
-                      const next = formatPhone(event.target.value);
-                      if (mode === "register") setRegisterPhone(next);
-                      else setLoginPhone(next);
-                    }}
-                    required
-                  />
-                </label>
-
-                <label className="login-field">
-                  <span className="login-field-title">인증 코드</span>
-                  <div className="code-row">
-                    <input
-                      name="code"
-                      type="text"
-                      inputMode="numeric"
-                      autoComplete="one-time-code"
-                      maxLength={6}
-                      value={mode === "register" ? registerCode : loginCode}
-                      onChange={(event) => {
-                        if (mode === "register") setRegisterCode(event.target.value);
-                        else setLoginCode(event.target.value);
-                      }}
-                      required
-                    />
-                    <button
-                      className="secondary-button request-code"
-                      type="button"
-                      onClick={() => setMessage("인증 코드 발송 API 연동이 필요합니다. 현재는 발급받은 코드를 입력해 주세요.")}
-                    >
-                      코드 요청
-                    </button>
-                  </div>
-                </label>
-
-                {mode === "register" ? (
-                  <label className="login-field">
-                    <span className="login-field-title">고용 유형</span>
-                    <select
-                      name="workType"
-                      value={registerWorkType}
-                      onChange={(event) => setRegisterWorkType(event.target.value as WorkType)}
-                      disabled={!canRegisterWithWorkTypes}
-                      required
-                    >
-                      {!canRegisterWithWorkTypes ? (
-                        <option value="">
-                          {workTypesStatus === "loading" ? "고용 유형을 불러오는 중입니다" : "등록 가능한 고용 유형이 없습니다"}
-                        </option>
-                      ) : null}
-                      {workTypes.map((workTypeOption) => (
-                        <option key={workTypeOption.label} value={workTypeOption.label}>
-                          {workTypeOption.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                ) : null}
-
-                <label className="login-field">
-                  <span className="login-field-title">
-                    {mode === "register" ? "비밀번호 설정" : "비밀번호"}
-                  </span>
-                  <input
-                    name="password"
-                    type="password"
-                    autoComplete={mode === "register" ? "new-password" : "current-password"}
-                    placeholder={mode === "register" ? "8자 이상" : "등록된 비밀번호"}
-                    value={mode === "register" ? registerPassword : loginPassword}
-                    onChange={(event) => {
-                      if (mode === "register") setRegisterPassword(event.target.value);
-                      else setLoginPassword(event.target.value);
-                    }}
-                    required
-                  />
-                </label>
-
-                <button className="primary-button" type="submit" disabled={!canUseWorkerProject || (mode === "register" && !canRegisterWithWorkTypes)}>
-                  {mode === "register" ? "회원가입 완료" : "대시보드로 로그인"}
-                </button>
-              </form>
-            </div>
-          ) : (
-            <div className="auth-form active" role="tabpanel">
-              <div className="admin-copy">
-                <h2>관리자 Google 로그인</h2>
-              </div>
-              <button className="google-button" type="button" onClick={submitAdmin}>
-                <span className="google-g" aria-hidden="true">
-                  G
-                </span>
-                Google 계정으로 계속
-              </button>
-            </div>
-          )}
-
-          <p className="message" role="status" aria-live="polite">
-            {message}
-          </p>
-        </section>
-      </main>
-    </>
+function LoginMessage({ message }: { message: string }) {
+  return (
+    <p className="message" role="status" aria-live="polite">
+      {message}
+    </p>
   );
 }
