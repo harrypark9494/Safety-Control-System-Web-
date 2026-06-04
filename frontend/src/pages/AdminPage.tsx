@@ -105,6 +105,7 @@ export function AdminPage() {
 
   async function refreshScheduleColumns(projectId = selectedProjectId) {
     try {
+      setScheduleColumnsReady(false);
       const nextColumns = await getAdminScheduleColumns(projectId || undefined);
       setScheduleColumns(nextColumns);
       setScheduleColumnsReady(true);

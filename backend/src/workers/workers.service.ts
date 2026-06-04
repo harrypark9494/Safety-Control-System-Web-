@@ -21,6 +21,7 @@ export class WorkersService {
 
   constructor(private readonly passwords: PasswordService) {
     this.seedWorkTypes();
+    this.seedScheduleColumns();
     this.seedWorkerRegistration();
   }
 
@@ -264,6 +265,36 @@ export class WorkersService {
       payrollDocumentsRequired: false,
       sortOrder: 20,
       updatedAt: now,
+    });
+  }
+
+  private seedScheduleColumns() {
+    const now = new Date().toISOString();
+    const seedColumns: Record<string, string[]> = {
+      [DEFAULT_PROJECT_ID]: [
+        '메인 설치 A팀',
+        '무대 구조 B팀',
+        '조명 C팀',
+        '음향 D팀',
+        '특수효과 E팀',
+        '게이트 운영 F팀',
+      ],
+      'waterbomb-2026-winter': [
+        '운영 계획팀',
+        '협력사 조율팀',
+        '안전 점검팀',
+        '장비 반입팀',
+      ],
+    };
+
+    Object.entries(seedColumns).forEach(([projectId, labels]) => {
+      this.scheduleColumns.set(projectId, labels.map((label, index) => ({
+        id: `${projectId}-schedule-column-${index + 1}`,
+        projectId,
+        label,
+        createdAt: now,
+        updatedAt: now,
+      })));
     });
   }
 

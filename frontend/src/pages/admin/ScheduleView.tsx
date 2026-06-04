@@ -339,7 +339,7 @@ export function ScheduleView({
     setSchedules(createInitialScheduleItems(projectId, scheduleColumns, scheduleRange.startDate, scheduleRange.endDate));
     setScheduleForm(createDefaultScheduleForm(scheduleRange.startDate, scheduleColumns[0] ? getScheduleColumnKey(scheduleColumns[0]) : unassignedScheduleColumn));
     setActiveSchedulePopover(null);
-  }, [projectId, scheduleRange.startDate, scheduleRange.endDate]);
+  }, [projectId, scheduleRange.startDate, scheduleRange.endDate, columnsReady]);
 
   return (
     <section className="admin-view is-active">
@@ -347,7 +347,7 @@ export function ScheduleView({
         <h1>스케줄 관리</h1>
         <div>
           <button className="light-button" type="button"><MaterialIcon name="download" />엑셀 내보내기</button>
-          <button className="dark-button" type="button" disabled={!projectId} onClick={() => setColumnModalOpen(true)}><MaterialIcon name="view_column" />컬럼 관리</button>
+          <button className="dark-button" type="button" disabled={!projectId} onClick={() => setColumnModalOpen(true)}><MaterialIcon name="view_column" />팀 컬럼 관리</button>
         </div>
       </header>
       <div className="page-content schedule-board">
@@ -444,7 +444,7 @@ export function ScheduleView({
         <div className="modal-backdrop">
           <section className="account-modal schedule-column-modal" role="dialog" aria-modal="true" aria-labelledby="schedule-column-modal-title">
             <header>
-              <h2 id="schedule-column-modal-title">스케줄 컬럼 관리</h2>
+              <h2 id="schedule-column-modal-title">팀 컬럼 관리</h2>
               <button type="button" aria-label="닫기" onClick={() => setColumnModalOpen(false)}><MaterialIcon name="close" /></button>
             </header>
             <form
@@ -456,12 +456,12 @@ export function ScheduleView({
             >
               <div className="modal-body schedule-column-modal-body">
                 <label>
-                  컬럼명
+                  팀 컬럼명
                   <span className="schedule-column-input-row">
                     <input
                       value={newColumnLabel}
                       onChange={(event) => setNewColumnLabel(event.target.value)}
-                      placeholder="예: 메인 스테이지 A"
+                      placeholder="예: 메인 설치 A팀"
                       disabled={!projectId || isSavingColumn}
                       autoFocus
                     />
