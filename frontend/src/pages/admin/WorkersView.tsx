@@ -13,22 +13,22 @@ import {
 import { formatPhone } from "../../features/phone";
 import type { PayrollDocumentStatus, QrEntitlement, WorkerCategorySetting, WorkerImportError, WorkerRegistrationAccount } from "../../types";
 
-type WorkerSortKey = "name" | "phone" | "company" | "role" | "category" | "registrationStatus" | "payrollDocumentStatus";
+type WorkerSortKey = "name" | "phone" | "company" | "team" | "category" | "registrationStatus" | "payrollDocumentStatus";
 type SortDirection = "asc" | "desc";
 type StatusMeta = { label: string; tone: string };
-type WorkerFormState = Pick<WorkerRegistrationAccount, "name" | "phone" | "category" | "company" | "role" | "memo">;
+type WorkerFormState = Pick<WorkerRegistrationAccount, "name" | "phone" | "category" | "company" | "team" | "memo">;
 
 const labels = {
   name: "이름",
   phone: "연락처",
   company: "소속 업체",
-  role: "담당 역할",
-  category: "구분",
+  team: "팀",
+  category: "고용 유형",
   onboarding: "온보딩",
   document: "서류 제출",
   memo: "메모",
   import: "XLSX 업로드",
-  categoryManage: "구분 관리",
+  categoryManage: "고용 유형 관리",
   workerAdd: "근로자 등록",
   edit: "수정",
   delete: "삭제",
@@ -45,7 +45,7 @@ const emptyWorkerForm: WorkerFormState = {
   phone: "",
   category: "",
   company: "",
-  role: "",
+  team: "",
   memo: "",
 };
 
@@ -86,7 +86,7 @@ export function WorkersView({
   const [onboardingFilter, setOnboardingFilter] = useState("all");
   const [documentFilter, setDocumentFilter] = useState("all");
   const [companyFilter, setCompanyFilter] = useState("all");
-  const [roleFilter, setRoleFilter] = useState("all");
+  const [teamFilter, setTeamFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [workerSort, setWorkerSort] = useState<{ key: WorkerSortKey; direction: SortDirection }>({ key: "name", direction: "asc" });
   const [formMessage, setFormMessage] = useState("");
@@ -100,12 +100,12 @@ export function WorkersView({
   const [importActionMessage, setImportActionMessage] = useState("");
   const [importing, setImporting] = useState(false);
   const canManageCategories = workerCategoriesReady;
-  const enabledWorkerCategories = workerCategories.filter((category) => category.enabled);
-  const categoryOptions = Array.from(new Set([...enabledWorkerCategories.map((option) => option.category), ...workers.map((worker) => worker.category)].filter(Boolean))).sort((a, b) => a.localeCompare(b, "ko"));
+  const categoryOptions = Array.from(new Set([...workerCategories.map((option) => option.category), ...workers.map((worker) => worker.category)].filter(Boolean))).sort((a, b) => a.localeCompare(b, "ko"));
   const companyOptions = Array.from(new Set(workers.map((worker) => worker.company).filter(Boolean))).sort((a, b) => a.localeCompare(b, "ko"));
-  const roleOptions = Array.from(new Set(workers.map((worker) => worker.role).filter(Boolean))).sort((a, b) => a.localeCompare(b, "ko"));
+  const teamOptions = Array.from(new Set(workers.map((worker) => worker.team).filter(Boolean))).sort((a, b) => a.localeCompare(b, "ko"));
   const onboardedCount = workers.filter((worker) => worker.registrationStatus === "onboarded").length;
   const documentRequiredWorkerCount = workers.filter((worker) => isPayrollDocumentsRequiredWorker(worker, workerCategories)).length;
+  const missingDocumentWorkerCount = workers.filter((worker) => isPayrollDocumentsRequiredWorker(worker, workerCategories) && worker.payrollDocumentStatus === "missing").length;
   const normalizedWorkerSearch = workerSearch.trim().toLowerCase();
   const workerSearchDigits = normalizedWorkerSearch.replace(/\D/g, "");
   const filteredWorkers = workers.filter((worker) => {
@@ -114,15 +114,15 @@ export function WorkersView({
       worker.name.toLowerCase().includes(normalizedWorkerSearch) ||
       worker.phone.toLowerCase().includes(normalizedWorkerSearch) ||
       worker.company.toLowerCase().includes(normalizedWorkerSearch) ||
-      worker.role.toLowerCase().includes(normalizedWorkerSearch) ||
+      worker.team.toLowerCase().includes(normalizedWorkerSearch) ||
       (workerSearchDigits ? phoneDigits.includes(workerSearchDigits) : false);
     const matchesOnboarding = onboardingFilter === "all" || worker.registrationStatus === onboardingFilter;
     const matchesDocument = documentFilter === "all" || worker.payrollDocumentStatus === documentFilter;
     const matchesCompany = companyFilter === "all" || worker.company === companyFilter;
-    const matchesRole = roleFilter === "all" || worker.role === roleFilter;
+    const matchesTeam = teamFilter === "all" || worker.team === teamFilter;
     const matchesCategory = categoryFilter === "all" || worker.category === categoryFilter;
 
-    return matchesSearch && matchesOnboarding && matchesDocument && matchesCompany && matchesRole && matchesCategory;
+    return matchesSearch && matchesOnboarding && matchesDocument && matchesCompany && matchesTeam && matchesCategory;
   });
   const sortedWorkers = [...filteredWorkers].sort((current, next) => {
     const currentValue = getWorkerSortValue(current, workerSort.key, workerCategories);
@@ -140,7 +140,7 @@ export function WorkersView({
     setOnboardingFilter("all");
     setDocumentFilter("all");
     setCompanyFilter("all");
-    setRoleFilter("all");
+    setTeamFilter("all");
     setCategoryFilter("all");
   }
 
@@ -159,14 +159,14 @@ export function WorkersView({
   function openCreateModal() {
     setActionMessage("");
     setEditingWorker(null);
-    setWorkerForm({ ...emptyWorkerForm, category: enabledWorkerCategories[0]?.category ?? "" });
+    setWorkerForm({ ...emptyWorkerForm, category: categoryOptions[0] ?? "" });
     setRegisterModalOpen(true);
   }
 
   function openEditModal(worker: WorkerRegistrationAccount) {
     setActionMessage("");
     setEditingWorker(worker);
-    setWorkerForm({ name: worker.name, phone: worker.phone, category: worker.category, company: worker.company, role: worker.role, memo: worker.memo });
+    setWorkerForm({ name: worker.name, phone: worker.phone, category: worker.category, company: worker.company, team: worker.team, memo: worker.memo });
     setRegisterModalOpen(true);
   }
 
@@ -201,7 +201,7 @@ export function WorkersView({
 
     try {
       if (!canManageCategories) {
-        setActionMessage("구분 목록을 불러온 뒤 근로자를 저장할 수 있습니다.");
+        setActionMessage("고용 유형 목록을 불러온 뒤 근로자를 저장할 수 있습니다.");
         return;
       }
 
@@ -209,7 +209,7 @@ export function WorkersView({
         await updateRegisteredWorker(editingWorker.uid, { ...workerForm, phone: formatPhone(workerForm.phone) });
         setFormMessage("근로자 정보가 수정되었습니다.");
       } else {
-        await createRegisteredWorker(projectId, workerForm.name, workerForm.phone, workerForm.category, workerForm.company, workerForm.role, workerForm.memo);
+        await createRegisteredWorker(projectId, workerForm.name, workerForm.phone, workerForm.category, workerForm.company, workerForm.team, workerForm.memo);
         setFormMessage("근로자 등록 정보가 저장되었습니다.");
       }
 
@@ -273,7 +273,7 @@ export function WorkersView({
         </header>
         <div className="page-content narrow-page admin-tab-page worker-management">
           <section className="app-card search-card">
-            <input type="search" value={workerSearch} onChange={(event) => setWorkerSearch(event.target.value)} placeholder="이름, 연락처, 업체, 역할 검색" />
+            <input type="search" value={workerSearch} onChange={(event) => setWorkerSearch(event.target.value)} placeholder="이름, 연락처, 업체, 팀 검색" />
             <select value={categoryFilter} onChange={(event) => setCategoryFilter(event.target.value)} aria-label={labels.category}>
               <option value="all">{labels.category} 전체</option>
               {categoryOptions.map((option) => <option value={option} key={option}>{option}</option>)}
@@ -282,9 +282,9 @@ export function WorkersView({
               <option value="all">{labels.company} 전체</option>
               {companyOptions.map((option) => <option value={option} key={option}>{option}</option>)}
             </select>
-            <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)} aria-label={labels.role}>
-              <option value="all">{labels.role} 전체</option>
-              {roleOptions.map((option) => <option value={option} key={option}>{option}</option>)}
+            <select value={teamFilter} onChange={(event) => setTeamFilter(event.target.value)} aria-label={labels.team}>
+              <option value="all">{labels.team} 전체</option>
+              {teamOptions.map((option) => <option value={option} key={option}>{option}</option>)}
             </select>
             <select value={onboardingFilter} onChange={(event) => setOnboardingFilter(event.target.value)} aria-label={labels.onboarding}>
               <option value="all">{labels.onboarding} 전체</option>
@@ -307,7 +307,7 @@ export function WorkersView({
                   <SortableHeader label={labels.name} sortKey="name" sortAria={getSortAria("name")} sortMark={getSortMark("name")} onSort={toggleWorkerSort} />
                   <SortableHeader label={labels.phone} sortKey="phone" sortAria={getSortAria("phone")} sortMark={getSortMark("phone")} onSort={toggleWorkerSort} />
                   <SortableHeader label={labels.company} sortKey="company" sortAria={getSortAria("company")} sortMark={getSortMark("company")} onSort={toggleWorkerSort} />
-                  <SortableHeader label={labels.role} sortKey="role" sortAria={getSortAria("role")} sortMark={getSortMark("role")} onSort={toggleWorkerSort} />
+                  <SortableHeader label={labels.team} sortKey="team" sortAria={getSortAria("team")} sortMark={getSortMark("team")} onSort={toggleWorkerSort} />
                   <SortableHeader label={labels.category} sortKey="category" sortAria={getSortAria("category")} sortMark={getSortMark("category")} onSort={toggleWorkerSort} />
                   <SortableHeader label={labels.onboarding} sortKey="registrationStatus" sortAria={getSortAria("registrationStatus")} sortMark={getSortMark("registrationStatus")} onSort={toggleWorkerSort} />
                   <SortableHeader label={labels.document} sortKey="payrollDocumentStatus" sortAria={getSortAria("payrollDocumentStatus")} sortMark={getSortMark("payrollDocumentStatus")} onSort={toggleWorkerSort} />
@@ -320,7 +320,7 @@ export function WorkersView({
                     <td><button className="worker-name-button" type="button" onClick={() => setSelectedWorker(worker)}><span className="avatar">{worker.name.slice(0, 1)}</span><strong>{worker.name}</strong></button></td>
                     <td>{worker.phone}</td>
                     <td>{worker.company}</td>
-                    <td>{worker.role}</td>
+                    <td>{worker.team}</td>
                     <td><em className="blue">{worker.category}</em></td>
                     <td><em className={getWorkerRegistrationStatusMeta(worker.registrationStatus).tone}>{getWorkerRegistrationStatusMeta(worker.registrationStatus).label}</em></td>
                     <td>{isPayrollDocumentsRequiredWorker(worker, workerCategories) ? <em className={getPayrollStatusMeta(worker.payrollDocumentStatus).tone}>{getPayrollStatusMeta(worker.payrollDocumentStatus).label}</em> : <em className="gray">대상 아님</em>}</td>
@@ -341,7 +341,7 @@ export function WorkersView({
             <div>
               <small>등록 근로자</small>
               <strong>{workers.length}</strong>
-              <small>온보딩 완료 {onboardedCount}명 / 서류 대상 {documentRequiredWorkerCount}명</small>
+              <small>온보딩 완료 {onboardedCount}명 / 서류 대상 {documentRequiredWorkerCount}명 / 미제출 {missingDocumentWorkerCount}명</small>
             </div>
           </article>
         </div>
@@ -368,10 +368,11 @@ export function WorkersView({
               <div className="modal-body">
                 <label>{labels.name}<input value={workerForm.name} onChange={(event) => updateForm("name", event.target.value)} autoComplete="off" required /></label>
                 <label>{labels.phone}<input value={workerForm.phone} onChange={(event) => updateForm("phone", formatPhone(event.target.value))} placeholder="010-1234-5678" autoComplete="off" maxLength={13} required /></label>
-                <label>{labels.category}<select value={workerForm.category} onChange={(event) => updateForm("category", event.target.value)} disabled={!canManageCategories} required><option value="">구분 선택</option>{enabledWorkerCategories.map((option) => <option key={option.category} value={option.category}>{option.category}</option>)}</select></label>
+                <label>{labels.category}<input value={workerForm.category} onChange={(event) => updateForm("category", event.target.value)} list="worker-category-options" autoComplete="off" required /><datalist id="worker-category-options">{categoryOptions.map((option) => <option key={option} value={option} />)}</datalist></label>
                 <label>{labels.company}<input value={workerForm.company} onChange={(event) => updateForm("company", event.target.value)} autoComplete="off" required /></label>
-                <label>{labels.role}<input value={workerForm.role} onChange={(event) => updateForm("role", event.target.value)} autoComplete="off" required /></label>
+                <label>{labels.team}<input value={workerForm.team} onChange={(event) => updateForm("team", event.target.value)} autoComplete="off" required /></label>
                 <label>{labels.memo}<textarea value={workerForm.memo} onChange={(event) => updateForm("memo", event.target.value)} maxLength={500} /></label>
+                <p className="modal-help-text">고용 유형은 서류 필요 여부를 결정하고, 팀은 근로자의 배치 팀으로 저장됩니다. 새 고용 유형은 저장 시 자동 등록됩니다.</p>
               </div>
               <footer>
                 <button className="light-button" type="button" onClick={closeWorkerModal}>{labels.cancel}</button>
@@ -403,7 +404,7 @@ export function WorkersView({
             </header>
             <form className="worker-import-form" onSubmit={uploadXlsx}>
               <div className="modal-body">
-                <p>이름, 연락처, 구분, 소속 업체, 담당 역할, 메모 열을 포함한 .xlsx 파일만 업로드할 수 있습니다.</p>
+                <p>고용 유형, 팀, 소속 업체, 이름, 연락처, 메모 열을 포함한 .xlsx 파일만 업로드할 수 있습니다. 새 고용 유형은 자동 등록됩니다.</p>
                 <label className="file-drop-field">
                   <span><MaterialIcon name="upload_file" />{importFile ? importFile.name : ".xlsx 파일 선택"}</span>
                   <input type="file" accept=".xlsx" disabled={importing} onChange={(event) => { setImportFile(event.target.files?.[0] ?? null); setImportActionMessage(""); setImportMessage(""); setImportErrors([]); }} />
@@ -461,7 +462,7 @@ function WorkerDetailModal({ worker, payrollDocumentsRequired, onEdit, onDelete,
         <dl className="modal-body worker-detail-grid">
           <div><dt>{labels.phone}</dt><dd>{worker.phone}</dd></div>
           <div><dt>{labels.company}</dt><dd>{worker.company}</dd></div>
-          <div><dt>{labels.role}</dt><dd>{worker.role}</dd></div>
+          <div><dt>{labels.team}</dt><dd>{worker.team}</dd></div>
           <div><dt>{labels.category}</dt><dd>{worker.category}</dd></div>
           <div><dt>{labels.onboarding}</dt><dd>{getWorkerRegistrationStatusMeta(worker.registrationStatus).label}</dd></div>
           <div><dt>{labels.document}</dt><dd>{payrollDocumentsRequired ? getPayrollStatusMeta(worker.payrollDocumentStatus).label : "대상 아님"}</dd></div>
@@ -488,15 +489,15 @@ function WorkerCategoryManager({ workers, categories, canManage, onRefresh }: { 
     try {
       await saveWorkerCategory({
         category: updates.category ?? category.category,
-        enabled: updates.enabled ?? category.enabled,
-        signupEnabled: updates.signupEnabled ?? category.signupEnabled,
+        enabled: true,
+        signupEnabled: true,
         payrollDocumentsRequired: updates.payrollDocumentsRequired ?? category.payrollDocumentsRequired,
         sortOrder: updates.sortOrder ?? category.sortOrder,
       });
-      setMessage("구분 설정이 저장되었습니다.");
+      setMessage("고용 유형 설정이 저장되었습니다.");
       await onRefresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "구분 설정 저장에 실패했습니다.");
+      setMessage(error instanceof Error ? error.message : "고용 유형 설정 저장에 실패했습니다.");
     }
   }
 
@@ -504,11 +505,11 @@ function WorkerCategoryManager({ workers, categories, canManage, onRefresh }: { 
     event.preventDefault();
     const normalized = newCategory.trim();
     if (!normalized) {
-      setMessage("추가할 구분 이름을 입력해 주세요.");
+      setMessage("추가할 고용 유형 이름을 입력해 주세요.");
       return;
     }
     if (categories.some((category) => category.category === normalized)) {
-      setMessage("이미 등록된 구분입니다.");
+      setMessage("이미 등록된 고용 유형입니다.");
       return;
     }
     await updateCategory({ category: normalized, enabled: true, signupEnabled: true, payrollDocumentsRequired: false, sortOrder: nextSortOrder }, {});
@@ -525,25 +526,26 @@ function WorkerCategoryManager({ workers, categories, canManage, onRefresh }: { 
       await renameWorkerCategory(category.category, normalized);
       setEditingCategory("");
       setNextCategory("");
-      setMessage("구분 이름이 수정되었습니다.");
+      setMessage("고용 유형 이름이 수정되었습니다.");
       await onRefresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "구분 이름 수정에 실패했습니다.");
+      setMessage(error instanceof Error ? error.message : "고용 유형 이름 수정에 실패했습니다.");
     }
   }
 
   async function removeCategory(category: WorkerCategorySetting) {
     try {
       await deleteWorkerCategory(category.category);
-      setMessage("구분이 삭제되었습니다.");
+      setMessage("고용 유형이 삭제되었습니다.");
       await onRefresh();
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "구분 삭제에 실패했습니다.");
+      setMessage(error instanceof Error ? error.message : "고용 유형 삭제에 실패했습니다.");
     }
   }
 
   return (
     <div className="modal-body work-type-manager">
+      <p className="modal-help-text">근로자 등록 또는 XLSX 업로드에서 입력한 고용 유형이 자동 등록됩니다. 팀은 근로자 원장에 저장되며 이 화면에서는 관리하지 않습니다.</p>
       {message ? <p className="modal-message" role="status">{message}</p> : null}
       <div className="work-type-list">
         {categories.map((category) => {
@@ -555,9 +557,7 @@ function WorkerCategoryManager({ workers, categories, canManage, onRefresh }: { 
                 {isEditing ? <input value={nextCategory} onChange={(event) => setNextCategory(event.target.value)} autoComplete="off" maxLength={40} /> : <strong>{category.category}</strong>}
                 <small>등록 근로자 {workerCount}명</small>
               </div>
-              <label><input type="checkbox" checked={category.enabled} disabled={!canManage} onChange={(event) => updateCategory(category, { enabled: event.target.checked })} /> 관리자 사용</label>
-              <label><input type="checkbox" checked={category.signupEnabled} disabled={!canManage} onChange={(event) => updateCategory(category, { signupEnabled: event.target.checked })} /> 가입 허용</label>
-              <label><input type="checkbox" checked={category.payrollDocumentsRequired} disabled={!canManage} onChange={(event) => updateCategory(category, { payrollDocumentsRequired: event.target.checked })} /> 서류 필요</label>
+              <label>서류 필요 <input type="checkbox" checked={category.payrollDocumentsRequired} disabled={!canManage} onChange={(event) => updateCategory(category, { payrollDocumentsRequired: event.target.checked })} /></label>
               <div className="work-type-actions">
                 {isEditing ? (
                   <>
@@ -572,10 +572,10 @@ function WorkerCategoryManager({ workers, categories, canManage, onRefresh }: { 
             </div>
           );
         })}
-        {categories.length === 0 ? <p className="work-type-empty-state">등록된 구분이 없습니다. 새 구분을 먼저 추가해 주세요.</p> : null}
+        {categories.length === 0 ? <p className="work-type-empty-state">등록된 고용 유형이 없습니다. 새 고용 유형을 먼저 추가해 주세요.</p> : null}
       </div>
       <form className="work-type-add-form" onSubmit={addCategory}>
-        <input value={newCategory} onChange={(event) => setNewCategory(event.target.value)} placeholder="새 구분" autoComplete="off" maxLength={40} disabled={!canManage} />
+        <input value={newCategory} onChange={(event) => setNewCategory(event.target.value)} placeholder="새 고용 유형" autoComplete="off" maxLength={40} disabled={!canManage} />
         <button className="dark-button" type="submit" disabled={!canManage}>추가</button>
       </form>
     </div>
@@ -583,7 +583,7 @@ function WorkerCategoryManager({ workers, categories, canManage, onRefresh }: { 
 }
 
 function isPayrollDocumentsRequiredWorker(worker: WorkerRegistrationAccount, categories: WorkerCategorySetting[]) {
-  return categories.some((category) => category.category === worker.category && category.enabled && category.payrollDocumentsRequired);
+  return categories.some((category) => category.category === worker.category && category.payrollDocumentsRequired);
 }
 
 function getWorkerSortValue(worker: WorkerRegistrationAccount, key: WorkerSortKey, categories: WorkerCategorySetting[]) {

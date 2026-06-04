@@ -39,11 +39,11 @@ export class WorkersController {
     @Query('search') search?: string,
     @Query('category') category?: string,
     @Query('company') company?: string,
-    @Query('role') role?: string,
+    @Query('team') team?: string,
     @Query('registrationStatus') registrationStatus?: RegistrationStatus,
     @Query('payrollDocumentStatus') payrollDocumentStatus?: PayrollDocumentStatus,
   ) {
-    return this.workers.listRegistrations({ projectId, search, category, company, role, registrationStatus, payrollDocumentStatus });
+    return this.workers.listRegistrations({ projectId, search, category, company, team, registrationStatus, payrollDocumentStatus });
   }
 
   @Post('admin/worker-registrations')

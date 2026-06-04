@@ -235,7 +235,7 @@ firebase deploy --project YOUR_PROJECT_ID --only hosting,firestore:rules,storage
 엔드포인트를 호출합니다. Vite 개발 서버는 `frontend/vite.config.ts`의 proxy로
 `/api` 요청을 `http://localhost:8080`에 전달합니다.
 
-고용 유형 선택지는 NestJS `/api/work-types`에서 가져오며, 관리자 화면의
+고용 유형 선택지는 NestJS `/api/worker-categories`에서 가져오며, 관리자 화면의
 고용 유형 관리에서 활성 여부와 급여/세무 서류 제출 필요 여부를 조절합니다.
 API 연결에 실패하면 프론트엔드는 기본 고용 유형 fallback으로 제출하지 않고,
 고용 유형을 불러온 뒤에만 최초 등록과 관리자 고용 유형 관리를 허용합니다.

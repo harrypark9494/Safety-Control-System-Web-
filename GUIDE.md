@@ -377,6 +377,9 @@ qr_usage_events            실제 QR 스캔 사용 이력
 payroll_documents          급여/세무 서류 제출 metadata와 검토 상태
 ```
 
+`worker_registrations`의 근로자 분류 필드는 `category`(고용 유형), `company`(소속 업체),
+`team`(팀)으로 분리하며, 담당 역할 용도의 `role` 컬럼은 두지 않습니다.
+
 식권/생수 QR은 근로자 원장에 단순 카운터로만 붙이지 않고, 지급권
 `qr_entitlements`와 사용 이벤트 `qr_usage_events`를 분리합니다. 관리자 QR 화면은
 사용 이벤트를 집계하고, 근로자 대시보드는 자기 지급권의 남은 횟수만 표시합니다.

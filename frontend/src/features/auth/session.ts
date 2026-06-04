@@ -42,7 +42,7 @@ type WorkerRegistrationResponse = {
   phone: string;
   category: WorkerCategory;
   company: string;
-  role: string;
+  team: string;
   memo: string;
   registrationStatus: WorkerRegistrationAccount["registrationStatus"];
   payrollDocumentStatus: WorkerSession["payrollDocumentStatus"];
@@ -111,7 +111,7 @@ function toRegistrationAccount(worker: WorkerRegistrationResponse): WorkerRegist
     phone: worker.phone,
     category: worker.category,
     company: worker.company,
-    role: worker.role,
+    team: worker.team,
     memo: worker.memo,
     registrationStatus: worker.registrationStatus,
     payrollDocumentStatus: worker.payrollDocumentStatus,
@@ -155,12 +155,19 @@ function isWorkerSession(value: unknown): value is WorkerSession {
     hasString(value, "phone") &&
     hasString(value, "category") &&
     hasString(value, "company") &&
-    hasString(value, "workerRole") &&
+    hasString(value, "workerTeam") &&
     hasString(value, "schedule") &&
     hasString(value, "status") &&
     typeof value.payrollDocumentsRequired === "boolean" &&
     isPayrollDocumentStatus(value.payrollDocumentStatus)
   );
+}
+
+function normalizeWorkerSession(session: WorkerLoginResponse | WorkerSession): WorkerSession {
+  return {
+    ...session,
+    workerTeam: session.workerTeam,
+  };
 }
 
 function isAdminSession(value: unknown): value is AppSession {
@@ -195,7 +202,7 @@ export function getSession(): AppSession | null {
         };
       }
 
-      return session;
+      return normalizeWorkerSession(session);
     }
 
     window.sessionStorage.removeItem(SESSION_KEY);
@@ -207,7 +214,7 @@ export function getSession(): AppSession | null {
 }
 
 export function saveSession(session: AppSession): void {
-  window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+  window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(session.role === "worker" ? normalizeWorkerSession(session) : session));
 }
 
 export function clearSession(): void {
@@ -342,12 +349,12 @@ export async function createRegisteredWorker(
   phone: string,
   category: WorkerCategory,
   company: string,
-  role: string,
+  team: string,
   memo: string,
 ): Promise<WorkerRegistrationAccount> {
   const worker = await requestJson<WorkerRegistrationResponse>("/api/admin/worker-registrations", {
     method: "POST",
-    body: JSON.stringify({ projectId, name, phone: formatPhone(phone), category, company, role, memo }),
+    body: JSON.stringify({ projectId, name, phone: formatPhone(phone), category, company, team, memo }),
   });
 
   return toRegistrationAccount(worker);
@@ -355,7 +362,7 @@ export async function createRegisteredWorker(
 
 export async function updateRegisteredWorker(
   uid: string,
-  patch: Partial<Pick<WorkerRegistrationAccount, "projectId" | "name" | "phone" | "category" | "company" | "role" | "memo">>,
+  patch: Partial<Pick<WorkerRegistrationAccount, "projectId" | "name" | "phone" | "category" | "company" | "team" | "memo">>,
 ): Promise<WorkerRegistrationAccount> {
   const worker = await requestJson<WorkerRegistrationResponse>(`/api/admin/worker-registrations/${encodeURIComponent(uid)}`, {
     method: "PATCH",
@@ -451,9 +458,10 @@ export async function signInWorker(
     method: "POST",
     body: JSON.stringify({ projectId, name, phone: formatPhone(phone), code, password }),
   });
+  const normalizedSession = normalizeWorkerSession(session);
 
-  saveSession(session);
-  return session;
+  saveSession(normalizedSession);
+  return normalizedSession;
 }
 
 export async function signInAdmin(): Promise<AppSession> {

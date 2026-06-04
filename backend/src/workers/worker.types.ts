@@ -23,7 +23,7 @@ export interface WorkerRegistration {
   verificationCode: string | null;
   category: string;
   company: string;
-  role: string;
+  team: string;
   memo: string;
   registrationStatus: RegistrationStatus;
   payrollDocumentStatus: PayrollDocumentStatus;

@@ -21,7 +21,7 @@ export interface WorkerSession {
   phone: string;
   category: WorkerCategory;
   company: string;
-  workerRole: string;
+  workerTeam: string;
   schedule: string;
   status: string;
   payrollDocumentsRequired: boolean;
@@ -50,7 +50,7 @@ export interface WorkerRegistrationAccount {
   phone: string;
   category: WorkerCategory;
   company: string;
-  role: string;
+  team: string;
   memo: string;
   registrationStatus: WorkerRegistrationStatus;
   payrollDocumentStatus: PayrollDocumentStatus;

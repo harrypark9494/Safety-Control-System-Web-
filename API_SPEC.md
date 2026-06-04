@@ -89,12 +89,13 @@ ARCHIVED
 }
 ```
 
-`category` is the controlled worker classification managed by admins. `company` and
-`role` are normalized free-text worker attributes under that category for the first
-pass, not separately managed catalogs. Worker signup category choices include only
-settings where `enabled=true` and `signupEnabled=true`. Document submission display is
-computed from `payrollDocumentsRequired` plus each worker `payrollDocumentStatus`.
-Missing, unknown, or disabled categories are rejected with `400 Bad Request`.
+`category` is the employment-type value recorded in the admin worker ledger.
+When an admin creates a worker registration or imports XLSX rows, a new category value
+is automatically added to the category settings if it does not already exist. `company`
+and `team` are normalized free-text worker attributes for the first pass, not separately
+managed catalogs. Worker signup category choices use the current
+category settings. Document submission display is computed from
+`payrollDocumentsRequired` plus each worker `payrollDocumentStatus`.
 
 ### WorkerRegistration
 
@@ -106,7 +107,7 @@ Missing, unknown, or disabled categories are rejected with `400 Bad Request`.
   "phone": "010-1234-5678",
   "category": "direct-hire",
   "company": "Madeone",
-  "role": "safety lead",
+  "team": "safety lead",
   "memo": "site lead",
   "registrationStatus": "registered",
   "payrollDocumentStatus": "missing",
@@ -130,7 +131,7 @@ Missing, unknown, or disabled categories are rejected with `400 Bad Request`.
   "phone": "010-1234-5678",
   "category": "direct-hire",
   "company": "Madeone",
-  "workerRole": "safety lead",
+  "workerTeam": "safety lead",
   "schedule": "unassigned",
   "status": "onboarded",
   "payrollDocumentsRequired": true,
@@ -138,8 +139,8 @@ Missing, unknown, or disabled categories are rejected with `400 Bad Request`.
 }
 ```
 
-`role` remains the auth/session discriminator. The worker's assignment role is exposed
-as `workerRole` in session responses to avoid colliding with the auth role field.
+The top-level `role` remains only as the auth/session discriminator. The worker's
+assignment team is exposed as `workerTeam` in session responses.
 
 ### Project
 
@@ -377,8 +378,8 @@ Response `200 OK`: `Project`
 
 `GET /api/worker-categories`
 
-Lists category settings that workers may choose during signup or first login.
-Only `enabled=true` and `signupEnabled=true` settings are returned.
+Lists category settings that workers may choose during signup or first login. Categories
+are created automatically from admin worker registrations and XLSX imports.
 
 Response `200 OK`: `WorkerCategorySetting[]`
 
@@ -386,8 +387,9 @@ Response `200 OK`: `WorkerCategorySetting[]`
 
 `GET /api/admin/worker-categories`
 
-Lists all category settings for admin management, including disabled and signup-disabled
-settings. Company and role are not managed as nested category catalogs in the first pass.
+Lists all category settings for admin management. Registration/signup allow toggles are
+not managed by operators; every recorded employment type remains usable. Company and team
+are not managed as nested category catalogs in the first pass.
 
 Response `200 OK`: `WorkerCategorySetting[]`
 
@@ -397,7 +399,7 @@ Response `200 OK`: `WorkerCategorySetting[]`
 
 스케줄 표 컬럼은 프로젝트별 수동 관리 목록입니다. 근로자 관리의 고용 유형/팀
 설정과 자동 동기화하지 않으며, 관리자가 스케줄 관리 화면에서 직접 추가하거나
-삭제합니다. 기존 고용 유형의 팀 목록은 스케줄 컬럼 초기값으로도 사용하지 않고,
+삭제합니다. 기존 근로자 팀 목록은 스케줄 컬럼 초기값으로도 사용하지 않고,
 근로자 매핑이나 팀별 인원 집계도 스케줄 컬럼에서 관리하지 않습니다.
 
 Response `200 OK`:
@@ -462,6 +464,9 @@ Request:
 
 Response `200 OK`: `WorkerCategorySetting`
 
+`enabled` and `signupEnabled` are kept for API compatibility and are stored as `true`.
+Operators only need to manage `payrollDocumentsRequired`.
+
 ### Rename Admin Worker Category
 
 `POST /api/admin/worker-categories/rename`
@@ -522,7 +527,7 @@ Response `200 OK`: `WorkerRegistration`
 
 Errors:
 
-- `400 Bad Request`: missing input, short password, missing/unknown/disabled category
+- `400 Bad Request`: missing input, short password, missing or unknown category
 - `403 Forbidden`: worker ledger mismatch
 - `404 Not Found`: worker ledger entry not found
 
@@ -601,7 +606,7 @@ Request:
   "phone": "010-1234-5678",
   "category": "direct-hire",
   "company": "Madeone",
-  "role": "safety lead",
+  "team": "safety lead",
   "memo": "site lead"
 }
 ```
@@ -610,7 +615,7 @@ Response `200 OK`: `WorkerRegistration`
 
 Errors:
 
-- `400 Bad Request`: missing input, invalid phone, missing/unknown/disabled category, empty company or role
+- `400 Bad Request`: missing input, invalid phone, invalid employment type or team name, empty company
 - `409 Conflict`: same project already has the phone registered
 
 ### Update Worker Registration
@@ -618,14 +623,14 @@ Errors:
 `PATCH /api/admin/worker-registrations/{uid}`
 
 Request fields are the editable subset of `WorkerRegistration`: `name`, `phone`, `category`,
-`company`, `role`, and `memo`. Category must resolve to `WorkerCategorySetting`; company and role
-are normalized free text in the first pass.
+`company`, `team`, and `memo`. Category is the employment type and is auto-added to
+`WorkerCategorySetting` when needed; company and team are normalized free text in the first pass.
 
 Response `200 OK`: `WorkerRegistration`
 
 Errors:
 
-- `400 Bad Request`: invalid phone, category, company, role, or memo
+- `400 Bad Request`: invalid phone, category, company, team, or memo
 - `404 Not Found`: registration uid not found
 - `409 Conflict`: updated phone duplicates another worker in the same project
 
@@ -644,8 +649,9 @@ Errors:
 `POST /api/admin/worker-registrations/import-xlsx`
 
 Content type: `multipart/form-data`, field name: `file`. Only `.xlsx` is accepted; `.xls`, `.csv`,
-and other extensions are rejected before parsing. Required Excel columns are C(category), D(role),
-E(company), F(name), H(phone), and I(memo). B(No.) and G(resident registration number) are ignored
+and other extensions are rejected before parsing. Required Excel columns are C(employment type), D(team),
+E(company), F(name), H(phone), and I(memo). New C column values are automatically added as category
+settings. B(No.) and G(resident registration number) are ignored
 and never stored, displayed, logged, or echoed in error responses.
 
 Row error shape never includes raw name, phone, memo, resident number, or raw row payload:
@@ -723,7 +729,7 @@ Response `200 OK`:
     "projectId": "waterbomb-2026-summer",
     "category": "direct-hire",
     "company": "Madeone",
-    "role": "safety lead"
+    "team": "safety lead"
   },
   "date": "2026-05-26",
   "entitlements": [

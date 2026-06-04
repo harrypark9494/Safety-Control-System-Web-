@@ -23,7 +23,7 @@ export class AdminRegistrationRequest {
 
   @IsString()
   @IsNotEmpty()
-  role: string;
+  team: string;
 
   @IsOptional()
   @IsString()
@@ -53,7 +53,7 @@ export class AdminRegistrationUpdateRequest {
 
   @IsOptional()
   @IsString()
-  role?: string;
+  team?: string;
 
   @IsOptional()
   @IsString()

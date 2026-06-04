@@ -34,7 +34,7 @@ type WorkerListFilters = {
   search?: string;
   category?: string;
   company?: string;
-  role?: string;
+  team?: string;
   registrationStatus?: WorkerRegistration['registrationStatus'];
   payrollDocumentStatus?: PayrollDocumentStatus;
 };
@@ -42,7 +42,7 @@ type WorkerListFilters = {
 type ImportDraft = {
   row: number;
   category: string;
-  role: string;
+  team: string;
   company: string;
   name: string;
   phone: string;
@@ -51,7 +51,7 @@ type ImportDraft = {
 
 const IMPORT_COLUMNS: Record<WorkerImportColumn, { index: number; label: string }> = {
   C: { index: 2, label: 'category' },
-  D: { index: 3, label: 'role' },
+  D: { index: 3, label: 'team' },
   E: { index: 4, label: 'company' },
   F: { index: 5, label: 'name' },
   H: { index: 7, label: 'phone' },
@@ -76,7 +76,7 @@ export class WorkersService {
   createRegistration(request: AdminRegistrationRequest) {
     const projectId = this.normalizeProjectId(request.projectId);
     const phone = this.normalizePhone(request.phone);
-    const category = this.normalizeExistingCategory(request.category);
+    const category = this.ensureCategory(request.category);
     const now = new Date().toISOString();
     const key = this.registrationKey(projectId, phone);
 
@@ -93,7 +93,7 @@ export class WorkersService {
       verificationCode: null,
       category,
       company: this.normalizeCompany(request.company),
-      role: this.normalizeWorkerRole(request.role),
+      team: this.normalizeWorkerTeam(request.team ?? ''),
       memo: this.normalizeMemo(request.memo ?? ''),
       registrationStatus: 'registered',
       payrollDocumentStatus: this.initialPayrollDocumentStatus(category),
@@ -111,7 +111,7 @@ export class WorkersService {
     const nextPhone = request.phone === undefined ? worker.phone : this.normalizePhone(request.phone);
     const nextCategory = request.category === undefined
       ? worker.category
-      : this.normalizeExistingCategory(request.category);
+      : this.ensureCategory(request.category);
     const nextKey = this.registrationKey(nextProjectId, nextPhone);
     const currentKey = this.registrationKey(worker.projectId, worker.phone);
     const existing = this.registrations.get(nextKey);
@@ -126,8 +126,8 @@ export class WorkersService {
     if (request.company !== undefined) {
       worker.company = this.normalizeCompany(request.company);
     }
-    if (request.role !== undefined) {
-      worker.role = this.normalizeWorkerRole(request.role);
+    if (request.team !== undefined) {
+      worker.team = this.normalizeWorkerTeam(request.team);
     }
     if (request.memo !== undefined) {
       worker.memo = this.normalizeMemo(request.memo);
@@ -183,7 +183,7 @@ export class WorkersService {
       phone: draft.phone,
       category: draft.category,
       company: draft.company,
-      role: draft.role,
+      team: draft.team,
       memo: draft.memo,
     }));
 
@@ -237,7 +237,7 @@ export class WorkersService {
       phone: worker.phone,
       category: worker.category,
       company: worker.company,
-      workerRole: worker.role,
+      workerTeam: worker.team,
       schedule: 'unassigned',
       status: 'onboarded',
       payrollDocumentsRequired: this.isPayrollDocumentRequired(worker.category)
@@ -258,7 +258,7 @@ export class WorkersService {
       .filter((worker) => !normalizedProjectId || worker.projectId === normalizedProjectId)
       .filter((worker) => !filters.category || worker.category === filters.category)
       .filter((worker) => !filters.company || worker.company === filters.company)
-      .filter((worker) => !filters.role || worker.role === filters.role)
+      .filter((worker) => !filters.team || worker.team === filters.team)
       .filter((worker) => !filters.registrationStatus || worker.registrationStatus === filters.registrationStatus)
       .filter((worker) => !filters.payrollDocumentStatus || worker.payrollDocumentStatus === filters.payrollDocumentStatus)
       .filter((worker) => {
@@ -269,7 +269,7 @@ export class WorkersService {
         return worker.name.toLowerCase().includes(search)
           || worker.phone.toLowerCase().includes(search)
           || worker.company.toLowerCase().includes(search)
-          || worker.role.toLowerCase().includes(search)
+          || worker.team.toLowerCase().includes(search)
           || (searchDigits ? phoneDigits.includes(searchDigits) : false);
       })
       .sort((a, b) => b.registeredAt.localeCompare(a.registeredAt))
@@ -297,8 +297,8 @@ export class WorkersService {
     const category = this.normalizeCategoryLabel(request.category);
     const setting: WorkerCategorySetting = {
       category,
-      enabled: request.enabled,
-      signupEnabled: request.signupEnabled,
+      enabled: true,
+      signupEnabled: true,
       payrollDocumentsRequired: request.payrollDocumentsRequired,
       sortOrder: request.sortOrder,
       updatedAt: new Date().toISOString(),
@@ -403,14 +403,14 @@ export class WorkersService {
     errors: WorkerImportError[],
   ): ImportDraft | null {
     const category = this.cellText(cells[IMPORT_COLUMNS.C.index]);
-    const role = this.cellText(cells[IMPORT_COLUMNS.D.index]);
+    const team = this.cellText(cells[IMPORT_COLUMNS.D.index]);
     const company = this.cellText(cells[IMPORT_COLUMNS.E.index]);
     const name = this.cellText(cells[IMPORT_COLUMNS.F.index]);
     const phoneText = this.cellText(cells[IMPORT_COLUMNS.H.index]);
     const memo = this.cellText(cells[IMPORT_COLUMNS.I.index]);
 
     const required: Array<[WorkerImportColumn, string]> = [
-      ['C', category], ['D', role], ['E', company], ['F', name], ['H', phoneText], ['I', memo],
+      ['C', category], ['D', team], ['E', company], ['F', name], ['H', phoneText], ['I', memo],
     ];
 
     for (const [column, value] of required) {
@@ -420,16 +420,16 @@ export class WorkersService {
     }
 
     let normalizedCategory = '';
-    let normalizedRole = '';
+    let normalizedTeam = '';
     let normalizedCompany = '';
     let normalizedMemo = '';
     let normalizedPhone = '';
     let normalizedName = '';
 
-    try { normalizedCategory = this.normalizeExistingCategory(category); }
-    catch { errors.push(this.importError(row, 'C', 'UNKNOWN_CATEGORY', 'Category is missing, unknown, or disabled.')); }
-    try { normalizedRole = this.normalizeWorkerRole(role); }
-    catch { errors.push(this.importError(row, 'D', 'INVALID_ROLE', 'Role is invalid.')); }
+    try { normalizedCategory = this.normalizeCategoryLabel(category); }
+    catch { errors.push(this.importError(row, 'C', 'INVALID_CATEGORY', 'Category is invalid.')); }
+    try { normalizedTeam = this.normalizeWorkerTeam(team); }
+    catch { errors.push(this.importError(row, 'D', 'INVALID_TEAM', 'Team is invalid.')); }
     try { normalizedCompany = this.normalizeCompany(company); }
     catch { errors.push(this.importError(row, 'E', 'INVALID_COMPANY', 'Company is invalid.')); }
     try { normalizedName = this.normalizeRequiredText(name, 'INVALID_WORKER_NAME', 'name', 80); }
@@ -454,7 +454,7 @@ export class WorkersService {
     return {
       row,
       category: normalizedCategory,
-      role: normalizedRole,
+      team: normalizedTeam,
       company: normalizedCompany,
       name: normalizedName,
       phone: normalizedPhone,
@@ -570,7 +570,7 @@ export class WorkersService {
       phone: '010-1234-5678',
       category: 'direct-hire',
       company: 'Madeone',
-      role: 'safety lead',
+      team: 'safety lead',
       memo: 'seed data',
     });
 
@@ -583,7 +583,7 @@ export class WorkersService {
         phone: process.env.LOCAL_TEST_WORKER_PHONE ?? '010-9000-0001',
         category: process.env.LOCAL_TEST_WORKER_CATEGORY ?? 'external-partner',
         company: process.env.LOCAL_TEST_WORKER_COMPANY ?? 'local company',
-        role: process.env.LOCAL_TEST_WORKER_ROLE ?? 'operations support',
+        team: process.env.LOCAL_TEST_WORKER_TEAM ?? 'operations support',
         memo: process.env.LOCAL_TEST_WORKER_MEMO ?? 'local test account',
       });
 
@@ -677,6 +677,30 @@ export class WorkersService {
     return normalized;
   }
 
+  private ensureCategory(category: string) {
+    const normalized = this.normalizeCategoryLabel(category);
+    const existing = this.categories.get(normalized);
+
+    if (existing) {
+      return normalized;
+    }
+
+    this.categories.set(normalized, {
+      category: normalized,
+      enabled: true,
+      signupEnabled: true,
+      payrollDocumentsRequired: false,
+      sortOrder: this.nextCategorySortOrder(),
+      updatedAt: new Date().toISOString(),
+    });
+
+    return normalized;
+  }
+
+  private nextCategorySortOrder() {
+    return Math.max(0, ...[...this.categories.values()].map((category) => category.sortOrder)) + 10;
+  }
+
   private normalizeCategoryLabel(category: string) {
     return this.normalizeRequiredText(category, 'INVALID_CATEGORY', 'category', 40);
   }
@@ -685,8 +709,8 @@ export class WorkersService {
     return this.normalizeRequiredText(company, 'INVALID_COMPANY', 'company', 80);
   }
 
-  private normalizeWorkerRole(role: string) {
-    return this.normalizeRequiredText(role, 'INVALID_ROLE', 'role', 80);
+  private normalizeWorkerTeam(team: string) {
+    return this.normalizeRequiredText(team, 'INVALID_TEAM', 'team', 80);
   }
 
   private normalizeMemo(memo: string) {

@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { WorkersService } from '../workers/workers.service';
-import type { WorkerRegistration } from '../workers/worker.types';
 import type { MealType, QrEntitlement, QrType, QrUsageEvent } from './qr.types';
 import type { QrScanRequest } from './qr.dto';
 
@@ -16,6 +15,8 @@ type QrEntitlementResponse = {
   qrToken: string;
   help: string;
 };
+
+type WorkerLookup = { uid: string };
 
 @Injectable()
 export class QrService {
@@ -34,7 +35,7 @@ export class QrService {
   }
 
   getAdminSummary(issuedDate = this.today(), mealType: MealType | 'all' = 'all', projectId?: string) {
-    const workers = this.workers.listRegistrations(projectId) as WorkerRegistration[];
+    const workers = this.workers.listRegistrations(projectId) as WorkerLookup[];
     const workerIds = new Set(workers.map((worker) => worker.uid));
     const entitlements = this.ensureAllEntitlements(issuedDate, projectId);
     const filteredEvents = this.usageEvents.filter((event) => (
@@ -84,7 +85,7 @@ export class QrService {
   }
 
   private ensureAllEntitlements(issuedDate: string, projectId?: string) {
-    const workers = this.workers.listRegistrations(projectId) as WorkerRegistration[];
+    const workers = this.workers.listRegistrations(projectId) as WorkerLookup[];
     return workers.flatMap((worker) => this.ensureWorkerEntitlements(worker.uid, issuedDate));
   }
 
@@ -177,7 +178,7 @@ export class QrService {
   }
 
   private findWorker(workerId: string) {
-    const worker = (this.workers.listRegistrations() as WorkerRegistration[])
+    const worker = (this.workers.listRegistrations() as WorkerLookup[])
       .find((registration) => registration.uid === workerId);
 
     if (!worker) {
@@ -188,7 +189,7 @@ export class QrService {
   }
 
   private seedUsageEvents() {
-    const [worker] = this.workers.listRegistrations() as WorkerRegistration[];
+    const [worker] = this.workers.listRegistrations() as WorkerLookup[];
 
     if (!worker) {
       return;
