@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class AdminRegistrationRequest {
   @IsOptional()
@@ -15,15 +15,49 @@ export class AdminRegistrationRequest {
 
   @IsString()
   @IsNotEmpty()
-  workType: string;
+  category: string;
 
   @IsString()
   @IsNotEmpty()
-  team: string;
+  company: string;
 
   @IsString()
   @IsNotEmpty()
-  supervisor: string;
+  role: string;
+
+  @IsOptional()
+  @IsString()
+  memo?: string;
+}
+
+export class AdminRegistrationUpdateRequest {
+  @IsOptional()
+  @IsString()
+  projectId?: string;
+
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @IsOptional()
+  @IsString()
+  company?: string;
+
+  @IsOptional()
+  @IsString()
+  role?: string;
+
+  @IsOptional()
+  @IsString()
+  memo?: string;
 }
 
 export class OnboardingRequest {
@@ -49,7 +83,7 @@ export class OnboardingRequest {
 
   @IsString()
   @IsNotEmpty()
-  workType: string;
+  category: string;
 }
 
 export class WorkerLoginRequest {
@@ -74,18 +108,16 @@ export class WorkerLoginRequest {
   password: string;
 }
 
-export class WorkTypeRequest {
+export class WorkerCategoryRequest {
   @IsString()
   @IsNotEmpty()
-  label: string;
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  teams?: string[];
+  category: string;
 
   @IsBoolean()
   enabled: boolean;
+
+  @IsBoolean()
+  signupEnabled: boolean;
 
   @IsBoolean()
   payrollDocumentsRequired: boolean;
@@ -94,14 +126,14 @@ export class WorkTypeRequest {
   sortOrder: number;
 }
 
-export class WorkTypeRenameRequest {
+export class WorkerCategoryRenameRequest {
   @IsString()
   @IsNotEmpty()
-  currentLabel: string;
+  currentCategory: string;
 
   @IsString()
   @IsNotEmpty()
-  nextLabel: string;
+  nextCategory: string;
 }
 
 export class ScheduleColumnRequest {

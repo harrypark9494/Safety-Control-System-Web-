@@ -1,13 +1,23 @@
-import { Body, Controller, Delete, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UploadedFile, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   AdminRegistrationRequest,
+  AdminRegistrationUpdateRequest,
   OnboardingRequest,
-  WorkerLoginRequest,
   ScheduleColumnRequest,
-  WorkTypeRenameRequest,
-  WorkTypeRequest,
+  WorkerCategoryRenameRequest,
+  WorkerCategoryRequest,
+  WorkerLoginRequest,
 } from './worker.dto';
 import { WorkersService } from './workers.service';
+import type { PayrollDocumentStatus, RegistrationStatus } from './worker.types';
+
+type UploadedXlsxFile = {
+  originalname: string;
+  mimetype?: string;
+  size: number;
+  buffer: Buffer;
+};
 
 @Controller()
 export class WorkersController {
@@ -24,8 +34,16 @@ export class WorkersController {
   }
 
   @Get('admin/worker-registrations')
-  listRegistrations(@Query('projectId') projectId?: string) {
-    return this.workers.listRegistrations(projectId);
+  listRegistrations(
+    @Query('projectId') projectId?: string,
+    @Query('search') search?: string,
+    @Query('category') category?: string,
+    @Query('company') company?: string,
+    @Query('role') role?: string,
+    @Query('registrationStatus') registrationStatus?: RegistrationStatus,
+    @Query('payrollDocumentStatus') payrollDocumentStatus?: PayrollDocumentStatus,
+  ) {
+    return this.workers.listRegistrations({ projectId, search, category, company, role, registrationStatus, payrollDocumentStatus });
   }
 
   @Post('admin/worker-registrations')
@@ -33,19 +51,45 @@ export class WorkersController {
     return this.workers.createRegistration(request);
   }
 
-  @Delete('admin/worker-registrations/:phone')
-  deleteRegistration(@Param('phone') phone: string, @Query('projectId') projectId?: string) {
-    this.workers.deleteRegistration(phone, projectId);
+  @Patch('admin/worker-registrations/:uid')
+  updateRegistration(@Param('uid') uid: string, @Body() request: AdminRegistrationUpdateRequest) {
+    return this.workers.updateRegistration(uid, request);
   }
 
-  @Get('work-types')
-  listWorkerSelectableWorkTypes() {
-    return this.workers.listWorkTypes();
+  @Delete('admin/worker-registrations/:uid')
+  deleteRegistration(@Param('uid') uid: string) {
+    this.workers.deleteRegistration(uid);
   }
 
-  @Get('admin/work-types')
-  listWorkTypes() {
-    return this.workers.listWorkTypes({ includeDisabled: true });
+  @Post('admin/worker-registrations/import-xlsx')
+  @UseInterceptors(FileInterceptor('file'))
+  importRegistrationsXlsx(@UploadedFile() file: UploadedXlsxFile | undefined, @Query('projectId') projectId?: string) {
+    return this.workers.importRegistrationsXlsx(projectId, file);
+  }
+
+  @Get('worker-categories')
+  listWorkerSelectableCategories() {
+    return this.workers.listCategories({ signupOnly: true });
+  }
+
+  @Get('admin/worker-categories')
+  listCategories() {
+    return this.workers.listCategories({ includeDisabled: true });
+  }
+
+  @Post('admin/worker-categories')
+  saveCategory(@Body() request: WorkerCategoryRequest) {
+    return this.workers.saveCategory(request);
+  }
+
+  @Post('admin/worker-categories/rename')
+  renameCategory(@Body() request: WorkerCategoryRenameRequest) {
+    return this.workers.renameCategory(request);
+  }
+
+  @Delete('admin/worker-categories/:category')
+  deleteCategory(@Param('category') category: string) {
+    this.workers.deleteCategory(category);
   }
 
   @Get('admin/schedule-columns')
@@ -61,20 +105,5 @@ export class WorkersController {
   @Delete('admin/schedule-columns/:id')
   deleteScheduleColumn(@Param('id') id: string, @Query('projectId') projectId?: string) {
     return this.workers.deleteScheduleColumn(id, projectId);
-  }
-
-  @Post('admin/work-types')
-  saveWorkType(@Body() request: WorkTypeRequest) {
-    return this.workers.saveWorkType(request);
-  }
-
-  @Post('admin/work-types/rename')
-  renameWorkType(@Body() request: WorkTypeRenameRequest) {
-    return this.workers.renameWorkType(request);
-  }
-
-  @Delete('admin/work-types/:label')
-  deleteWorkType(@Param('label') label: string) {
-    this.workers.deleteWorkType(label);
   }
 }

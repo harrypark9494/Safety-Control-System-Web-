@@ -76,44 +76,25 @@ ARCHIVED
 프로젝트는 `DRAFT → ACTIVE → ARCHIVED` 흐름을 기본으로 하며, 운영 데이터는
 삭제보다 아카이브 상태 전환을 우선합니다.
 
-### WorkTypeSetting
+### WorkerCategorySetting
 
 ```json
 {
-  "label": "직접 고용",
-  "teams": ["Stage Alpha"],
+  "category": "direct-hire",
   "enabled": true,
+  "signupEnabled": true,
   "payrollDocumentsRequired": true,
   "sortOrder": 10,
   "updatedAt": "2026-05-23T09:00:00Z"
 }
 ```
 
-`workType`은 관리자 고용 유형 설정에 등록된 `label` 문자열입니다. `team`은
-해당 고용 유형의 `teams` 목록에 등록된 하위 팀 문자열입니다. 외부 근로자가
-직접 최초 등록을 진행하므로, 로그인 화면의 고용 유형 선택 박스에는 등록된 모든
-고용 유형을 표시합니다. 서류 제출 이동 여부는 `payrollDocumentsRequired`
-설정으로 계산합니다. 설정에 없는 `workType`이나 해당 고용 유형 아래에 없는
-`team`은 `400 Bad Request`로 거부합니다.
-
-### WorkerRegistrationStatus
-
-```text
-registered
-onboarded
-```
-
-### PayrollDocumentStatus
-
-```text
-missing
-submitted
-reviewing
-approved
-rejected
-```
-
-## Object Shapes
+`category` is the controlled worker classification managed by admins. `company` and
+`role` are normalized free-text worker attributes under that category for the first
+pass, not separately managed catalogs. Worker signup category choices include only
+settings where `enabled=true` and `signupEnabled=true`. Document submission display is
+computed from `payrollDocumentsRequired` plus each worker `payrollDocumentStatus`.
+Missing, unknown, or disabled categories are rejected with `400 Bad Request`.
 
 ### WorkerRegistration
 
@@ -121,15 +102,20 @@ rejected
 {
   "uid": "5b7f5d7d-2c0f-4d4d-8b44-3dbb1cbd39f1",
   "projectId": "waterbomb-2026-summer",
-  "name": "홍길동",
+  "name": "Hong Gil-dong",
   "phone": "010-1234-5678",
-  "workType": "직접 고용",
-  "team": "직접 고용 확인 대기",
-  "supervisor": "관리자 배정 전",
+  "category": "direct-hire",
+  "company": "Madeone",
+  "role": "safety lead",
+  "memo": "site lead",
   "registrationStatus": "registered",
   "payrollDocumentStatus": "missing",
   "registeredAt": "2026-05-22T08:00:00Z",
-  "onboardedAt": null
+  "onboardedAt": null,
+  "qrUsage": {
+    "meal": { "issued": 2, "used": 1, "remaining": 1, "usageRate": 50 },
+    "water": { "issued": 3, "used": 1, "remaining": 2, "usageRate": 33.3 }
+  }
 }
 ```
 
