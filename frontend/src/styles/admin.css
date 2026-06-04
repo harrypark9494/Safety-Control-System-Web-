@@ -126,19 +126,6 @@ td {
   font-weight: 800;
 }
 
-.brand-block .admin-access-pill {
-  display: inline-flex;
-  width: fit-content;
-  margin-top: 0;
-  border: 1px solid var(--line-strong);
-  border-radius: 4px;
-  padding: 5px 8px;
-  color: #17263a;
-  background: #fff;
-  font-size: 0.72rem;
-  font-weight: 950;
-}
-
 .current-project-button {
   display: block;
   width: 100%;
@@ -1861,6 +1848,17 @@ td {
   grid-template-columns: minmax(0, 1fr) minmax(150px, 180px) 44px;
 }
 
+.worker-management .search-card {
+  grid-template-columns:
+    minmax(220px, 1.4fr)
+    minmax(130px, 0.75fr)
+    minmax(140px, 0.85fr)
+    minmax(140px, 0.85fr)
+    minmax(130px, 0.75fr)
+    minmax(130px, 0.75fr)
+    44px;
+}
+
 .search-card select {
   appearance: none;
   padding-right: 34px;
@@ -1933,6 +1931,32 @@ td {
 .worker-name-button:hover strong,
 .worker-name-button:focus-visible strong {
   color: #17263a;
+}
+
+.import-error-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid #f0c6ce;
+  border-radius: 4px;
+  padding: 12px 14px;
+  border-color: #f0c6ce;
+  background: #fff8fa;
+}
+
+.import-error-card strong {
+  color: var(--red);
+  font-weight: 950;
+}
+
+.import-error-card ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 18px;
+  color: #4a2530;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  font-weight: 850;
 }
 
 .table-foot {
@@ -2036,27 +2060,53 @@ td {
   gap: 0;
 }
 
+.work-type-empty-state {
+  margin: 0;
+  padding: 22px 20px;
+  color: #596273;
+  font-size: 0.88rem;
+  font-weight: 850;
+}
+
 .work-type-row,
 .work-type-add-form {
   display: grid;
-  grid-template-columns: minmax(140px, 0.8fr) minmax(240px, 1.2fr) minmax(140px, auto) minmax(150px, auto);
+  grid-template-columns: minmax(140px, 1fr) repeat(3, minmax(92px, auto)) minmax(148px, auto);
   align-items: center;
   gap: 16px;
   padding: 18px 20px;
   border-bottom: 1px solid var(--line);
 }
 
+.work-type-manager {
+  display: grid;
+  max-height: min(70vh, 620px);
+  overflow-y: auto;
+  padding: 0;
+}
+
+.work-type-main,
 .work-type-name-cell {
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
 
+.work-type-main small,
 .work-type-name-cell small {
   color: #596273;
   font-size: 0.78rem;
   font-weight: 850;
 }
 
+.work-type-main strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 950;
+}
+
+.work-type-main input,
 .work-type-name-cell input {
   min-height: 38px;
   border: 1px solid var(--line-strong);
@@ -2150,8 +2200,9 @@ td {
 }
 
 .work-type-add-form {
-  grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) minmax(150px, auto) 92px;
+  grid-template-columns: minmax(180px, 1fr) 92px;
   border-bottom: 0;
+  background: #fbf9fa;
 }
 
 .work-type-actions {
@@ -2344,7 +2395,7 @@ td {
 
 .workers-table table {
   table-layout: fixed;
-  min-width: 820px;
+  min-width: 1040px;
 }
 
 .workers-table th:first-child,
@@ -2354,7 +2405,7 @@ td {
 
 .workers-table th:nth-child(2),
 .workers-table td:nth-child(2) {
-  width: 15%;
+  width: 13%;
 }
 
 .workers-table th:nth-child(3),
@@ -2369,18 +2420,23 @@ td {
 
 .workers-table th:nth-child(5),
 .workers-table td:nth-child(5) {
-  width: 10%;
+  width: 11%;
 }
 
 .workers-table th:nth-child(6),
 .workers-table td:nth-child(6) {
-  width: 14%;
+  width: 11%;
+}
+
+.workers-table th:nth-child(7),
+.workers-table td:nth-child(7) {
+  width: 12%;
 }
 
 .workers-table th:last-child,
 .workers-table td:last-child {
-  width: 14%;
-  text-align: center;
+  width: 92px;
+  text-align: right;
 }
 
 .empty-table-state {
@@ -2485,17 +2541,6 @@ td {
   font-weight: 900;
 }
 
-.admin-access-summary {
-  margin: 18px 24px 0;
-  border: 1px solid var(--line-strong);
-  border-radius: 4px;
-  padding: 10px 12px;
-  color: #3c4350;
-  background: #fff;
-  font-size: 0.86rem;
-  font-weight: 850;
-}
-
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -2520,6 +2565,10 @@ td {
 
 .account-modal.worker-modal {
   width: min(520px, calc(100vw - 32px));
+}
+
+.account-modal.worker-import-modal {
+  width: min(560px, calc(100vw - 32px));
 }
 
 .account-modal.work-type-modal {
@@ -2786,6 +2835,97 @@ td {
   padding: 14px 18px;
 }
 
+.worker-import-form .modal-body {
+  gap: 14px;
+}
+
+.worker-import-form .modal-body p {
+  line-height: 1.5;
+}
+
+.file-drop-field {
+  position: relative;
+  display: grid;
+  min-height: 112px;
+  place-items: center;
+  border: 1px dashed #9aa6b8;
+  border-radius: 4px;
+  padding: 16px;
+  color: #243149;
+  background: #fbf9fa;
+  cursor: pointer;
+}
+
+.file-drop-field:hover,
+.file-drop-field:focus-within {
+  border-color: #17263a;
+  background: #f4f7fb;
+}
+
+.file-drop-field span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 100%;
+  gap: 8px;
+  color: #243149;
+  font-size: 0.9rem;
+  font-weight: 950;
+  overflow-wrap: anywhere;
+}
+
+.file-drop-field input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.file-drop-field input:disabled {
+  cursor: not-allowed;
+}
+
+.worker-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-height: min(70vh, 620px);
+  overflow-y: auto;
+  gap: 0 18px;
+  padding: 4px 18px 16px;
+}
+
+.worker-detail-grid div {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+  padding: 12px 0;
+}
+
+.worker-detail-grid div:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+
+.worker-detail-grid dt {
+  color: #5a6372;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.worker-detail-grid dd {
+  min-width: 0;
+  color: #202735;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.worker-detail-grid div:nth-child(7),
+.worker-detail-grid div:nth-child(8) {
+  grid-column: 1 / -1;
+}
+
 .worker-detail-body {
   max-height: min(72vh, 660px);
   overflow-y: auto;
@@ -2918,7 +3058,8 @@ td {
 }
 
 .worker-detail-modal footer {
-  grid-template-columns: 1fr;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
 }
 
 .work-type-picker {
@@ -3082,6 +3223,10 @@ td {
   font-size: 0.82rem;
 }
 
+.modal-message.is-error {
+  color: var(--red);
+}
+
 .account-modal footer {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -3193,6 +3338,10 @@ td {
   }
 
   .search-card {
+    grid-template-columns: 1fr;
+  }
+
+  .worker-management .search-card {
     grid-template-columns: 1fr;
   }
 
@@ -3319,5 +3468,15 @@ td {
 
   .work-type-add-form .dark-button {
     width: 100%;
+  }
+
+  .worker-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .worker-detail-grid div,
+  .worker-detail-grid div:nth-child(7),
+  .worker-detail-grid div:nth-child(8) {
+    grid-column: auto;
   }
 }

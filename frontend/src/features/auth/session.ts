@@ -11,19 +11,22 @@ import type {
   WeatherThresholds,
   WorkerRegistrationAccount,
   WorkerSession,
-  WorkType,
-  WorkTypeSetting,
+  WorkerCategory,
+  WorkerCategorySetting,
+  WorkerImportResult,
 } from "../../types";
 import { getApps, initializeApp, type FirebaseApp } from "firebase/app";
 import { GoogleAuthProvider, getAuth, signInWithPopup } from "firebase/auth";
 import { clearSecureEntryPath } from "../navigation";
 import { formatPhone } from "../phone";
+import { buildTestWeatherOverview } from "../weather/testWeatherFixture";
 import { normalizeAdminAccess } from "./adminAccess";
 
 const SESSION_KEY = "safetyControlSession";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 const ADMIN_GOOGLE_DOMAIN = import.meta.env.VITE_ADMIN_GOOGLE_DOMAIN ?? "";
 const ENABLE_LOCAL_ADMIN_BYPASS = import.meta.env.VITE_ENABLE_LOCAL_ADMIN_BYPASS === "true";
+const ENABLE_TEST_WEATHER_MOCK = import.meta.env.VITE_ENABLE_TEST_WEATHER_MOCK === "true";
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -37,13 +40,15 @@ type WorkerRegistrationResponse = {
   projectId: string;
   name: string;
   phone: string;
-  workType: WorkType;
-  team: string;
-  supervisor: string;
+  category: WorkerCategory;
+  company: string;
+  role: string;
+  memo: string;
   registrationStatus: WorkerRegistrationAccount["registrationStatus"];
   payrollDocumentStatus: WorkerSession["payrollDocumentStatus"];
   registeredAt: string;
   onboardedAt?: string;
+  qrUsage?: WorkerRegistrationAccount["qrUsage"];
 };
 
 type WorkerLoginResponse = WorkerSession & {
@@ -67,10 +72,11 @@ async function readApiError(response: Response, fallbackMessage: string): Promis
 }
 
 async function requestApi(path: string, init?: RequestInit): Promise<Response> {
+  const isFormData = typeof FormData !== "undefined" && init?.body instanceof FormData;
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
-      "Content-Type": "application/json",
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...init?.headers,
     },
   });
@@ -103,13 +109,15 @@ function toRegistrationAccount(worker: WorkerRegistrationResponse): WorkerRegist
     projectId: worker.projectId,
     name: worker.name,
     phone: worker.phone,
-    workType: worker.workType,
-    team: worker.team,
-    supervisor: worker.supervisor,
+    category: worker.category,
+    company: worker.company,
+    role: worker.role,
+    memo: worker.memo,
     registrationStatus: worker.registrationStatus,
     payrollDocumentStatus: worker.payrollDocumentStatus,
     registeredAt: worker.registeredAt,
     onboardedAt: worker.onboardedAt,
+    qrUsage: worker.qrUsage,
   };
 }
 
@@ -145,9 +153,9 @@ function isWorkerSession(value: unknown): value is WorkerSession {
     hasString(value, "uid") &&
     hasString(value, "name") &&
     hasString(value, "phone") &&
-    hasString(value, "workType") &&
-    hasString(value, "team") &&
-    hasString(value, "supervisor") &&
+    hasString(value, "category") &&
+    hasString(value, "company") &&
+    hasString(value, "workerRole") &&
     hasString(value, "schedule") &&
     hasString(value, "status") &&
     typeof value.payrollDocumentsRequired === "boolean" &&
@@ -213,19 +221,22 @@ export async function completeWorkerOnboarding(
   phone: string,
   code: string,
   password: string,
-  workType: WorkType,
+  category: WorkerCategory,
 ): Promise<WorkerRegistrationAccount> {
   const worker = await requestJson<WorkerRegistrationResponse>("/api/worker-registrations", {
     method: "POST",
-    body: JSON.stringify({ projectId, name, phone: formatPhone(phone), code, password, workType }),
+    body: JSON.stringify({ projectId, name, phone: formatPhone(phone), code, password, category }),
   });
 
   return toRegistrationAccount(worker);
 }
 
-export async function getWorkTypes(options: { includeDisabled?: boolean } = {}): Promise<WorkTypeSetting[]> {
-  const path = options.includeDisabled ? "/api/admin/work-types" : "/api/work-types";
-  return requestJson<WorkTypeSetting[]>(path);
+export async function getWorkerCategories(): Promise<WorkerCategorySetting[]> {
+  return requestJson<WorkerCategorySetting[]>("/api/worker-categories");
+}
+
+export async function getAdminWorkerCategories(): Promise<WorkerCategorySetting[]> {
+  return requestJson<WorkerCategorySetting[]>("/api/admin/worker-categories");
 }
 
 export async function getAdminScheduleColumns(projectId?: string): Promise<AdminScheduleColumn[]> {
@@ -255,22 +266,22 @@ export async function deleteAdminScheduleColumn(id: string, projectId?: string):
   });
 }
 
-export async function saveWorkType(setting: Pick<WorkTypeSetting, "label" | "teams" | "enabled" | "payrollDocumentsRequired" | "sortOrder">): Promise<WorkTypeSetting> {
-  return requestJson<WorkTypeSetting>("/api/admin/work-types", {
+export async function saveWorkerCategory(setting: Pick<WorkerCategorySetting, "category" | "enabled" | "signupEnabled" | "payrollDocumentsRequired" | "sortOrder">): Promise<WorkerCategorySetting> {
+  return requestJson<WorkerCategorySetting>("/api/admin/worker-categories", {
     method: "POST",
     body: JSON.stringify(setting),
   });
 }
 
-export async function renameWorkType(currentLabel: string, nextLabel: string): Promise<WorkTypeSetting> {
-  return requestJson<WorkTypeSetting>("/api/admin/work-types/rename", {
+export async function renameWorkerCategory(currentCategory: string, nextCategory: string): Promise<WorkerCategorySetting> {
+  return requestJson<WorkerCategorySetting>("/api/admin/worker-categories/rename", {
     method: "POST",
-    body: JSON.stringify({ currentLabel, nextLabel }),
+    body: JSON.stringify({ currentCategory, nextCategory }),
   });
 }
 
-export async function deleteWorkType(label: string): Promise<void> {
-  await requestNoContent(`/api/admin/work-types/${encodeURIComponent(label)}`, {
+export async function deleteWorkerCategory(category: string): Promise<void> {
+  await requestNoContent(`/api/admin/worker-categories/${encodeURIComponent(category)}`, {
     method: "DELETE",
   });
 }
@@ -329,27 +340,50 @@ export async function createRegisteredWorker(
   projectId: string,
   name: string,
   phone: string,
-  workType: WorkType,
-  team: string,
-  supervisor: string,
+  category: WorkerCategory,
+  company: string,
+  role: string,
+  memo: string,
 ): Promise<WorkerRegistrationAccount> {
   const worker = await requestJson<WorkerRegistrationResponse>("/api/admin/worker-registrations", {
     method: "POST",
-    body: JSON.stringify({ projectId, name, phone: formatPhone(phone), workType, team, supervisor }),
+    body: JSON.stringify({ projectId, name, phone: formatPhone(phone), category, company, role, memo }),
   });
 
   return toRegistrationAccount(worker);
 }
 
-export async function deleteRegisteredWorker(phone: string, projectId?: string): Promise<void> {
-  const params = new URLSearchParams();
-  if (projectId) {
-    params.set("projectId", projectId);
-  }
+export async function updateRegisteredWorker(
+  uid: string,
+  patch: Partial<Pick<WorkerRegistrationAccount, "projectId" | "name" | "phone" | "category" | "company" | "role" | "memo">>,
+): Promise<WorkerRegistrationAccount> {
+  const worker = await requestJson<WorkerRegistrationResponse>(`/api/admin/worker-registrations/${encodeURIComponent(uid)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ ...patch, phone: patch.phone ? formatPhone(patch.phone) : undefined }),
+  });
 
-  await requestNoContent(`/api/admin/worker-registrations/${encodeURIComponent(formatPhone(phone))}${params.toString() ? `?${params}` : ""}`, {
+  return toRegistrationAccount(worker);
+}
+
+export async function deleteRegisteredWorker(uid: string): Promise<void> {
+  await requestNoContent(`/api/admin/worker-registrations/${encodeURIComponent(uid)}`, {
     method: "DELETE",
   });
+}
+
+export async function importRegisteredWorkersXlsx(projectId: string, file: File): Promise<WorkerImportResult> {
+  const form = new FormData();
+  form.append("file", file);
+  const params = new URLSearchParams({ projectId });
+  const result = await requestJson<WorkerImportResult>(`/api/admin/worker-registrations/import-xlsx?${params}`, {
+    method: "POST",
+    body: form,
+  });
+
+  return {
+    ...result,
+    workers: result.workers.map(toRegistrationAccount),
+  };
 }
 
 export async function getWorkerQrEntitlements(workerId: string): Promise<QrEntitlement[]> {
@@ -381,7 +415,15 @@ export async function getAdminWeatherOverview(projectId?: string): Promise<Admin
     params.set("projectId", projectId);
   }
 
-  return requestJson<AdminWeatherOverview>(`/api/admin/weather${params.toString() ? `?${params}` : ""}`);
+  try {
+    return await requestJson<AdminWeatherOverview>(`/api/admin/weather${params.toString() ? `?${params}` : ""}`);
+  } catch (error) {
+    if (ENABLE_TEST_WEATHER_MOCK) {
+      return buildTestWeatherOverview(projectId);
+    }
+
+    throw error;
+  }
 }
 
 export async function updateAdminWeatherStation(station: { projectId?: string; name?: string; latitude: number; longitude: number }): Promise<AdminWeatherOverview> {

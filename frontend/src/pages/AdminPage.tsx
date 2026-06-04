@@ -1,10 +1,9 @@
 import { FormEvent, useEffect, useState } from "react";
 import { MaterialIcon } from "../components/MaterialIcon";
 import "../styles/admin.css";
-import { adminAccessDescriptions, adminAccessLabels } from "../features/auth/adminAccess";
-import { clearSession, getAdminProjects, getAdminScheduleColumns, getRegisteredWorkers, getSession, getWorkTypes } from "../features/auth/session";
+import { clearSession, getAdminProjects, getAdminScheduleColumns, getRegisteredWorkers, getSession, getAdminWorkerCategories } from "../features/auth/session";
 import { navigateTo } from "../features/navigation";
-import type { AdminAccess, AdminScheduleColumn, Project, WorkerRegistrationAccount, WorkTypeSetting } from "../types";
+import type { AdminAccess, AdminScheduleColumn, Project, WorkerRegistrationAccount, WorkerCategorySetting } from "../types";
 import { AdminsView } from "./admin/AdminsView";
 import { DashboardView } from "./admin/DashboardView";
 import { ProjectsView } from "./admin/ProjectsView";
@@ -41,8 +40,8 @@ export function AdminPage() {
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [projectMessage, setProjectMessage] = useState("");
   const [workers, setWorkers] = useState<WorkerRegistrationAccount[]>([]);
-  const [workTypes, setWorkTypes] = useState<WorkTypeSetting[]>([]);
-  const [workTypesReady, setWorkTypesReady] = useState(false);
+  const [workerCategories, setWorkerCategories] = useState<WorkerCategorySetting[]>([]);
+  const [workerCategoriesReady, setWorkerCategoriesReady] = useState(false);
   const [workerMessage, setWorkerMessage] = useState("");
   const [scheduleColumns, setScheduleColumns] = useState<AdminScheduleColumn[]>([]);
   const [scheduleColumnsReady, setScheduleColumnsReady] = useState(false);
@@ -66,7 +65,7 @@ export function AdminPage() {
 
   useEffect(() => {
     refreshProjects();
-    refreshWorkTypes();
+    refreshWorkerCategories();
   }, []);
 
   useEffect(() => {
@@ -109,15 +108,15 @@ export function AdminPage() {
 
   const selectedProject = projects.find((project) => project.id === selectedProjectId) ?? null;
 
-  async function refreshWorkTypes() {
+  async function refreshWorkerCategories() {
     try {
-      const nextWorkTypes = await getWorkTypes({ includeDisabled: true });
-      setWorkTypes(nextWorkTypes);
-      setWorkTypesReady(true);
+      const nextWorkerCategories = await getAdminWorkerCategories();
+      setWorkerCategories(nextWorkerCategories);
+      setWorkerCategoriesReady(true);
       await refreshScheduleColumns(selectedProjectId);
     } catch (error) {
-      setWorkTypes([]);
-      setWorkTypesReady(false);
+      setWorkerCategories([]);
+      setWorkerCategoriesReady(false);
       setWorkerMessage(error instanceof Error ? error.message : "고용 유형 목록을 불러오지 못했습니다.");
     }
   }
@@ -143,7 +142,6 @@ export function AdminPage() {
           <div className="brand-block">
             <strong>워터밤 안전 관제 시스템</strong>
             <span>관리자 페이지</span>
-            <span className="admin-access-pill">{adminAccessLabels[adminAccess]}</span>
             <button className="current-project-button" type="button" onClick={() => canOpenProjectManagement ? setView("projects") : undefined} disabled={!canOpenProjectManagement}>
               <span>
                 <b>{selectedProject?.name ?? "프로젝트 선택 필요"}</b>
@@ -182,7 +180,6 @@ export function AdminPage() {
         </aside>
 
         <section className="admin-main">
-          <p className="admin-access-summary" role="status">{adminAccessDescriptions[adminAccess]}</p>
           {projectMessage ? <p className="admin-message admin-message--global" role="status">{projectMessage}</p> : null}
           {view === "dashboard" ? <DashboardView project={selectedProject} /> : null}
           {view === "weather" ? <WeatherView projectId={selectedProjectId} /> : null}
@@ -192,11 +189,11 @@ export function AdminPage() {
             <WorkersView
               projectId={selectedProjectId}
               workers={workers}
-              workTypes={workTypes}
-              workTypesReady={workTypesReady}
+              workerCategories={workerCategories}
+              workerCategoriesReady={workerCategoriesReady}
               message={workerMessage}
               onRefresh={refreshWorkers}
-              onRefreshWorkTypes={refreshWorkTypes}
+              onRefreshWorkerCategories={refreshWorkerCategories}
             />
           ) : null}
           {view === "rules" ? <RulesView projectId={selectedProjectId} /> : null}

@@ -2,7 +2,7 @@ export type UserRole = "worker" | "admin";
 export type AdminAccess = "workspace" | "schedule" | "qr";
 export type ProjectStatus = "DRAFT" | "ACTIVE" | "ARCHIVED";
 
-export type WorkType = string;
+export type WorkerCategory = string;
 
 export type PayrollDocumentStatus =
   | "missing"
@@ -19,9 +19,9 @@ export interface WorkerSession {
   role: "worker";
   name: string;
   phone: string;
-  workType: WorkType;
-  team: string;
-  supervisor: string;
+  category: WorkerCategory;
+  company: string;
+  workerRole: string;
   schedule: string;
   status: string;
   payrollDocumentsRequired: boolean;
@@ -38,18 +38,25 @@ export interface AdminSession {
 
 export type AppSession = WorkerSession | AdminSession;
 
+export interface WorkerQrUsageSummary {
+  meal: QrUsageMetric;
+  water: QrUsageMetric;
+}
+
 export interface WorkerRegistrationAccount {
   uid: string;
   projectId: string;
   name: string;
   phone: string;
-  workType: WorkType;
-  team: string;
-  supervisor: string;
+  category: WorkerCategory;
+  company: string;
+  role: string;
+  memo: string;
   registrationStatus: WorkerRegistrationStatus;
   payrollDocumentStatus: PayrollDocumentStatus;
   registeredAt: string;
   onboardedAt?: string;
+  qrUsage?: WorkerQrUsageSummary;
 }
 
 export interface Project {
@@ -65,13 +72,28 @@ export interface Project {
   archivedAt: string | null;
 }
 
-export interface WorkTypeSetting {
-  label: WorkType;
-  teams: string[];
+export interface WorkerCategorySetting {
+  category: WorkerCategory;
   enabled: boolean;
+  signupEnabled: boolean;
   payrollDocumentsRequired: boolean;
   sortOrder: number;
   updatedAt?: string;
+}
+
+export interface WorkerImportError {
+  row: number;
+  column: "C" | "D" | "E" | "F" | "H" | "I";
+  label: string;
+  code: string;
+  message: string;
+}
+
+export interface WorkerImportResult {
+  importedCount: number;
+  rejectedCount: number;
+  errors: WorkerImportError[];
+  workers: WorkerRegistrationAccount[];
 }
 
 export interface AdminScheduleColumn {
@@ -83,7 +105,7 @@ export interface AdminScheduleColumn {
 }
 
 export interface PayrollSubmission {
-  workType: WorkType;
+  category: WorkerCategory;
   residentNumber: string;
   postcode: string;
   address: string;
@@ -196,7 +218,7 @@ export interface AdminWeatherOverview {
   source: {
     provider: "KMA";
     name: string;
-    mode: "adapter-placeholder" | "live";
+    mode: "adapter-placeholder" | "live" | "test-fixture";
     baseDateTime: string;
     updatedAt: string;
     advisoryMergePolicy: string;
