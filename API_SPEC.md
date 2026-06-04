@@ -206,6 +206,30 @@ rejected
 }
 ```
 
+### QrUsageEvent
+
+```json
+{
+  "id": "9c89d708-9242-4e80-ae57-2f6f0bb7a5b5",
+  "entitlementId": "f0e5ab6f-45b0-4686-9c25-5683e48beef7",
+  "workerId": "5b7f5d7d-2c0f-4d4d-8b44-3dbb1cbd39f1",
+  "workerName": "홍길동",
+  "projectId": "waterbomb-2026-summer",
+  "qrType": "meal",
+  "mealType": "lunch",
+  "usedAt": "2026-05-26T12:10:00.000Z",
+  "scanLocation": "운영 데스크",
+  "scannerId": "scanner-main-desk-01",
+  "result": "allowed",
+  "reason": "ok"
+}
+```
+
+운영 DB 영속화 단계에서는 QR 사용 성공뿐 아니라 거부 이력도 같은 로그 모델에
+남깁니다. `result`는 `allowed`, `denied`를 사용하고, `reason`은 `ok`,
+`limit_exceeded`, `invalid_token`, `revoked`, `inactive_worker` 등으로
+확장할 수 있습니다.
+
 ### AdminWeatherOverview
 
 ```json
@@ -685,6 +709,11 @@ Errors:
 오늘 기준 식권 2회, 생수 3회 지급권을 생성하고 사용 이력을 반영합니다. DB
 영속화 단계에서는 `qr_entitlements` 테이블에서 조회합니다.
 
+운영 예정 설계에서는 근로자별 정적 QR 토큰을 발급하고, 서버가 날짜와 정책을
+기준으로 사용 가능 횟수를 계산합니다. 캡처본 공유 방지는 현재 범위에서 제외하며,
+QR 토큰은 개인정보 원문이 아니라 서버에서만 사용자와 매핑되는 opaque token으로
+관리합니다.
+
 Response `200 OK`: `QrEntitlement[]`
 
 ### List Admin QR Usage Summary
@@ -696,6 +725,51 @@ Response `200 OK`: `QrEntitlement[]`
 지원합니다.
 
 Response `200 OK`: `QrUsageSummary`
+
+### List Admin QR Usage Logs
+
+`GET /api/admin/qr-usage/logs?projectId=waterbomb-2026-summer&date=2026-05-26&workerId={workerUid}&qrType=meal&result=allowed`
+
+운영 예정 API입니다. 관리자 식권/생수 QR 사용 현황 화면의 전체 스캔 로그를
+반환합니다. `projectId`, `date`, `workerId`, `qrType`, `result`로 필터링할 수
+있고, `workerId`를 생략하면 프로젝트 전체 로그를 반환합니다.
+
+Response `200 OK`: `QrUsageEvent[]`
+
+### Get Worker QR Usage Detail
+
+`GET /api/admin/workers/{workerId}/qr-usage?date=2026-05-26`
+
+운영 예정 API입니다. 관리자 화면에서 사용자를 검색했을 때 해당 사용자의 식권/생수
+사용량과 스캔 로그를 함께 반환합니다.
+
+Response `200 OK`:
+
+```json
+{
+  "worker": {
+    "uid": "5b7f5d7d-2c0f-4d4d-8b44-3dbb1cbd39f1",
+    "name": "홍길동",
+    "projectId": "waterbomb-2026-summer",
+    "team": "직접 고용 A팀"
+  },
+  "date": "2026-05-26",
+  "entitlements": [
+    {
+      "qrType": "meal",
+      "label": "식권",
+      "issuedDate": "2026-05-26",
+      "totalCount": 2,
+      "usedCount": 1,
+      "remainingCount": 1,
+      "status": "active",
+      "qrToken": "opaque-token",
+      "help": "운영 데스크에서 위 QR 코드를 스캔하세요"
+    }
+  ],
+  "logs": []
+}
+```
 
 ### Record QR Scan
 
@@ -716,7 +790,26 @@ Request:
 }
 ```
 
+운영 예정 요청 형식은 스캐너가 읽은 QR 토큰만 서버에 전달하는 방식입니다. 서버는
+`qr_tokens` 또는 `qr_entitlements`에서 토큰을 조회해 근로자, QR 유형, 날짜별
+정책을 판정합니다.
+
+```json
+{
+  "qrToken": "opaque-token",
+  "scanLocation": "운영 데스크",
+  "scannerId": "scanner-main-desk-01"
+}
+```
+
 Response `200 OK`: `{ "event": QrUsageEvent, "entitlement": QrEntitlement }`
+
+운영 DB 영속화 예정 테이블:
+
+- `qr_policies`: 프로젝트/날짜/QR 유형별 허용 횟수. 예: 식권 2회, 생수 3회
+- `qr_tokens`: 근로자별 정적 QR 토큰과 활성 상태
+- `qr_entitlements`: 근로자/날짜/QR 유형별 지급권과 사용량
+- `qr_usage_events`: 모든 스캔 성공/거부 로그
 
 ### Get Admin Weather Overview
 
