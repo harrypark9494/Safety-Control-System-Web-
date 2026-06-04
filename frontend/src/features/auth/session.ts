@@ -1,5 +1,6 @@
 import type {
   AppSession,
+  AdminAccess,
   AdminScheduleColumn,
   AdminWeatherOverview,
   MealType,
@@ -17,6 +18,7 @@ import { getApps, initializeApp, type FirebaseApp } from "firebase/app";
 import { GoogleAuthProvider, getAuth, signInWithPopup } from "firebase/auth";
 import { clearSecureEntryPath } from "../navigation";
 import { formatPhone } from "../phone";
+import { normalizeAdminAccess } from "./adminAccess";
 
 const SESSION_KEY = "safetyControlSession";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -178,6 +180,13 @@ export function getSession(): AppSession | null {
     const session: unknown = JSON.parse(raw);
 
     if (isAppSession(session)) {
+      if (session.role === "admin") {
+        return {
+          ...session,
+          adminAccess: normalizeAdminAccess(session.adminAccess),
+        };
+      }
+
       return session;
     }
 
@@ -419,6 +428,7 @@ function signInLocalAdminForDev(): AppSession {
     role: "admin",
     name: "로컬 관리자",
     email: "local-admin@example.test",
+    adminAccess: readLocalAdminAccess(),
   };
 
   saveSession(session);
@@ -445,8 +455,17 @@ async function signInAdminWithFirebase(): Promise<AppSession> {
     body: JSON.stringify({ idToken }),
   });
 
-  saveSession(session);
-  return session;
+  const normalizedSession = {
+    ...session,
+    adminAccess: normalizeAdminAccess(session.adminAccess),
+  };
+
+  saveSession(normalizedSession);
+  return normalizedSession;
+}
+
+function readLocalAdminAccess(): AdminAccess {
+  return normalizeAdminAccess(import.meta.env.VITE_LOCAL_ADMIN_ACCESS);
 }
 
 export function requiresPayrollDocuments(session: AppSession | null): boolean {

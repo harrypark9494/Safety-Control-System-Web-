@@ -1,4 +1,5 @@
 export type UserRole = "worker" | "admin";
+export type AdminAccess = "workspace" | "schedule" | "qr";
 export type ProjectStatus = "DRAFT" | "ACTIVE" | "ARCHIVED";
 
 export type WorkType = string;
@@ -32,6 +33,7 @@ export interface AdminSession {
   role: "admin";
   name: string;
   email: string;
+  adminAccess: AdminAccess;
 }
 
 export type AppSession = WorkerSession | AdminSession;

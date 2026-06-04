@@ -1,9 +1,10 @@
 import { FormEvent, useEffect, useState } from "react";
 import { MaterialIcon } from "../components/MaterialIcon";
 import "../styles/admin.css";
-import { clearSession, getAdminProjects, getAdminScheduleColumns, getRegisteredWorkers, getWorkTypes } from "../features/auth/session";
+import { adminAccessDescriptions, adminAccessLabels } from "../features/auth/adminAccess";
+import { clearSession, getAdminProjects, getAdminScheduleColumns, getRegisteredWorkers, getSession, getWorkTypes } from "../features/auth/session";
 import { navigateTo } from "../features/navigation";
-import type { AdminScheduleColumn, Project, WorkerRegistrationAccount, WorkTypeSetting } from "../types";
+import type { AdminAccess, AdminScheduleColumn, Project, WorkerRegistrationAccount, WorkTypeSetting } from "../types";
 import { AdminsView } from "./admin/AdminsView";
 import { DashboardView } from "./admin/DashboardView";
 import { ProjectsView } from "./admin/ProjectsView";
@@ -26,6 +27,12 @@ const navItems = [
 type View = (typeof navItems)[number][0];
 type AdminView = View | "projects";
 
+const adminAccessViews: Record<AdminAccess, AdminView[]> = {
+  workspace: ["dashboard", "weather", "schedule", "qr", "workers", "rules", "admins", "projects"],
+  schedule: ["dashboard", "weather", "schedule", "rules"],
+  qr: ["qr"],
+};
+
 export function AdminPage() {
   const [view, setView] = useState<AdminView>("dashboard");
   const [modalOpen, setModalOpen] = useState(false);
@@ -40,6 +47,12 @@ export function AdminPage() {
   const [scheduleColumns, setScheduleColumns] = useState<AdminScheduleColumn[]>([]);
   const [scheduleColumnsReady, setScheduleColumnsReady] = useState(false);
   const [scheduleMessage, setScheduleMessage] = useState("");
+  const session = getSession();
+  const adminAccess = session?.role === "admin" ? session.adminAccess : "workspace";
+  const allowedViews = adminAccessViews[adminAccess];
+  const primaryNavItems = navItems.slice(0, 6).filter(([id]) => allowedViews.includes(id));
+  const canOpenAdminManagement = allowedViews.includes("admins");
+  const canOpenProjectManagement = allowedViews.includes("projects");
 
   function submitAdmin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,6 +68,12 @@ export function AdminPage() {
     refreshProjects();
     refreshWorkTypes();
   }, []);
+
+  useEffect(() => {
+    if (!allowedViews.includes(view)) {
+      setView(allowedViews[0] ?? "dashboard");
+    }
+  }, [allowedViews, view]);
 
   useEffect(() => {
     if (selectedProjectId) {
@@ -124,7 +143,8 @@ export function AdminPage() {
           <div className="brand-block">
             <strong>워터밤 안전 관제 시스템</strong>
             <span>관리자 페이지</span>
-            <button className="current-project-button" type="button" onClick={() => setView("projects")}>
+            <span className="admin-access-pill">{adminAccessLabels[adminAccess]}</span>
+            <button className="current-project-button" type="button" onClick={() => canOpenProjectManagement ? setView("projects") : undefined} disabled={!canOpenProjectManagement}>
               <span>
                 <b>{selectedProject?.name ?? "프로젝트 선택 필요"}</b>
                 <small>{selectedProject ? `${formatProjectStatus(selectedProject.status)} · ${selectedProject.location}` : "프로젝트 관리에서 선택"}</small>
@@ -133,7 +153,7 @@ export function AdminPage() {
           </div>
 
           <nav className="admin-nav" aria-label="주요 메뉴">
-            {navItems.slice(0, 6).map(([id, icon, label]) => (
+            {primaryNavItems.map(([id, icon, label]) => (
               <button className={`nav-item ${view === id ? "is-active" : ""}`} type="button" key={id} onClick={() => setView(id)}>
                 <MaterialIcon name={icon} className="nav-icon" filled={view === id} />
                 {label}
@@ -142,14 +162,18 @@ export function AdminPage() {
           </nav>
 
           <div className="sidebar-footer">
-            <button className={`nav-item nav-item--admin ${view === "admins" ? "is-active" : ""}`} type="button" onClick={() => setView("admins")}>
-              <MaterialIcon name="admin_panel_settings" className="nav-icon" filled={view === "admins"} />
-              어드민 관리
-            </button>
-            <button className={`nav-item nav-item--plain ${view === "projects" ? "is-active" : ""}`} type="button" onClick={() => setView("projects")}>
-              <MaterialIcon name="folder_managed" className="nav-icon" filled={view === "projects"} />
-              프로젝트 관리
-            </button>
+            {canOpenAdminManagement ? (
+              <button className={`nav-item nav-item--admin ${view === "admins" ? "is-active" : ""}`} type="button" onClick={() => setView("admins")}>
+                <MaterialIcon name="admin_panel_settings" className="nav-icon" filled={view === "admins"} />
+                어드민 관리
+              </button>
+            ) : null}
+            {canOpenProjectManagement ? (
+              <button className={`nav-item nav-item--plain ${view === "projects" ? "is-active" : ""}`} type="button" onClick={() => setView("projects")}>
+                <MaterialIcon name="folder_managed" className="nav-icon" filled={view === "projects"} />
+                프로젝트 관리
+              </button>
+            ) : null}
             <button className="nav-item nav-item--plain" type="button" onClick={logout}>
               <MaterialIcon name="logout" className="nav-icon" />
               로그아웃
@@ -158,6 +182,7 @@ export function AdminPage() {
         </aside>
 
         <section className="admin-main">
+          <p className="admin-access-summary" role="status">{adminAccessDescriptions[adminAccess]}</p>
           {projectMessage ? <p className="admin-message admin-message--global" role="status">{projectMessage}</p> : null}
           {view === "dashboard" ? <DashboardView project={selectedProject} /> : null}
           {view === "weather" ? <WeatherView projectId={selectedProjectId} /> : null}
@@ -201,7 +226,7 @@ export function AdminPage() {
                 <label>이름<input name="name" placeholder="예: 관리자 E" autoComplete="off" required /></label>
                 <label>아이디<input name="accountId" placeholder="예: admin_ops_05" autoComplete="off" required /></label>
                 <label>비밀번호<span><input name="password" type="password" placeholder="초기 비밀번호 입력" autoComplete="new-password" required /><button type="button" aria-label="비밀번호 보기"><MaterialIcon name="visibility" /></button></span></label>
-                <label>권한 설정<select name="role"><option>전체 권한</option><option>운영 권한</option><option>안전 조회</option><option>현장 조회</option></select></label>
+                <label>권한 설정<select name="role"><option>워크스페이스 전체 권한</option><option>스케줄 감독</option><option>QR코드 관리자</option></select></label>
                 <p><MaterialIcon name="info" />계정 등록 후 초기 비밀번호는 시스템 보안 정책에 따라 즉시 변경을 권장합니다.</p>
                 <strong className="modal-message" role="status" aria-live="polite">{modalMessage}</strong>
               </div>

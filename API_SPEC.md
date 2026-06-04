@@ -53,6 +53,18 @@ worker
 admin
 ```
 
+### AdminAccess
+
+```text
+workspace
+schedule
+qr
+```
+
+- `workspace`: 특정 workspace에 존재하는 모든 인원 기준으로 모든 관리자 시스템 접근 가능
+- `schedule`: 스케줄 감독 권한, 대시보드·기상 정보·스케줄·안전 수칙 화면 접근 가능
+- `qr`: QR코드 관리자 권한, 식권/생수 QR 관련 화면만 접근 가능
+
 ### ProjectStatus
 
 ```text
@@ -276,7 +288,8 @@ rejected
   "uid": "firebase-auth-uid",
   "role": "admin",
   "name": "관리자",
-  "email": "admin@example.com"
+  "email": "admin@example.com",
+  "adminAccess": "workspace"
 }
 ```
 

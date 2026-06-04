@@ -10,6 +10,8 @@ interface AdminIdentity {
   emailVerified?: boolean;
 }
 
+type AdminAccess = 'workspace' | 'schedule' | 'qr';
+
 @Injectable()
 export class AdminAuthService {
   async login(idToken: string) {
@@ -33,6 +35,7 @@ export class AdminAuthService {
       role: 'admin',
       name: this.displayName(identity.name, email),
       email,
+      adminAccess: this.resolveAdminAccess(email),
     };
   }
 
@@ -76,10 +79,7 @@ export class AdminAuthService {
   }
 
   private isAllowed(email: string) {
-    const allowedEmails = (process.env.ADMIN_ALLOWED_EMAILS ?? '')
-      .split(',')
-      .map((value) => this.normalizeEmail(value))
-      .filter(Boolean);
+    const allowedEmails = this.readEmailList(process.env.ADMIN_ALLOWED_EMAILS);
     const allowedDomain = this.normalizeDomain(process.env.ADMIN_ALLOWED_DOMAIN);
 
     if (allowedEmails.length > 0) {
@@ -91,6 +91,25 @@ export class AdminAuthService {
     }
 
     throw new ApiError(HttpStatus.SERVICE_UNAVAILABLE, 'ADMIN_ALLOWLIST_NOT_CONFIGURED', '관리자 허용 이메일 또는 도메인 설정이 필요합니다.');
+  }
+
+  private resolveAdminAccess(email: string): AdminAccess {
+    if (this.readEmailList(process.env.ADMIN_QR_MANAGER_EMAILS).includes(email)) {
+      return 'qr';
+    }
+
+    if (this.readEmailList(process.env.ADMIN_SCHEDULE_SUPERVISOR_EMAILS).includes(email)) {
+      return 'schedule';
+    }
+
+    return 'workspace';
+  }
+
+  private readEmailList(value: string | undefined) {
+    return (value ?? '')
+      .split(',')
+      .map((entry) => this.normalizeEmail(entry))
+      .filter(Boolean);
   }
 
   private normalizeEmail(email: string | undefined) {

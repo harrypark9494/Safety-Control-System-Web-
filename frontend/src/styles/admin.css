@@ -126,6 +126,19 @@ td {
   font-weight: 800;
 }
 
+.brand-block .admin-access-pill {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  padding: 5px 8px;
+  color: #17263a;
+  background: #fff;
+  font-size: 0.72rem;
+  font-weight: 950;
+}
+
 .current-project-button {
   display: block;
   width: 100%;
@@ -164,6 +177,11 @@ td {
   color: var(--muted);
   font-size: 0.74rem;
   font-weight: 850;
+}
+
+.current-project-button:disabled {
+  cursor: default;
+  opacity: 1;
 }
 
 .admin-nav,
@@ -2465,6 +2483,17 @@ td {
   color: var(--red);
   background: #fff7f7;
   font-weight: 900;
+}
+
+.admin-access-summary {
+  margin: 18px 24px 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  padding: 10px 12px;
+  color: #3c4350;
+  background: #fff;
+  font-size: 0.86rem;
+  font-weight: 850;
 }
 
 .modal-backdrop {
