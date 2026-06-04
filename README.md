@@ -73,7 +73,8 @@ Safety-Control-System-Web-/
 
 | Page | Local path | Hosting path |
 | --- | --- | --- |
-| Log in | `frontend/src/pages/LoginPage.tsx` | `/`, `/login/` |
+| Worker login | `frontend/src/pages/LoginPage.tsx` | `/login/worker/` |
+| Admin login | `frontend/src/pages/LoginPage.tsx` | `/login/admin/` |
 | Secure app entry | `frontend/src/App.tsx` | `/s/{sessionToken}` after login |
 | Dashboard | `frontend/src/pages/DashboardPage.tsx` | `/s/{sessionToken}` after worker login |
 | Admin Desktop | `frontend/src/pages/AdminPage.tsx` | `/s/{sessionToken}` after admin login |
@@ -185,7 +186,8 @@ npm.cmd run dev:backend
 npm.cmd run dev:frontend
 ```
 
-접속 주소는 `http://localhost:3000/login/`입니다. 관리자는 `관리자` 탭에서
+근로자 접속 주소는 `http://localhost:3000/login/worker/`입니다.
+관리자 접속 주소는 `http://localhost:3000/login/admin/`이며,
 `Google 계정으로 계속` 버튼을 누르면 로컬 관리자 세션으로 바로 진입합니다.
 
 근로자 대시보드 테스트 계정:

@@ -319,7 +319,8 @@ mock 데모를 보존하는 비교용 폴더입니다. `frontend/index.html`은 
   직접 노출하지 않고 세션별 opaque 경로(`/s/{sessionToken}`)에서 세션 상태에 따라
   분기합니다.
 - 기존 `/app/`, `/dashboard/`, `/payroll-documents/`, `/admin/` 직접 접근은 세션이
-  있으면 opaque 경로로 치환하고, 세션이 없으면 로그인으로 보냅니다.
+  있으면 opaque 경로로 치환합니다. 세션이 없으면 근로자 경로는 `/login/worker/`,
+  관리자 경로는 `/login/admin/`로 보냅니다.
 - 대시보드 표시 대상이어도 미제출 대상자이면 opaque 경로 안에서 급여 서류 제출
   화면을 먼저 표시합니다.
 - 현재 급여 서류 저장 API와 파일 업로드 API는 후속 구현 대상입니다.

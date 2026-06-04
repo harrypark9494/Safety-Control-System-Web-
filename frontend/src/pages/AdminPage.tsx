@@ -48,7 +48,7 @@ export function AdminPage() {
 
   function logout() {
     clearSession();
-    navigateTo("/login/");
+    navigateTo("/login/admin/");
   }
 
   useEffect(() => {

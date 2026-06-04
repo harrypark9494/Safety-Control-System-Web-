@@ -510,7 +510,7 @@ export function DashboardPage() {
 
   function logout() {
     clearSession();
-    navigateTo("/login/");
+    navigateTo("/login/worker/");
   }
 
   return (

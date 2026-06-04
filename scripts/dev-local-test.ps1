@@ -197,7 +197,8 @@ try {
   Wait-PortListening -Port $frontendPort -Label "Frontend" -ErrorLog $frontendErrLog -BaselineProcessIds $baselineFrontendPids
 
   Write-Host "Local test servers are running."
-  Write-Host "Frontend: http://localhost:$frontendPort/login/"
+  Write-Host "Worker login: http://localhost:$frontendPort/login/worker/"
+  Write-Host "Admin login:  http://localhost:$frontendPort/login/admin/"
   Write-Host "Backend:  http://localhost:$backendPort/api/health"
   Write-Host "Logs:     $logDir"
   Write-Host "Press Enter to stop both servers."
