@@ -350,7 +350,7 @@ td {
   justify-content: space-between;
   gap: 18px;
   min-height: 76px;
-  padding: 0 28px;
+  padding: 0 344px 0 28px;
   border-bottom: 1px solid var(--line-strong);
   background: var(--surface);
 }
@@ -398,6 +398,89 @@ td {
   gap: 10px;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.admin-account-bar {
+  position: fixed;
+  z-index: 8;
+  top: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) 36px;
+  align-items: center;
+  width: 326px;
+  min-height: 76px;
+  gap: 8px;
+  border-bottom: 1px solid var(--line-strong);
+  border-left: 1px solid var(--line-strong);
+  padding: 0 18px;
+  background: var(--surface);
+}
+
+.admin-account-avatar {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: #17263a;
+  font-size: 0.9rem;
+  font-weight: 950;
+}
+
+.admin-account-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.admin-account-copy strong,
+.admin-account-copy span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-account-copy strong {
+  color: #17263a;
+  font-size: 0.84rem;
+  font-weight: 950;
+}
+
+.admin-account-copy span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 850;
+}
+
+.admin-account-icon-button {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0;
+  color: #34445c;
+  background: #fff;
+}
+
+.admin-account-icon-button:hover,
+.admin-account-icon-button:focus-visible {
+  border-color: #17263a;
+  color: #17263a;
+  background: #f6f8fb;
+}
+
+.admin-account-icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.admin-account-icon-button--logout {
+  color: var(--red);
 }
 
 .page-content {
@@ -3693,6 +3776,166 @@ td {
   color: var(--green) !important;
 }
 
+@media (min-width: 981px) and (max-width: 1920px) {
+  th,
+  td {
+    padding: 13px 18px;
+  }
+
+  .admin-shell {
+    grid-template-columns: clamp(200px, 16vw, 252px) minmax(0, 1fr);
+  }
+
+  .admin-sidebar {
+    gap: 14px;
+    padding: 18px 14px;
+  }
+
+  .brand-block {
+    gap: 6px;
+    padding: 0 8px;
+  }
+
+  .current-project-button {
+    min-height: 44px;
+    padding: 8px;
+  }
+
+  .nav-item {
+    grid-template-columns: 30px 1fr;
+    min-height: 44px;
+    gap: 10px;
+    padding: 0 14px;
+  }
+
+  .nav-icon {
+    font-size: 1.28rem;
+  }
+
+  .sidebar-footer {
+    gap: 6px;
+    padding-top: 16px;
+  }
+
+  .page-header {
+    min-height: 64px;
+    gap: 14px;
+    padding: 0 326px 0 22px;
+  }
+
+  .admin-account-bar {
+    width: 306px;
+    min-height: 64px;
+    padding: 0 14px;
+  }
+
+  .page-content {
+    padding: 16px;
+  }
+
+  .admin-tab-page,
+  .dashboard-content {
+    gap: 14px;
+  }
+
+  .dashboard-grid,
+  .weather-layout {
+    gap: 18px;
+  }
+
+  .card-head {
+    min-height: 58px;
+    padding: 0 18px;
+  }
+
+  .metric-grid,
+  .stage-list {
+    gap: 14px;
+    padding: 18px;
+  }
+
+  .metric-card {
+    min-height: 134px;
+    padding: 18px 16px 14px;
+  }
+
+  .metric-card strong {
+    margin-top: 10px;
+  }
+
+  .heatmap-panel,
+  .storm-map {
+    min-height: 178px;
+    margin: 0 22px 22px;
+  }
+
+  .score-list {
+    gap: 14px;
+    padding: 16px;
+  }
+
+  .score-list article {
+    padding: 14px;
+  }
+
+  .forecast-card,
+  .station-card,
+  .weather-log-card,
+  .threshold-card {
+    padding: 16px;
+  }
+
+  .weather-current article {
+    min-height: 112px;
+    padding: 15px;
+  }
+
+  .emergency-button {
+    min-height: 56px;
+    gap: 14px;
+  }
+
+  .project-summary-grid {
+    gap: 12px;
+  }
+
+  .project-summary-card {
+    grid-template-columns: 50px minmax(0, 1fr);
+    min-height: 88px;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .project-summary-icon {
+    width: 50px;
+    height: 50px;
+  }
+
+  .project-history-panel {
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .project-history-head,
+  .project-history-row {
+    min-width: 900px;
+  }
+
+  .project-history-head span,
+  .project-history-row > div {
+    padding: 12px 14px;
+  }
+
+  .project-history-row {
+    min-height: 76px;
+  }
+
+  .modal-body,
+  .account-modal footer {
+    padding: 16px;
+  }
+}
+
 @media (max-width: 1320px) {
   .dashboard-grid,
   .weather-layout,
@@ -3729,7 +3972,7 @@ td {
     align-items: flex-start;
     flex-direction: column;
     justify-content: center;
-    padding: 14px 20px;
+    padding: 14px 300px 14px 20px;
   }
 
   .page-header--actions div {
@@ -3877,8 +4120,21 @@ td {
     min-height: 100vh;
   }
 
+  .admin-account-bar {
+    position: sticky;
+    top: 0;
+    right: auto;
+    width: auto;
+    margin: 0;
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
   .page-header {
     position: static;
+    padding: 14px 16px;
   }
 
   .metric-grid,

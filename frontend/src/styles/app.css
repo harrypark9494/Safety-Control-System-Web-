@@ -18,6 +18,16 @@
     sans-serif;
 }
 
+html {
+  font-size: 16px;
+}
+
+@media (min-width: 981px) and (max-width: 1920px) {
+  html {
+    font-size: 14.5px;
+  }
+}
+
 * {
   box-sizing: border-box;
 }

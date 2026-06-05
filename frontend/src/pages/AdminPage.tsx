@@ -51,6 +51,8 @@ export function AdminPage() {
   const [scheduleMessage, setScheduleMessage] = useState("");
   const session = getSession();
   const adminAccess = session?.role === "admin" ? session.adminAccess : "workspace";
+  const adminName = session?.role === "admin" ? session.name : "관리자";
+  const adminEmail = session?.role === "admin" ? session.email : "";
   const allowedViews = adminAccessViews[adminAccess];
   const primaryNavItems = navItems.slice(0, 6).filter(([id]) => allowedViews.includes(id));
   const canOpenAdminManagement = allowedViews.includes("admins");
@@ -249,14 +251,16 @@ export function AdminPage() {
                 프로젝트 관리
               </button>
             ) : null}
-            <button className="nav-item nav-item--plain" type="button" onClick={logout}>
-              <MaterialIcon name="logout" className="nav-icon" />
-              로그아웃
-            </button>
           </div>
         </aside>
 
         <section className="admin-main">
+          <AdminAccountBar
+            access={adminAccess}
+            email={adminEmail}
+            name={adminName}
+            onLogout={logout}
+          />
           {projectMessage ? <p className="admin-message admin-message--global" role="status">{projectMessage}</p> : null}
           {activeView === "dashboard" ? <DashboardView project={selectedProject} /> : null}
           {activeView === "weather" ? <WeatherView projectId={selectedProjectId} /> : null}
@@ -315,6 +319,43 @@ export function AdminPage() {
       ) : null}
     </>
   );
+}
+
+function AdminAccountBar({
+  access,
+  email,
+  name,
+  onLogout,
+}: {
+  access: AdminAccess;
+  email: string;
+  name: string;
+  onLogout: () => void;
+}) {
+  const accountDetail = email ? `${email} · ${formatAdminAccess(access)}` : formatAdminAccess(access);
+
+  return (
+    <aside className="admin-account-bar" aria-label="접속 계정">
+      <div className="admin-account-avatar" aria-hidden="true">
+        {name.trim().slice(0, 1) || "관"}
+      </div>
+      <div className="admin-account-copy">
+        <strong>{name}</strong>
+        <span>{accountDetail}</span>
+      </div>
+      <button className="admin-account-icon-button admin-account-icon-button--logout" type="button" aria-label="로그아웃" title="로그아웃" onClick={onLogout}>
+        <MaterialIcon name="logout" />
+      </button>
+    </aside>
+  );
+}
+
+function formatAdminAccess(access: AdminAccess) {
+  return {
+    workspace: "워크스페이스 전체 권한",
+    schedule: "스케줄 감독",
+    qr: "QR 코드 관리자",
+  }[access];
 }
 
 function formatProjectStatus(status: Project["status"]) {
