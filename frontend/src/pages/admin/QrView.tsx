@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { MaterialIcon } from "../../components/MaterialIcon";
-import { getAdminQrUsageSummary } from "../../features/auth/session";
+import { getAdminQrUsageSummary } from "../../api/qrApi";
 import type { MealType, QrUsageSummary } from "../../types";
 
 export function QrView({ projectId }: { projectId: string }) {

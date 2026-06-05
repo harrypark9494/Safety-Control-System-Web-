@@ -4,12 +4,12 @@ import {
   createRegisteredWorker,
   deleteRegisteredWorker,
   deleteWorkerCategory,
-  getWorkerQrEntitlements,
   importRegisteredWorkersXlsx,
   renameWorkerCategory,
   saveWorkerCategory,
   updateRegisteredWorker,
-} from "../../features/auth/session";
+} from "../../api/workersApi";
+import { getWorkerQrEntitlements } from "../../api/qrApi";
 import { formatPhone } from "../../features/phone";
 import type { PayrollDocumentStatus, QrEntitlement, WorkerCategorySetting, WorkerImportError, WorkerRegistrationAccount } from "../../types";
 

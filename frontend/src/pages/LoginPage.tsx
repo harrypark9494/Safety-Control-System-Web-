@@ -1,9 +1,9 @@
 import { FormEvent, useEffect, useState } from "react";
 import "../styles/login.css";
+import { completeWorkerOnboarding } from "../api/authApi";
+import { getSelectableProjects } from "../api/projectsApi";
+import { getWorkerCategories } from "../api/workersApi";
 import {
-  completeWorkerOnboarding,
-  getSelectableProjects,
-  getWorkerCategories,
   signInAdmin,
   signInWorker,
 } from "../features/auth/session";

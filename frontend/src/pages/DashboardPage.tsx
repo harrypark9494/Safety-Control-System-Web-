@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { MaterialIcon } from "../components/MaterialIcon";
-import { clearSession, getSession, getWorkerQrEntitlements, requiresPayrollDocuments } from "../features/auth/session";
+import { getWorkerQrEntitlements } from "../api/qrApi";
+import { clearSession, getSession, requiresPayrollDocuments } from "../features/auth/session";
 import { getSecureEntryPath, navigateTo } from "../features/navigation";
 import type { QrEntitlement } from "../types";
 

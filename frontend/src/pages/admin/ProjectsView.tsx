@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { MaterialIcon } from "../../components/MaterialIcon";
-import { createAdminProject, updateAdminProjectStatus } from "../../features/auth/session";
+import { createAdminProject, updateAdminProjectStatus } from "../../api/projectsApi";
 import type { Project, ProjectStatus } from "../../types";
 
 const projectStatusLabels: Record<ProjectStatus, string> = {

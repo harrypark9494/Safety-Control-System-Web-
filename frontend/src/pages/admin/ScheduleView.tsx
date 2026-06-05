@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { Fragment, useEffect, useRef, useState } from "react";
 import { MaterialIcon } from "../../components/MaterialIcon";
-import { createAdminScheduleColumn, deleteAdminScheduleColumn } from "../../features/auth/session";
+import { createAdminScheduleColumn, deleteAdminScheduleColumn } from "../../api/workersApi";
 import type { AdminScheduleColumn, Project } from "../../types";
 
 type ScheduleStatus = "confirmed" | "ready" | "risk";

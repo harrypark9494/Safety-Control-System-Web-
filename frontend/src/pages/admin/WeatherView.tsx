@@ -1,5 +1,5 @@
 import { type CSSProperties, useEffect, useState } from "react";
-import { getAdminWeatherOverview, updateAdminWeatherStation, updateAdminWeatherThresholds } from "../../features/auth/session";
+import { getAdminWeatherOverview, updateAdminWeatherStation, updateAdminWeatherThresholds } from "../../api/weatherApi";
 import type { AdminWeatherOverview, WeatherForecastItem, WeatherThresholds } from "../../types";
 import { Bar, formatDateTime } from "./shared";
 

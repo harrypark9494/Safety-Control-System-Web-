@@ -1,7 +1,9 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { MaterialIcon } from "../components/MaterialIcon";
 import "../styles/admin.css";
-import { clearSession, getAdminProjects, getAdminScheduleColumns, getRegisteredWorkers, getSession, getAdminWorkerCategories } from "../features/auth/session";
+import { getAdminProjects } from "../api/projectsApi";
+import { getAdminScheduleColumns, getAdminWorkerCategories, getRegisteredWorkers } from "../api/workersApi";
+import { clearSession, getSession } from "../features/auth/session";
 import { navigateTo } from "../features/navigation";
 import type { AdminAccess, AdminScheduleColumn, Project, WorkerRegistrationAccount, WorkerCategorySetting } from "../types";
 import { AdminsView } from "./admin/AdminsView";
