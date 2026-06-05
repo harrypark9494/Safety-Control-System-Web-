@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState, type CSSProperties, type MouseEvent } from "react";
 import { MaterialIcon } from "../../components/MaterialIcon";
 import { createAdminProject, updateAdminProjectStatus } from "../../api/projectsApi";
 import type { Project, ProjectStatus } from "../../types";
@@ -10,6 +10,11 @@ const projectStatusLabels: Record<ProjectStatus, string> = {
 };
 
 type ProjectFilter = "ALL" | ProjectStatus;
+type StatusMenuState = {
+  projectId: string;
+  left: number;
+  top: number;
+};
 
 const projectFilterTabs: { filter: ProjectFilter; label: string }[] = [
   { filter: "ALL", label: "전체" },
@@ -49,6 +54,7 @@ export function ProjectsView({
   const [message, setMessage] = useState("");
   const [filter, setFilter] = useState<ProjectFilter>("ALL");
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [statusMenu, setStatusMenu] = useState<StatusMenuState | null>(null);
 
   const projectCounts = useMemo(() => {
     return {
@@ -109,10 +115,21 @@ export function ProjectsView({
     try {
       await updateAdminProjectStatus(projectId, nextStatus);
       setMessage("프로젝트 상태가 변경되었습니다.");
+      setStatusMenu(null);
       await onRefresh();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "프로젝트 상태 변경에 실패했습니다.");
     }
+  }
+
+  function toggleStatusMenu(projectId: string, event: MouseEvent<HTMLButtonElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+
+    setStatusMenu((current) => current?.projectId === projectId ? null : {
+      projectId,
+      left: rect.left,
+      top: rect.bottom + 6,
+    });
   }
 
   function markIntegrationNeeded(action: "edit" | "delete") {
@@ -238,14 +255,37 @@ export function ProjectsView({
                     <span>{project.location}</span>
                   </div>
                   <div className="project-status-control" role="cell">
-                    <span className={`project-status project-status--${project.status.toLowerCase()}`}>
+                    <button
+                      className={`project-status project-status--${project.status.toLowerCase()}`}
+                      type="button"
+                      aria-haspopup="listbox"
+                      aria-expanded={statusMenu?.projectId === project.id}
+                      aria-label={`${project.name} 상태 변경`}
+                      onClick={(event) => toggleStatusMenu(project.id, event)}
+                    >
                       {projectStatusLabels[project.status]}
-                    </span>
-                    <select value={project.status} onChange={(event) => changeStatus(project.id, event.target.value as ProjectStatus)} aria-label={`${project.name} 상태 변경`}>
-                      <option value="DRAFT">준비중</option>
-                      <option value="ACTIVE">활성</option>
-                      <option value="ARCHIVED">종료</option>
-                    </select>
+                    </button>
+                    {statusMenu?.projectId === project.id ? (
+                      <div
+                        className="project-status-menu"
+                        role="listbox"
+                        aria-label={`${project.name} 상태 선택`}
+                        style={{ "--status-menu-left": `${statusMenu.left}px`, "--status-menu-top": `${statusMenu.top}px` } as CSSProperties & Record<"--status-menu-left" | "--status-menu-top", string>}
+                      >
+                        {(["DRAFT", "ACTIVE", "ARCHIVED"] as ProjectStatus[]).map((nextStatus) => (
+                          <button
+                            className={`project-status project-status--${nextStatus.toLowerCase()} ${project.status === nextStatus ? "is-selected" : ""}`}
+                            type="button"
+                            role="option"
+                            aria-selected={project.status === nextStatus}
+                            key={nextStatus}
+                            onClick={() => project.status === nextStatus ? setStatusMenu(null) : changeStatus(project.id, nextStatus)}
+                          >
+                            {projectStatusLabels[nextStatus]}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                   <div className="project-icon-actions" role="cell">
                     <button type="button" aria-label={`${project.name} 수정`} onClick={() => markIntegrationNeeded("edit")}>

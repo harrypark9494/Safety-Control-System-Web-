@@ -161,16 +161,18 @@ export function WeatherView({ projectId }: { projectId: string }) {
 
   return (
     <section className="admin-view is-active">
-      <header className="page-header page-header--stack">
+      <header className="page-header page-header--weather">
         <h1>기상 정보 관리</h1>
-        <p>{weather ? `${weather.site.name} 일대 · ${weather.source.name}` : "기상청 API 어댑터 연동 대기"}</p>
+        <p className="page-header-meta">{weather ? `${weather.site.name} 일대 · ${weather.source.name}` : "기상청 API 어댑터 연동 대기"}</p>
       </header>
       <div className="page-content weather-layout">
-        <div className="title-row">
+        <div className="weather-section-header">
           <h2>실시간 기상 현황</h2>
-          <span>마지막 업데이트: {updatedAt}</span>
+          <div className="weather-title-meta">
+            <strong role="status" aria-live="polite">{message}</strong>
+            <span>마지막 업데이트: {updatedAt}</span>
+          </div>
         </div>
-        <p className="weather-sync-message" role="status" aria-live="polite">{message}</p>
         <div className="weather-current">
           {(weather?.current.metrics ?? []).map((metric) => (
             <article key={metric.key}>
@@ -185,8 +187,13 @@ export function WeatherView({ projectId }: { projectId: string }) {
         <section className="app-card forecast-card">
           <div className="forecast-meteogram" style={meteogramStyle}>
             <div className="forecast-trend" aria-label="시간대별 온도 및 강수량 트렌드 그래프">
-              <div className="forecast-trend-title">
-                <h2>향후 24시간</h2>
+              <div className="forecast-trend-head">
+                <div className="forecast-trend-title">
+                  <h2>향후 24시간</h2>
+                </div>
+                <div className="trend-threshold-labels">
+                  <span className="temp-threshold-label">{isTemperatureThresholdVisible ? "기준" : "기준 범위 밖"} {thresholds.temperature}°C</span>
+                </div>
               </div>
               <div className="trend-scale trend-scale-left">
                 <strong>{maxTemperature}°C</strong>
@@ -218,9 +225,6 @@ export function WeatherView({ projectId }: { projectId: string }) {
                   );
                 })}
               </svg>
-              <div className="trend-threshold-labels">
-                <span className="temp-threshold-label">{isTemperatureThresholdVisible ? "기준" : "기준 범위 밖"} {thresholds.temperature}°C</span>
-              </div>
             </div>
             <div className="forecast-data-grid">
               <span className="forecast-row-label">시간</span>
