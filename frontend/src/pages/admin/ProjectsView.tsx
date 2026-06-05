@@ -63,14 +63,15 @@ export function ProjectsView({
     const nextProjects = filter === "ALL" ? projects : projects.filter((project) => project.status === filter);
     return [...nextProjects].sort((a, b) => getProjectEventStartDate(b).localeCompare(getProjectEventStartDate(a)));
   }, [filter, projects]);
+  const requiresInitialProject = shouldGuideInitialCreate && projects.length === 0;
 
   useEffect(() => {
-    if (shouldGuideInitialCreate && projects.length === 0) {
+    if (requiresInitialProject) {
       setFilter("ALL");
       setCreateModalOpen(true);
       setMessage("첫 프로젝트를 생성하면 관리자 운영 데이터가 해당 프로젝트에 묶여 저장됩니다.");
     }
-  }, [projects.length, shouldGuideInitialCreate]);
+  }, [requiresInitialProject]);
 
   async function submitProject(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -119,6 +120,11 @@ export function ProjectsView({
   }
 
   function closeCreateModal() {
+    if (requiresInitialProject) {
+      setMessage("첫 프로젝트 생성이 완료되어야 관리자 운영 화면을 사용할 수 있습니다.");
+      return;
+    }
+
     setCreateModalOpen(false);
   }
 
@@ -263,9 +269,11 @@ export function ProjectsView({
           <section className="account-modal project-create-modal" role="dialog" aria-modal="true" aria-labelledby="project-create-title">
             <header>
               <h2 id="project-create-title">새 프로젝트 등록</h2>
-              <button type="button" aria-label="닫기" onClick={closeCreateModal}>
-                <MaterialIcon name="close" />
-              </button>
+              {requiresInitialProject ? null : (
+                <button type="button" aria-label="닫기" onClick={closeCreateModal}>
+                  <MaterialIcon name="close" />
+                </button>
+              )}
             </header>
             <form className="project-create-form" onSubmit={submitProject}>
               <div className="modal-body project-create-modal-body">
@@ -290,7 +298,7 @@ export function ProjectsView({
                 {message ? <strong className="modal-message" role="status" aria-live="polite">{message}</strong> : null}
               </div>
               <footer>
-                <button className="light-button" type="button" onClick={closeCreateModal}>취소</button>
+                {requiresInitialProject ? null : <button className="light-button" type="button" onClick={closeCreateModal}>취소</button>}
                 <button className="dark-button" type="submit"><MaterialIcon name="create_new_folder" />등록</button>
               </footer>
             </form>

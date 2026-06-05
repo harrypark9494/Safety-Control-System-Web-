@@ -55,6 +55,8 @@ export function AdminPage() {
   const primaryNavItems = navItems.slice(0, 6).filter(([id]) => allowedViews.includes(id));
   const canOpenAdminManagement = allowedViews.includes("admins");
   const canOpenProjectManagement = allowedViews.includes("projects");
+  const requiresInitialProject = projects.length === 0 && canOpenProjectManagement;
+  const activeView: AdminView = requiresInitialProject ? "projects" : view;
   const projectSwitcherRef = useRef<HTMLDivElement | null>(null);
 
   function submitAdmin(event: FormEvent<HTMLFormElement>) {
@@ -108,7 +110,7 @@ export function AdminPage() {
       setSelectedProjectId((current) => nextProjects.some((project) => project.id === current) ? current : nextSelectedProjectId);
 
       if (nextProjects.length === 0) {
-        setProjectMessage("등록된 프로젝트가 없습니다. 새 프로젝트를 먼저 생성해 주세요.");
+        setProjectMessage("등록된 프로젝트가 없습니다. 운영 화면을 사용하려면 새 프로젝트를 먼저 생성해 주세요.");
         if (canOpenProjectManagement) {
           setView("projects");
         }
@@ -227,8 +229,8 @@ export function AdminPage() {
 
           <nav className="admin-nav" aria-label="주요 메뉴">
             {primaryNavItems.map(([id, icon, label]) => (
-              <button className={`nav-item ${view === id ? "is-active" : ""}`} type="button" key={id} onClick={() => setView(id)}>
-                <MaterialIcon name={icon} className="nav-icon" filled={view === id} />
+              <button className={`nav-item ${activeView === id ? "is-active" : ""}`} type="button" key={id} disabled={requiresInitialProject} onClick={() => setView(id)}>
+                <MaterialIcon name={icon} className="nav-icon" filled={activeView === id} />
                 {label}
               </button>
             ))}
@@ -236,14 +238,14 @@ export function AdminPage() {
 
           <div className="sidebar-footer">
             {canOpenAdminManagement ? (
-              <button className={`nav-item nav-item--admin ${view === "admins" ? "is-active" : ""}`} type="button" onClick={() => setView("admins")}>
-                <MaterialIcon name="admin_panel_settings" className="nav-icon" filled={view === "admins"} />
+              <button className={`nav-item nav-item--admin ${activeView === "admins" ? "is-active" : ""}`} type="button" disabled={requiresInitialProject} onClick={() => setView("admins")}>
+                <MaterialIcon name="admin_panel_settings" className="nav-icon" filled={activeView === "admins"} />
                 어드민 관리
               </button>
             ) : null}
             {canOpenProjectManagement ? (
-              <button className={`nav-item nav-item--plain ${view === "projects" ? "is-active" : ""}`} type="button" onClick={() => setView("projects")}>
-                <MaterialIcon name="folder_managed" className="nav-icon" filled={view === "projects"} />
+              <button className={`nav-item nav-item--plain ${activeView === "projects" ? "is-active" : ""}`} type="button" onClick={() => setView("projects")}>
+                <MaterialIcon name="folder_managed" className="nav-icon" filled={activeView === "projects"} />
                 프로젝트 관리
               </button>
             ) : null}
@@ -256,11 +258,11 @@ export function AdminPage() {
 
         <section className="admin-main">
           {projectMessage ? <p className="admin-message admin-message--global" role="status">{projectMessage}</p> : null}
-          {view === "dashboard" ? <DashboardView project={selectedProject} /> : null}
-          {view === "weather" ? <WeatherView projectId={selectedProjectId} /> : null}
-          {view === "schedule" ? <ScheduleView columns={scheduleColumns} columnsReady={scheduleColumnsReady} message={scheduleMessage} project={selectedProject} onColumnsChange={setScheduleColumns} /> : null}
-          {view === "qr" ? <QrView projectId={selectedProjectId} /> : null}
-          {view === "workers" ? (
+          {activeView === "dashboard" ? <DashboardView project={selectedProject} /> : null}
+          {activeView === "weather" ? <WeatherView projectId={selectedProjectId} /> : null}
+          {activeView === "schedule" ? <ScheduleView columns={scheduleColumns} columnsReady={scheduleColumnsReady} message={scheduleMessage} project={selectedProject} onColumnsChange={setScheduleColumns} /> : null}
+          {activeView === "qr" ? <QrView projectId={selectedProjectId} /> : null}
+          {activeView === "workers" ? (
             <WorkersView
               projectId={selectedProjectId}
               workers={workers}
@@ -271,9 +273,9 @@ export function AdminPage() {
               onRefreshWorkerCategories={refreshWorkerCategories}
             />
           ) : null}
-          {view === "rules" ? <RulesView projectId={selectedProjectId} /> : null}
-          {view === "admins" ? <AdminsView onOpen={() => setModalOpen(true)} /> : null}
-          {view === "projects" ? (
+          {activeView === "rules" ? <RulesView projectId={selectedProjectId} /> : null}
+          {activeView === "admins" ? <AdminsView onOpen={() => setModalOpen(true)} /> : null}
+          {activeView === "projects" ? (
             <ProjectsView
               projects={projects}
               selectedProjectId={selectedProjectId}
