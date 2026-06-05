@@ -208,6 +208,7 @@ export function ScheduleView({
 }) {
   const projectId = project?.id ?? "";
   const scheduleRange = getProjectScheduleRange(project);
+  const eventRange = getProjectEventRange(project);
   const scheduleDates = getDateRange(scheduleRange.startDate, scheduleRange.endDate);
   const scheduleColumns = normalizeScheduleColumns(columns);
   const [selectedDate, setSelectedDate] = useState<IsoDateString>(scheduleRange.startDate);
@@ -391,9 +392,17 @@ export function ScheduleView({
       </header>
       <div className="page-content schedule-board">
         <section className="app-card schedule-period-card" aria-label="프로젝트 일정 기간">
-          <div>
-            <span>프로젝트 기간</span>
-            <strong>{formatScheduleDateRange(scheduleRange)}</strong>
+          <div className="schedule-period-stack">
+            <span className="schedule-period-item">
+              <small>실제 기간</small>
+              <strong>{formatScheduleDateRange(scheduleRange)}</strong>
+            </span>
+            {eventRange ? (
+              <span className="schedule-period-item schedule-period-item--event">
+                <small>행사 기간</small>
+                <strong>{formatScheduleDateRange(eventRange)}</strong>
+              </span>
+            ) : null}
           </div>
           <p>{formatScheduleDate(selectedDate)} · {selectedSchedules.length}건</p>
           <div>
@@ -405,7 +414,7 @@ export function ScheduleView({
 
         <div className="date-strip" aria-label="프로젝트 기간 날짜 목록">
           {scheduleDates.map((date) => (
-            <button ref={selectedDate === date ? activeDateRef : null} className={selectedDate === date ? "is-active" : ""} type="button" key={date} onClick={() => selectDate(date)}>
+            <button ref={selectedDate === date ? activeDateRef : null} className={`${selectedDate === date ? "is-active" : ""}${isDateInRange(date, eventRange) ? " is-event-date" : ""}`.trim()} type="button" key={date} onClick={() => selectDate(date)}>
               <span>{formatScheduleDateShort(date)}</span>
               <small>{schedules.filter((item) => item.date === date).length}건</small>
             </button>
@@ -801,6 +810,23 @@ function getProjectScheduleRange(project: Project | null): ScheduleRange {
   return rawEndDate < startDate
     ? { startDate: rawEndDate, endDate: startDate }
     : { startDate, endDate: rawEndDate };
+}
+
+function getProjectEventRange(project: Project | null): ScheduleRange | null {
+  const startDate = isIsoDateString(project?.eventStartDate) ? project.eventStartDate : null;
+
+  if (!startDate) {
+    return null;
+  }
+
+  const rawEndDate = isIsoDateString(project?.eventEndDate) ? project.eventEndDate : startDate;
+  return rawEndDate < startDate
+    ? { startDate: rawEndDate, endDate: startDate }
+    : { startDate, endDate: rawEndDate };
+}
+
+function isDateInRange(date: IsoDateString, range: ScheduleRange | null) {
+  return range ? date >= range.startDate && date <= range.endDate : false;
 }
 
 function getDateRange(startDate: IsoDateString, endDate: IsoDateString) {

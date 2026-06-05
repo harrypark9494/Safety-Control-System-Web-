@@ -1504,6 +1504,16 @@ td {
   font-weight: 850;
 }
 
+.date-strip button.is-event-date {
+  border-color: rgba(217, 119, 6, 0.38);
+  color: #813900;
+  background: #fff3e6;
+}
+
+.date-strip button.is-event-date small {
+  color: #b65b00;
+}
+
 .date-strip button.is-active {
   border-color: var(--navy);
   color: #fff;
@@ -1512,6 +1522,11 @@ td {
 
 .date-strip button.is-active small {
   color: #d7e0ef;
+}
+
+.date-strip button.is-active.is-event-date {
+  border-color: #b65b00;
+  background: #b65b00;
 }
 
 .schedule-table-wrap {
@@ -2035,17 +2050,32 @@ td {
   padding: 14px 18px;
 }
 
-.schedule-period-card div:first-child {
+.schedule-period-stack {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.schedule-period-item {
   display: grid;
   gap: 4px;
   min-width: 0;
 }
 
-.schedule-period-card span,
+.schedule-period-item--event {
+  border-left: 3px solid #d97706;
+  padding-left: 10px;
+}
+
+.schedule-period-card small,
 .schedule-period-card p {
   color: #566174;
   font-size: 0.82rem;
   font-weight: 900;
+}
+
+.schedule-period-item--event small {
+  color: #b65b00;
 }
 
 .schedule-period-card strong {
@@ -2053,6 +2083,10 @@ td {
   font-size: 1rem;
   font-weight: 950;
   overflow-wrap: anywhere;
+}
+
+.schedule-period-item--event strong {
+  color: #813900;
 }
 
 .schedule-period-card p {
