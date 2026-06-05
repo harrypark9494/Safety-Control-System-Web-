@@ -46,9 +46,30 @@ export class WorkersController {
     return this.workers.listRegistrations({ projectId, search, category, company, team, registrationStatus, payrollDocumentStatus });
   }
 
+  @Get('admin/projects/:projectId/worker-registrations')
+  listProjectRegistrations(
+    @Param('projectId') projectId: string,
+    @Query('search') search?: string,
+    @Query('category') category?: string,
+    @Query('company') company?: string,
+    @Query('team') team?: string,
+    @Query('registrationStatus') registrationStatus?: RegistrationStatus,
+    @Query('payrollDocumentStatus') payrollDocumentStatus?: PayrollDocumentStatus,
+  ) {
+    return this.workers.listRegistrations({ projectId, search, category, company, team, registrationStatus, payrollDocumentStatus });
+  }
+
   @Post('admin/worker-registrations')
   createRegistration(@Body() request: AdminRegistrationRequest) {
     return this.workers.createRegistration(request);
+  }
+
+  @Post('admin/projects/:projectId/worker-registrations')
+  createProjectRegistration(
+    @Param('projectId') projectId: string,
+    @Body() request: AdminRegistrationRequest,
+  ) {
+    return this.workers.createRegistration({ ...request, projectId });
   }
 
   @Patch('admin/worker-registrations/:uid')
@@ -60,8 +81,22 @@ export class WorkersController {
     return this.workers.updateRegistration(uid, projectId, request);
   }
 
+  @Patch('admin/projects/:projectId/worker-registrations/:uid')
+  updateProjectRegistration(
+    @Param('projectId') projectId: string,
+    @Param('uid') uid: string,
+    @Body() request: AdminRegistrationUpdateRequest,
+  ) {
+    return this.workers.updateRegistration(uid, projectId, { ...request, projectId });
+  }
+
   @Delete('admin/worker-registrations/:uid')
   deleteRegistration(@Param('uid') uid: string, @Query('projectId') projectId: string | undefined) {
+    this.workers.deleteRegistration(uid, projectId);
+  }
+
+  @Delete('admin/projects/:projectId/worker-registrations/:uid')
+  deleteProjectRegistration(@Param('projectId') projectId: string, @Param('uid') uid: string) {
     this.workers.deleteRegistration(uid, projectId);
   }
 
@@ -71,9 +106,25 @@ export class WorkersController {
     return this.workers.importRegistrationsXlsx(projectId, file);
   }
 
+  @Post('admin/projects/:projectId/worker-registrations/import-xlsx')
+  @UseInterceptors(FileInterceptor('file'))
+  importProjectRegistrationsXlsx(@Param('projectId') projectId: string, @UploadedFile() file: UploadedXlsxFile | undefined) {
+    return this.workers.importRegistrationsXlsx(projectId, file);
+  }
+
+  @Get('projects/:projectId/worker-categories')
+  listProjectWorkerSelectableCategories(@Param('projectId') projectId: string) {
+    return this.workers.listCategories(projectId, { signupOnly: true });
+  }
+
   @Get('worker-categories')
   listWorkerSelectableCategories(@Query('projectId') projectId?: string) {
     return this.workers.listCategories(projectId, { signupOnly: true });
+  }
+
+  @Get('admin/projects/:projectId/worker-categories')
+  listProjectCategories(@Param('projectId') projectId: string) {
+    return this.workers.listCategories(projectId, { includeDisabled: true });
   }
 
   @Get('admin/worker-categories')
@@ -81,9 +132,25 @@ export class WorkersController {
     return this.workers.listCategories(projectId, { includeDisabled: true });
   }
 
+  @Post('admin/projects/:projectId/worker-categories')
+  saveProjectCategory(
+    @Param('projectId') projectId: string,
+    @Body() request: WorkerCategoryRequest,
+  ) {
+    return this.workers.saveCategory({ ...request, projectId });
+  }
+
   @Post('admin/worker-categories')
   saveCategory(@Body() request: WorkerCategoryRequest) {
     return this.workers.saveCategory(request);
+  }
+
+  @Post('admin/projects/:projectId/worker-categories/rename')
+  renameProjectCategory(
+    @Param('projectId') projectId: string,
+    @Body() request: WorkerCategoryRenameRequest,
+  ) {
+    return this.workers.renameCategory({ ...request, projectId });
   }
 
   @Post('admin/worker-categories/rename')
@@ -91,9 +158,19 @@ export class WorkersController {
     return this.workers.renameCategory(request);
   }
 
+  @Delete('admin/projects/:projectId/worker-categories/:category')
+  deleteProjectCategory(@Param('projectId') projectId: string, @Param('category') category: string) {
+    this.workers.deleteCategory(projectId, category);
+  }
+
   @Delete('admin/worker-categories/:category')
   deleteCategory(@Param('category') category: string, @Query('projectId') projectId?: string) {
     this.workers.deleteCategory(projectId, category);
+  }
+
+  @Get('admin/projects/:projectId/schedule-columns')
+  listProjectScheduleColumns(@Param('projectId') projectId: string) {
+    return this.workers.listScheduleColumns(projectId);
   }
 
   @Get('admin/schedule-columns')
@@ -101,9 +178,22 @@ export class WorkersController {
     return this.workers.listScheduleColumns(projectId);
   }
 
+  @Post('admin/projects/:projectId/schedule-columns')
+  createProjectScheduleColumn(
+    @Param('projectId') projectId: string,
+    @Body() request: ScheduleColumnRequest,
+  ) {
+    return this.workers.createScheduleColumn({ ...request, projectId });
+  }
+
   @Post('admin/schedule-columns')
   createScheduleColumn(@Body() request: ScheduleColumnRequest) {
     return this.workers.createScheduleColumn(request);
+  }
+
+  @Delete('admin/projects/:projectId/schedule-columns/:id')
+  deleteProjectScheduleColumn(@Param('projectId') projectId: string, @Param('id') id: string) {
+    return this.workers.deleteScheduleColumn(id, projectId);
   }
 
   @Delete('admin/schedule-columns/:id')

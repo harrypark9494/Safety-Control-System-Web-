@@ -6,7 +6,7 @@ export async function getWorkerQrEntitlements(workerId: string): Promise<QrEntit
 }
 
 export async function getAdminQrUsageSummary(options: { projectId: string; date?: string; mealType?: MealType | "all" }): Promise<QrUsageSummary> {
-  const params = new URLSearchParams({ projectId: options.projectId });
+  const params = new URLSearchParams();
 
   if (options.date) {
     params.set("date", options.date);
@@ -17,5 +17,5 @@ export async function getAdminQrUsageSummary(options: { projectId: string; date?
   }
 
   const query = params.toString();
-  return requestJson<QrUsageSummary>(`/api/admin/qr-usage/summary${query ? `?${query}` : ""}`);
+  return requestJson<QrUsageSummary>(`/api/admin/projects/${encodeURIComponent(options.projectId)}/qr-usage/summary${query ? `?${query}` : ""}`);
 }

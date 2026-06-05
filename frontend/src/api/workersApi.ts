@@ -43,52 +43,52 @@ export function toRegistrationAccount(worker: WorkerRegistrationResponse): Worke
 }
 
 export async function getWorkerCategories(projectId: string): Promise<WorkerCategorySetting[]> {
-  return requestJson<WorkerCategorySetting[]>(`/api/worker-categories?projectId=${encodeURIComponent(projectId)}`);
+  return requestJson<WorkerCategorySetting[]>(`/api/projects/${encodeURIComponent(projectId)}/worker-categories`);
 }
 
 export async function getAdminWorkerCategories(projectId: string): Promise<WorkerCategorySetting[]> {
-  return requestJson<WorkerCategorySetting[]>(`/api/admin/worker-categories?projectId=${encodeURIComponent(projectId)}`);
+  return requestJson<WorkerCategorySetting[]>(`/api/admin/projects/${encodeURIComponent(projectId)}/worker-categories`);
 }
 
 export async function getAdminScheduleColumns(projectId: string): Promise<AdminScheduleColumn[]> {
-  return requestJson<AdminScheduleColumn[]>(`/api/admin/schedule-columns?projectId=${encodeURIComponent(projectId)}`);
+  return requestJson<AdminScheduleColumn[]>(`/api/admin/projects/${encodeURIComponent(projectId)}/schedule-columns`);
 }
 
 export async function createAdminScheduleColumn(projectId: string, label: string): Promise<AdminScheduleColumn[]> {
-  return requestJson<AdminScheduleColumn[]>("/api/admin/schedule-columns", {
+  return requestJson<AdminScheduleColumn[]>(`/api/admin/projects/${encodeURIComponent(projectId)}/schedule-columns`, {
     method: "POST",
-    body: JSON.stringify({ projectId, label }),
+    body: JSON.stringify({ label }),
   });
 }
 
 export async function deleteAdminScheduleColumn(id: string, projectId: string): Promise<AdminScheduleColumn[]> {
-  return requestJson<AdminScheduleColumn[]>(`/api/admin/schedule-columns/${encodeURIComponent(id)}?projectId=${encodeURIComponent(projectId)}`, {
+  return requestJson<AdminScheduleColumn[]>(`/api/admin/projects/${encodeURIComponent(projectId)}/schedule-columns/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
 }
 
 export async function saveWorkerCategory(projectId: string, setting: Pick<WorkerCategorySetting, "category" | "enabled" | "signupEnabled" | "payrollDocumentsRequired" | "sortOrder">): Promise<WorkerCategorySetting> {
-  return requestJson<WorkerCategorySetting>("/api/admin/worker-categories", {
+  return requestJson<WorkerCategorySetting>(`/api/admin/projects/${encodeURIComponent(projectId)}/worker-categories`, {
     method: "POST",
-    body: JSON.stringify({ ...setting, projectId }),
+    body: JSON.stringify(setting),
   });
 }
 
 export async function renameWorkerCategory(projectId: string, currentCategory: string, nextCategory: string): Promise<WorkerCategorySetting> {
-  return requestJson<WorkerCategorySetting>("/api/admin/worker-categories/rename", {
+  return requestJson<WorkerCategorySetting>(`/api/admin/projects/${encodeURIComponent(projectId)}/worker-categories/rename`, {
     method: "POST",
-    body: JSON.stringify({ projectId, currentCategory, nextCategory }),
+    body: JSON.stringify({ currentCategory, nextCategory }),
   });
 }
 
 export async function deleteWorkerCategory(projectId: string, category: string): Promise<void> {
-  await requestNoContent(`/api/admin/worker-categories/${encodeURIComponent(category)}?projectId=${encodeURIComponent(projectId)}`, {
+  await requestNoContent(`/api/admin/projects/${encodeURIComponent(projectId)}/worker-categories/${encodeURIComponent(category)}`, {
     method: "DELETE",
   });
 }
 
 export async function getRegisteredWorkers(projectId: string): Promise<WorkerRegistrationAccount[]> {
-  const workers = await requestJson<WorkerRegistrationResponse[]>(`/api/admin/worker-registrations?projectId=${encodeURIComponent(projectId)}`);
+  const workers = await requestJson<WorkerRegistrationResponse[]>(`/api/admin/projects/${encodeURIComponent(projectId)}/worker-registrations`);
   return workers.map(toRegistrationAccount);
 }
 
@@ -101,9 +101,9 @@ export async function createRegisteredWorker(
   team: string,
   memo: string,
 ): Promise<WorkerRegistrationAccount> {
-  const worker = await requestJson<WorkerRegistrationResponse>("/api/admin/worker-registrations", {
+  const worker = await requestJson<WorkerRegistrationResponse>(`/api/admin/projects/${encodeURIComponent(projectId)}/worker-registrations`, {
     method: "POST",
-    body: JSON.stringify({ projectId, name, phone: formatPhone(phone), category, company, team, memo }),
+    body: JSON.stringify({ name, phone: formatPhone(phone), category, company, team, memo }),
   });
 
   return toRegistrationAccount(worker);
@@ -114,18 +114,18 @@ export async function updateRegisteredWorker(
   uid: string,
   patch: Partial<Pick<WorkerRegistrationAccount, "projectId" | "name" | "phone" | "category" | "company" | "team" | "memo">>,
 ): Promise<WorkerRegistrationAccount> {
-  const params = new URLSearchParams({ projectId });
-  const worker = await requestJson<WorkerRegistrationResponse>(`/api/admin/worker-registrations/${encodeURIComponent(uid)}?${params}`, {
+  const bodyPatch = { ...patch, phone: patch.phone ? formatPhone(patch.phone) : undefined };
+  delete bodyPatch.projectId;
+  const worker = await requestJson<WorkerRegistrationResponse>(`/api/admin/projects/${encodeURIComponent(projectId)}/worker-registrations/${encodeURIComponent(uid)}`, {
     method: "PATCH",
-    body: JSON.stringify({ ...patch, projectId, phone: patch.phone ? formatPhone(patch.phone) : undefined }),
+    body: JSON.stringify(bodyPatch),
   });
 
   return toRegistrationAccount(worker);
 }
 
 export async function deleteRegisteredWorker(projectId: string, uid: string): Promise<void> {
-  const params = new URLSearchParams({ projectId });
-  await requestNoContent(`/api/admin/worker-registrations/${encodeURIComponent(uid)}?${params}`, {
+  await requestNoContent(`/api/admin/projects/${encodeURIComponent(projectId)}/worker-registrations/${encodeURIComponent(uid)}`, {
     method: "DELETE",
   });
 }
@@ -133,8 +133,7 @@ export async function deleteRegisteredWorker(projectId: string, uid: string): Pr
 export async function importRegisteredWorkersXlsx(projectId: string, file: File): Promise<WorkerImportResult> {
   const form = new FormData();
   form.append("file", file);
-  const params = new URLSearchParams({ projectId });
-  const result = await requestJson<WorkerImportResult>(`/api/admin/worker-registrations/import-xlsx?${params}`, {
+  const result = await requestJson<WorkerImportResult>(`/api/admin/projects/${encodeURIComponent(projectId)}/worker-registrations/import-xlsx`, {
     method: "POST",
     body: form,
   });

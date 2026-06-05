@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { QrScanRequest } from './qr.dto';
 import { QrService } from './qr.service';
 import type { MealType } from './qr.types';
@@ -10,6 +10,15 @@ export class QrController {
   @Get('worker/qr-entitlements/today')
   getWorkerEntitlements(@Query('workerId') workerId: string) {
     return this.qr.getWorkerEntitlements(workerId);
+  }
+
+  @Get('admin/projects/:projectId/qr-usage/summary')
+  getAdminProjectSummary(
+    @Param('projectId') projectId: string,
+    @Query('date') date?: string,
+    @Query('mealType') mealType?: MealType | 'all',
+  ) {
+    return this.qr.getAdminSummary(date, mealType ?? 'all', projectId);
   }
 
   @Get('admin/qr-usage/summary')

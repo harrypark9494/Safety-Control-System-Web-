@@ -394,7 +394,7 @@ export function ScheduleView({
         <section className="app-card schedule-period-card" aria-label="프로젝트 일정 기간">
           <div className="schedule-period-stack">
             <span className="schedule-period-item">
-              <small>실제 기간</small>
+              <small>프로젝트 기간</small>
               <strong>{formatScheduleDateRange(scheduleRange)}</strong>
             </span>
             {eventRange ? (
