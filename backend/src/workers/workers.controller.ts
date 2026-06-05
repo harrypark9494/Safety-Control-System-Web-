@@ -52,13 +52,17 @@ export class WorkersController {
   }
 
   @Patch('admin/worker-registrations/:uid')
-  updateRegistration(@Param('uid') uid: string, @Body() request: AdminRegistrationUpdateRequest) {
-    return this.workers.updateRegistration(uid, request);
+  updateRegistration(
+    @Param('uid') uid: string,
+    @Query('projectId') projectId: string | undefined,
+    @Body() request: AdminRegistrationUpdateRequest,
+  ) {
+    return this.workers.updateRegistration(uid, projectId, request);
   }
 
   @Delete('admin/worker-registrations/:uid')
-  deleteRegistration(@Param('uid') uid: string) {
-    this.workers.deleteRegistration(uid);
+  deleteRegistration(@Param('uid') uid: string, @Query('projectId') projectId: string | undefined) {
+    this.workers.deleteRegistration(uid, projectId);
   }
 
   @Post('admin/worker-registrations/import-xlsx')

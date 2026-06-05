@@ -636,28 +636,31 @@ Errors:
 
 ### Update Worker Registration
 
-`PATCH /api/admin/worker-registrations/{uid}`
+`PATCH /api/admin/worker-registrations/{uid}?projectId=waterbomb-2026-summer`
 
 Request fields are the editable subset of `WorkerRegistration`: `name`, `phone`, `category`,
 `company`, `team`, and `memo`. Category is the employment type and is auto-added to
 `WorkerCategorySetting` when needed; company and team are normalized free text in the first pass.
+The query `projectId` is the selected admin project context. Cross-project worker moves are not
+handled by this endpoint.
 
 Response `200 OK`: `WorkerRegistration`
 
 Errors:
 
-- `400 Bad Request`: invalid phone, category, company, team, or memo
+- `400 Bad Request`: missing project context, invalid phone, category, company, team, or memo
 - `404 Not Found`: registration uid not found
 - `409 Conflict`: updated phone duplicates another worker in the same project
 
 ### Delete Worker Registration
 
-`DELETE /api/admin/worker-registrations/{uid}`
+`DELETE /api/admin/worker-registrations/{uid}?projectId=waterbomb-2026-summer`
 
 Response `200 OK`: empty body
 
 Errors:
 
+- `400 Bad Request`: missing project context
 - `404 Not Found`: registration uid not found
 
 ### Import Worker Registrations XLSX

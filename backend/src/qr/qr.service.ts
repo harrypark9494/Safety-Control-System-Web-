@@ -16,7 +16,7 @@ type QrEntitlementResponse = {
   help: string;
 };
 
-type WorkerLookup = { uid: string };
+type WorkerLookup = { uid: string; projectId: string };
 
 @Injectable()
 export class QrService {
@@ -70,6 +70,7 @@ export class QrService {
     const event: QrUsageEvent = {
       id: randomUUID(),
       entitlementId: entitlement.id,
+      projectId: entitlement.projectId,
       workerId: request.workerId,
       qrType: request.qrType,
       usedAt: new Date().toISOString(),
@@ -108,6 +109,7 @@ export class QrService {
     const now = new Date().toISOString();
     const entitlement: QrEntitlement = {
       id: randomUUID(),
+      projectId: this.findWorker(workerId).projectId,
       workerId,
       qrType,
       issuedDate,
@@ -208,6 +210,7 @@ export class QrService {
     this.usageEvents.push({
       id: randomUUID(),
       entitlementId: entitlement.id,
+      projectId: entitlement.projectId,
       workerId,
       qrType,
       usedAt: `${issuedDate}T12:${qrType === 'meal' ? '10' : '25'}:00.000Z`,

@@ -110,19 +110,22 @@ export async function createRegisteredWorker(
 }
 
 export async function updateRegisteredWorker(
+  projectId: string,
   uid: string,
   patch: Partial<Pick<WorkerRegistrationAccount, "projectId" | "name" | "phone" | "category" | "company" | "team" | "memo">>,
 ): Promise<WorkerRegistrationAccount> {
-  const worker = await requestJson<WorkerRegistrationResponse>(`/api/admin/worker-registrations/${encodeURIComponent(uid)}`, {
+  const params = new URLSearchParams({ projectId });
+  const worker = await requestJson<WorkerRegistrationResponse>(`/api/admin/worker-registrations/${encodeURIComponent(uid)}?${params}`, {
     method: "PATCH",
-    body: JSON.stringify({ ...patch, phone: patch.phone ? formatPhone(patch.phone) : undefined }),
+    body: JSON.stringify({ ...patch, projectId, phone: patch.phone ? formatPhone(patch.phone) : undefined }),
   });
 
   return toRegistrationAccount(worker);
 }
 
-export async function deleteRegisteredWorker(uid: string): Promise<void> {
-  await requestNoContent(`/api/admin/worker-registrations/${encodeURIComponent(uid)}`, {
+export async function deleteRegisteredWorker(projectId: string, uid: string): Promise<void> {
+  const params = new URLSearchParams({ projectId });
+  await requestNoContent(`/api/admin/worker-registrations/${encodeURIComponent(uid)}?${params}`, {
     method: "DELETE",
   });
 }

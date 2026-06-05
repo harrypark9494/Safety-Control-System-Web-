@@ -4,6 +4,7 @@ export type QrEntitlementStatus = 'active' | 'exhausted' | 'revoked';
 
 export interface QrEntitlement {
   id: string;
+  projectId: string;
   workerId: string;
   qrType: QrType;
   issuedDate: string;
@@ -17,6 +18,7 @@ export interface QrEntitlement {
 export interface QrUsageEvent {
   id: string;
   entitlementId: string;
+  projectId: string;
   workerId: string;
   qrType: QrType;
   usedAt: string;

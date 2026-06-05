@@ -108,9 +108,15 @@ export class WorkersService {
     return this.toRegistrationResponse(registration);
   }
 
-  updateRegistration(uid: string, request: AdminRegistrationUpdateRequest) {
-    const worker = this.findByUid(uid);
+  updateRegistration(uid: string, projectId: string | undefined, request: AdminRegistrationUpdateRequest) {
+    const contextProjectId = this.requireProjectId(projectId);
+    const worker = this.findByUidInProject(uid, contextProjectId);
     const nextProjectId = request.projectId === undefined ? worker.projectId : this.requireProjectId(request.projectId);
+
+    if (nextProjectId !== contextProjectId) {
+      throw new ApiError(HttpStatus.BAD_REQUEST, 'PROJECT_CONTEXT_MISMATCH', 'projectId does not match the selected project.');
+    }
+
     const nextPhone = request.phone === undefined ? worker.phone : this.normalizePhone(request.phone);
     const nextCategory = request.category === undefined
       ? worker.category
@@ -281,8 +287,8 @@ export class WorkersService {
       .map((worker) => this.toRegistrationResponse(worker));
   }
 
-  deleteRegistration(uid: string) {
-    const worker = this.findByUid(uid);
+  deleteRegistration(uid: string, projectId: string | undefined) {
+    const worker = this.findByUidInProject(uid, this.requireProjectId(projectId));
     this.registrations.delete(this.registrationKey(worker.projectId, worker.phone));
   }
 
@@ -630,6 +636,16 @@ export class WorkersService {
     const worker = [...this.registrations.values()].find((registration) => registration.uid === uid);
 
     if (!worker) {
+      throw new NotFoundException('Worker registration not found.');
+    }
+
+    return worker;
+  }
+
+  private findByUidInProject(uid: string, projectId: string) {
+    const worker = this.findByUid(uid);
+
+    if (worker.projectId !== projectId) {
       throw new NotFoundException('Worker registration not found.');
     }
 

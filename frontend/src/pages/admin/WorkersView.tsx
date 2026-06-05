@@ -211,7 +211,7 @@ export function WorkersView({
       }
 
       if (editingWorker) {
-        await updateRegisteredWorker(editingWorker.uid, { ...workerForm, phone: formatPhone(workerForm.phone) });
+        await updateRegisteredWorker(projectId, editingWorker.uid, { ...workerForm, phone: formatPhone(workerForm.phone) });
         setFormMessage("근로자 정보가 수정되었습니다.");
       } else {
         await createRegisteredWorker(projectId, workerForm.name, workerForm.phone, workerForm.category, workerForm.company, workerForm.team, workerForm.memo);
@@ -228,7 +228,12 @@ export function WorkersView({
 
   async function removeWorker(uid: string) {
     try {
-      await deleteRegisteredWorker(uid);
+      if (!projectId) {
+        setActionMessage("프로젝트를 선택한 뒤 근로자를 삭제할 수 있습니다.");
+        return;
+      }
+
+      await deleteRegisteredWorker(projectId, uid);
       setFormMessage("근로자 등록 정보가 삭제되었습니다.");
       setSelectedWorker(null);
       await onRefresh();
